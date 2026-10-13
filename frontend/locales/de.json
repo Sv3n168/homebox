@@ -1,4 +1,26 @@
 {
+    "box_check": {
+        "back": "Zurück zur Box",
+        "button": "Prüfen",
+        "done": "Prüfung gespeichert – {missing} vermisst.",
+        "elsewhere": "Woanders",
+        "empty": "In dieser Box liegen keine Artikel.",
+        "finish": "Prüfung abschließen",
+        "intro": "Geh die Box durch: da, fehlt oder liegt woanders. Fehlende Artikel bekommen den Tag „Vermisst“.",
+        "missing": "Fehlt",
+        "missing_hint": "{count} Artikel vermisst",
+        "moved": "Verschoben",
+        "present": "Da",
+        "progress": "{done} von {total} geprüft",
+        "rest_present": "Rest ist da",
+        "show": "Anzeigen",
+        "title": "{name} prüfen",
+        "toast": {
+            "load_failed": "Box konnte nicht geladen werden",
+            "save_failed": "Prüfung konnte nicht vollständig gespeichert werden",
+            "saved": "Prüfung gespeichert"
+        }
+    },
     "box_picker": {
         "favorites": "Angeheftet & zuletzt",
         "none": "Keine Box gefunden",
@@ -454,6 +476,23 @@
             "using_template": "Verwendet Vorlage: {name}"
         }
     },
+    "duplicates": {
+        "exists": "Gibt es das schon?",
+        "intro": "Einträge mit (fast) gleichem Namen. Beim Zusammenführen werden Mengen addiert, Tags, Notizen und Fotos übernommen und der Rest archiviert.",
+        "keep_which": "Behalten",
+        "merge": "Zusammenführen",
+        "none": "Keine möglichen Doppelten gefunden.",
+        "not_duplicate": "Kein Duplikat",
+        "plus_one": "Menge +1",
+        "title": "Mögliche Doppelte",
+        "toast": {
+            "load_failed": "Artikel konnten nicht geladen werden",
+            "merge_failed": "Zusammenführen fehlgeschlagen",
+            "merged": "In {name} zusammengeführt",
+            "plus_one": "{name}: Menge jetzt {count}",
+            "plus_one_failed": "Menge konnte nicht geändert werden"
+        }
+    },
     "errors": {
         "api_failure": "Backend-API-Aufruf fehlgeschlagen: "
     },
@@ -825,13 +864,13 @@
     "move": {
         "button": "Verschieben",
         "title": "„{name}“ verschieben nach…",
-        "undo": "Rückgängig",
         "toast": {
             "failed": "{count} Artikel konnten nicht verschoben werden",
             "moved_many": "{count} Artikel nach {target} verschoben",
             "moved_one": "{name} nach {target} verschoben",
             "undone": "Verschieben rückgängig gemacht"
-        }
+        },
+        "undo": "Rückgängig"
     },
     "offline": {
         "available": "{count} Einträge offline verfügbar",
@@ -873,9 +912,9 @@
         }
     },
     "places": {
+        "my_boxes": "Meine Boxen",
         "pin": "Anheften",
-        "pinned": "Angeheftet",
-        "my_boxes": "Meine Boxen"
+        "pinned": "Angeheftet"
     },
     "profile": {
         "active": "Aktiv",
@@ -1017,6 +1056,19 @@
         "switch_camera": "Kamera wechseln",
         "title": "AR-Scanner",
         "unsupported": "AR-Scannen wird von diesem Browser nicht unterstützt"
+    },
+    "sort": {
+        "all_done": "Alles einsortiert!",
+        "create_inbox": "„Unsortiert“ anlegen",
+        "hint": "{count} Artikel in {name}",
+        "into_box": "Einsortieren",
+        "intro": "Alles aus „Unsortiert“ in die richtige Box bringen – Box scannen oder suchen.",
+        "no_inbox": "Es gibt noch keinen Lagerort „Unsortiert“. Neue Artikel ohne Box landen dort und werden später hier einsortiert.",
+        "title": "Einsortieren",
+        "toast": {
+            "create_failed": "„Unsortiert“ konnte nicht angelegt werden",
+            "load_failed": "Artikel konnten nicht geladen werden"
+        }
     },
     "tabbar": {
         "create": "Neu",

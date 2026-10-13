@@ -1,4 +1,26 @@
 {
+    "box_check": {
+        "back": "Back to the box",
+        "button": "Check",
+        "done": "Check saved – {missing} missing.",
+        "elsewhere": "Elsewhere",
+        "empty": "There are no items in this box.",
+        "finish": "Finish check",
+        "intro": "Go through the box: present, missing or somewhere else. Missing items get the tag \"Vermisst\".",
+        "missing": "Missing",
+        "missing_hint": "{count} items missing",
+        "moved": "Moved",
+        "present": "Present",
+        "progress": "{done} of {total} checked",
+        "rest_present": "Rest is present",
+        "show": "Show",
+        "title": "Check {name}",
+        "toast": {
+            "load_failed": "Could not load the box",
+            "save_failed": "Could not save the whole check",
+            "saved": "Check saved"
+        }
+    },
     "box_picker": {
         "favorites": "Pinned & recent",
         "none": "No box found",
@@ -454,6 +476,23 @@
             "using_template": "Using template: {name}"
         }
     },
+    "duplicates": {
+        "exists": "Already in your inventory?",
+        "intro": "Entries with (almost) the same name. Merging adds up the quantities, keeps tags, notes and photos, and archives the rest.",
+        "keep_which": "Keep",
+        "merge": "Merge",
+        "none": "No likely duplicates found.",
+        "not_duplicate": "Not a duplicate",
+        "plus_one": "Quantity +1",
+        "title": "Possible duplicates",
+        "toast": {
+            "load_failed": "Could not load items",
+            "merge_failed": "Merging failed",
+            "merged": "Merged into {name}",
+            "plus_one": "{name}: quantity is now {count}",
+            "plus_one_failed": "Could not change the quantity"
+        }
+    },
     "errors": {
         "api_failure": "Backend API call failed: "
     },
@@ -837,13 +876,13 @@
     "move": {
         "button": "Move",
         "title": "Move \"{name}\" to…",
-        "undo": "Undo",
         "toast": {
             "failed": "{count} item(s) could not be moved",
             "moved_many": "{count} items moved to {target}",
             "moved_one": "{name} moved to {target}",
             "undone": "Move undone"
-        }
+        },
+        "undo": "Undo"
     },
     "offline": {
         "available": "{count} entries available offline",
@@ -885,9 +924,9 @@
         }
     },
     "places": {
+        "my_boxes": "My boxes",
         "pin": "Pin",
-        "pinned": "Pinned",
-        "my_boxes": "My boxes"
+        "pinned": "Pinned"
     },
     "profile": {
         "active": "Active",
@@ -895,6 +934,7 @@
         "api_key_copy": "Copy",
         "api_key_create": "Create API Key",
         "api_key_created": "Created",
+        "api_key_default_expiration": "Keys expire after 30 days unless you set a date.",
         "api_key_delete_confirm": "Are you sure you want to revoke this API key? Any clients using it will lose access immediately.",
         "api_key_expires_at": "Expires",
         "api_key_last_used": "Last used",
@@ -902,7 +942,6 @@
         "api_key_name_placeholder": "e.g. Home Assistant",
         "api_key_never_used": "Never",
         "api_key_no_expiration": "No expiration",
-        "api_key_default_expiration": "Keys expire after 30 days unless you set a date.",
         "api_key_set_expiration": "Set a custom expiration date",
         "api_key_token_label": "Your new API key",
         "api_key_token_warning": "Copy this token now. For your security, it will not be shown again.",
@@ -1034,6 +1073,19 @@
         "switch_camera": "Switch Camera",
         "title": "AR Scanner",
         "unsupported": "AR scanning is not supported in this browser"
+    },
+    "sort": {
+        "all_done": "Everything sorted!",
+        "create_inbox": "Create \"Unsortiert\"",
+        "hint": "{count} items in {name}",
+        "into_box": "Sort in",
+        "intro": "Put everything from the inbox into its real box – scan or search the box.",
+        "no_inbox": "There is no \"Unsortiert\" location yet. New items without a box land there and get sorted in here later.",
+        "title": "Sort in",
+        "toast": {
+            "create_failed": "Could not create \"Unsortiert\"",
+            "load_failed": "Could not load items"
+        }
     },
     "tabbar": {
         "create": "New",

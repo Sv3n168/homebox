@@ -15,6 +15,7 @@
   import ItemLentOverview from "~/components/Item/LentOverview.vue";
   import ItemUntaggedHint from "~/components/Item/UntaggedHint.vue";
   import LocationMyBoxes from "~/components/Location/MyBoxes.vue";
+  import HomeTidy from "~/components/Home/Tidy.vue";
   import MdiChevronDown from "~icons/mdi/chevron-down";
 
   const { t } = useI18n();
@@ -64,6 +65,8 @@
       </section>
 
       <ItemUntaggedHint />
+
+      <HomeTidy />
 
       <LocationMyBoxes />
 

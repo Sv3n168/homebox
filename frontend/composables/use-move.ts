@@ -1,7 +1,12 @@
 import { useI18n } from "vue-i18n";
 import { toast } from "@/components/ui/sonner";
 
-export type Movable = { id: string; name: string; parent?: { id: string; name?: string } | null };
+export type Movable = {
+  id: string;
+  name: string;
+  parent?: { id: string; name?: string } | null;
+  tags?: { id: string; name: string }[];
+};
 export type MoveTarget = { id: string; name: string };
 
 /**
@@ -23,7 +28,13 @@ export function useMove() {
     const previous = todo.map(i => ({ id: i.id, parentId: i.parent?.id ?? null }));
     let moved = 0;
     for (const item of todo) {
-      if (await setParent(item.id, target.id)) moved++;
+      if (!(await setParent(item.id, target.id))) continue;
+      moved++;
+      // Moving something on purpose means it has been found.
+      const tags = item.tags ?? [];
+      if (tags.some(isMissingTag)) {
+        await api.items.patch(item.id, { id: item.id, tagIds: tags.filter(tg => !isMissingTag(tg)).map(tg => tg.id) });
+      }
     }
     places.visit(target.id);
 

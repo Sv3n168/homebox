@@ -12,6 +12,7 @@
   import MdiArrowDownBold from "~icons/mdi/arrow-down-bold";
   import MdiStar from "~icons/mdi/star";
   import MdiStarOutline from "~icons/mdi/star-outline";
+  import MdiClipboardCheckOutline from "~icons/mdi/clipboard-check-outline";
   import LocationCollectDialog from "~/components/Location/CollectDialog.vue";
   import {
     DropdownMenu,
@@ -339,6 +340,12 @@
           <MdiStar v-if="pinned" class="text-amber-500" />
           <MdiStarOutline v-else />
           {{ pinned ? $t("places.pinned") : $t("places.pin") }}
+        </Button>
+        <Button variant="outline" as-child data-testid="box-check">
+          <NuxtLink :to="`/location/${locationId}/check`">
+            <MdiClipboardCheckOutline />
+            {{ $t("box_check.button") }}
+          </NuxtLink>
         </Button>
       </div>
       <LocationCollectDialog v-model:open="collectOpen" :box="collectTarget" @moved="refreshItemList" />

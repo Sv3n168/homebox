@@ -235,6 +235,15 @@ async function queueAttachment(req: OfflineRequest, entityId: string): Promise<O
   return answer && answer.status === 200 ? { status: 201, data: answer.data } : { status: 201, data: {} };
 }
 
+/**
+ * All entity summaries of a collection as the device knows them (snapshot plus
+ * offline changes), for instant local features like the duplicate check.
+ */
+export async function localEntities(headers: Record<string, string>): Promise<EntitySummary[]> {
+  if (!offlineStorageAvailable()) return [];
+  return (await entities(tenantOf(headers))).all;
+}
+
 /** Only a change of place: { id, parentId[, locationId] }. */
 function isMoveBody(body: unknown): body is { parentId: string } {
   if (!body || typeof body !== "object") return false;
