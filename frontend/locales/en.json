@@ -494,6 +494,7 @@
         "exists": "Already in your inventory?",
         "include": "include",
         "intro": "Entries with (almost) the same name. Nothing happens on its own: choose which entry stays and which belong to it, then confirm the summary.",
+        "keep": "keep",
         "keep_which": "Keep",
         "merge": "Merge…",
         "none": "No likely duplicates found.",
@@ -1106,6 +1107,7 @@
         "permission_denied": "Camera permission denied, please allow access to the camera in your browser settings",
         "select_video_source": "Pick a video source",
         "title": "Scanner",
+        "unknown_code": "Not a Homebox label: \"{text}\"",
         "unsupported": "Media Stream API is not supported without HTTPS"
     },
     "scanner_ar": {
