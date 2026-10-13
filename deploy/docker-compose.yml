@@ -1,0 +1,63 @@
+# Homebox (custom build: offline mode, lending) + encrypted OneDrive backups.
+# Made for a Portainer stack; all settings come from the stack's environment
+# variables (see stack.env.example). Full guide: deploy/README.de.md
+name: homebox
+
+services:
+  homebox:
+    image: ${HOMEBOX_IMAGE:-ghcr.io/sv3n168/homebox:latest}
+    container_name: homebox
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-Europe/Berlin}
+      - HBOX_LOG_LEVEL=info
+      - HBOX_LOG_FORMAT=text
+      - HBOX_OPTIONS_ALLOW_ANALYTICS=false
+      # Public through the tunnel: only invited users. Set to true once to
+      # create your first account if you start from scratch.
+      - HBOX_OPTIONS_ALLOW_REGISTRATION=${HBOX_ALLOW_REGISTRATION:-false}
+      # Keep the value you used before — API keys are hashed with it.
+      - HBOX_AUTH_API_KEY_PEPPER=${HBOX_AUTH_API_KEY_PEPPER:?set HBOX_AUTH_API_KEY_PEPPER}
+      - HBOX_WEB_MAX_UPLOAD_SIZE=${HBOX_MAX_UPLOAD_MB:-20}
+    volumes:
+      - homebox-data:/data
+    # cloudflared reaches Homebox here (tunnel service: http://<VM-IP>:3100).
+    # If cloudflared shares a Docker network with this stack instead, remove
+    # the port and use http://homebox:7745 — see "cloudflared" in the README.
+    ports:
+      - "${HOMEBOX_PORT:-3100}:7745"
+
+  homebox-backup:
+    image: ${HOMEBOX_BACKUP_IMAGE:-ghcr.io/sv3n168/homebox-backup:latest}
+    container_name: homebox-backup
+    restart: unless-stopped
+    depends_on:
+      - homebox
+    environment:
+      - TZ=${TZ:-Europe/Berlin}
+      # Where the encrypted backups go: <rclone remote>:<folder>
+      - BACKUP_REMOTE=${BACKUP_REMOTE:-onedrive:Backups/homebox}
+      # Encryption keys. Without BOTH, no backup can ever be restored —
+      # store them in your password manager!
+      - BACKUP_PASSWORD=${BACKUP_PASSWORD:?set BACKUP_PASSWORD}
+      - BACKUP_SALT=${BACKUP_SALT:?set BACKUP_SALT}
+      - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-30 3 * * *}
+      - BACKUP_KEEP_DAYS=${BACKUP_KEEP_DAYS:-60}
+      - BACKUP_KEEP_MIN=${BACKUP_KEEP_MIN:-10}
+      - BACKUP_LOCAL_KEEP=${BACKUP_LOCAL_KEEP:-3}
+      # Optional: https://healthchecks.io ping URL to get mailed when backups stop.
+      - HEALTHCHECK_URL=${BACKUP_HEALTHCHECK_URL:-}
+      # Lets "restore" refuse to run while Homebox is up.
+      - HOMEBOX_URL=http://homebox:7745
+    volumes:
+      - homebox-data:/data
+      - homebox-backup-config:/config
+      - homebox-backup-local:/backups
+
+volumes:
+  homebox-data:
+    # Moving an existing installation? Put the name of its data volume here
+    # (Portainer -> Volumes) so the data is reused.
+    name: ${HOMEBOX_DATA_VOLUME:-homebox-data}
+  homebox-backup-config:
+  homebox-backup-local:
