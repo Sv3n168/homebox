@@ -571,6 +571,11 @@
         "recently_added": "Recently Added",
         "storage_locations": "Storage Locations",
         "tags": "Tags",
+        "tidy": {
+            "duplicates": "Duplicates",
+            "sort": "Sort in",
+            "tags": "Tag assistant"
+        },
         "total_items": "Total Items",
         "total_locations": "Total Locations",
         "total_tags": "Total Tags",

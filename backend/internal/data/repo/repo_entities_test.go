@@ -1142,6 +1142,10 @@ func TestEntityRepository_OnlyWithoutTags(t *testing.T) {
 
 	tag, err := tRepos.Tags.Create(ctx, tGroup.ID, TagCreate{Name: "werkzeug-" + fk.Str(6)})
 	require.NoError(t, err)
+	// Other tests count the group's tags, so don't leave this one behind.
+	t.Cleanup(func() {
+		_ = tRepos.Tags.delete(context.Background(), tag.ID)
+	})
 	tagged := entities[0]
 	update := EntityUpdate{ID: tagged.ID, Name: tagged.Name, Quantity: 1, TagIDs: []uuid.UUID{tag.ID}}
 	if tagged.Parent != nil {

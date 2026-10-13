@@ -14,12 +14,8 @@
       <span>{{ tab.label.value }}</span>
     </NuxtLink>
 
-    <button type="button" :class="[tabClass, '-mt-5 opacity-100']" data-testid="tabbar-scan" @click="$emit('scan')">
-      <span
-        class="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-4 ring-background"
-      >
-        <MdiQrcodeScan class="size-7" />
-      </span>
+    <button type="button" :class="[tabClass, 'opacity-75']" data-testid="tabbar-scan" @click="$emit('scan')">
+      <MdiQrcodeScan class="size-6" />
       <span>{{ $t("tabbar.scan") }}</span>
     </button>
 

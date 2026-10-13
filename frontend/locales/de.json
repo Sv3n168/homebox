@@ -569,6 +569,11 @@
         "recently_added": "Kürzlich hinzugefügt",
         "storage_locations": "Lagerorte",
         "tags": "Tags",
+        "tidy": {
+            "duplicates": "Doppelte",
+            "sort": "Einsortieren",
+            "tags": "Tag-Assistent"
+        },
         "total_items": "Gesamtanzahl Artikel",
         "total_locations": "Gesamtanzahl Lagerorte",
         "total_tags": "Anzahl Tags",
