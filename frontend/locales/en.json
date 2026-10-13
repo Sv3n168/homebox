@@ -930,6 +930,29 @@
             "synced": "{count} offline change(s) uploaded"
         }
     },
+    "offsite_backup": {
+        "backup": "Last backup",
+        "backup_failed": "Failed {when}: {detail}",
+        "backup_never": "None yet – the first one runs tonight.",
+        "backup_never_overdue": "No backup yet although the container has been running for a while – check the OneDrive connection.",
+        "backup_ok": "Succeeded {when}",
+        "backup_stale": "No backup since {when} – is the backup container running?",
+        "every_days": "{n, plural, =1 {daily} other {every {n} days}}",
+        "interval": "Backup",
+        "keep": "Delete after",
+        "months": "{n, plural, =1 {1 month} other {{n} months}}",
+        "not_configured": "No backup container set up. See deploy/README.de.md.",
+        "settings_hint": "Applies from the next nightly run. The 10 newest backups are always kept, even when older.",
+        "title": "Encrypted backup to OneDrive",
+        "toast": {
+            "save_failed": "Could not save the settings",
+            "saved": "Backup settings saved"
+        },
+        "verify": "Restore test",
+        "verify_failed": "Failed {when}: {detail}",
+        "verify_never": "Not run yet – it runs automatically on the 1st of every month.",
+        "verify_ok": "Works – last tested {when}"
+    },
     "pages": {
         "templates": {
             "no_templates": "No templates yet.",

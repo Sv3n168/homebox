@@ -13,11 +13,15 @@ ENV RCLONE_CONFIG=/config/rclone.conf \
     HB_LOCAL_DIR=/backups \
     BACKUP_REMOTE=onedrive:Backups/homebox \
     BACKUP_SCHEDULE="30 3 * * *" \
+    VERIFY_SCHEDULE="15 4 1 * *" \
     BACKUP_KEEP_DAYS=60 \
     BACKUP_KEEP_MIN=10 \
     BACKUP_LOCAL_KEEP=3 \
     TZ=Europe/Berlin
 
 VOLUME ["/config", "/backups"]
+# Portainer shows the container as "unhealthy" when backups stopped or a
+# backup / restore test failed.
+HEALTHCHECK --interval=30m --timeout=30s --start-period=5m CMD ["/usr/local/bin/hb-backup", "health"]
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["schedule"]

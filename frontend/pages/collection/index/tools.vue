@@ -119,6 +119,7 @@
               </button>
             </template>
           </DetailAction>
+          <BackupOffsiteStatus />
         </div>
       </BaseCard>
       <BaseCard>
@@ -191,6 +192,7 @@
   import BaseCard from "@/components/Base/Card.vue";
   import BaseSectionHeader from "@/components/Base/SectionHeader.vue";
   import DetailAction from "@/components/DetailAction.vue";
+  import BackupOffsiteStatus from "@/components/Backup/OffsiteStatus.vue";
 
   const { t } = useI18n();
   const prefs = useViewPreferences();

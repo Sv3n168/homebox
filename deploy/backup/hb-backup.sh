@@ -3,10 +3,15 @@
 #
 #   hb-backup backup                 back up now
 #   hb-backup list                   list backups on the remote
-#   hb-backup verify [NAME|latest]   download, decrypt and check a backup (changes nothing)
+#   hb-backup verify [NAME|latest] [--remote]
+#                                    download, decrypt and check a backup (changes nothing);
+#                                    --remote ignores local copies and tests the OneDrive copy
 #   hb-backup restore [NAME|latest] --yes
 #                                    replace /data with a backup (Homebox must be stopped)
 #   hb-backup check                  verify configuration and remote access
+#   hb-backup status                 last backup and last restore test
+#   hb-backup health                 exit 1 if backups stopped or a check failed
+#                                    (used by the container health check)
 #
 # Everything is encrypted client-side by rclone's crypt backend (XSalsa20-
 # Poly1305, file names encrypted too) before it leaves the machine. Without
@@ -23,13 +28,75 @@ PREFIX="homebox"
 CRYPT="hbcrypt:"
 
 log() { echo "[hb-backup $(date '+%F %T')] $*" >&2; }
-die() { log "ERROR: $*"; ping_health fail; exit 1; }
+die() { log "ERROR: $*"; write_status fail "$*"; ping_health fail; exit 1; }
+
+# Results of the last backup and the last restore test, for "status" and the
+# container health check. Kept in the /backups volume so they survive restarts.
+STATUS_DIR="${HB_STATUS_DIR:-${LOCAL}/.status}"
+STATUS_FOR=""
+# Homebox reads this copy (same volume) and shows it under Collection → Tools.
+STATUS_JSON="${DATA}/.hb-backup-status.json"
+
+write_status() {
+  [ -n "${STATUS_FOR}" ] || return 0
+  mkdir -p "${STATUS_DIR}" 2>/dev/null || return 0
+  printf '%s %s %s\n' "$1" "$(date +%s)" "${2:-}" > "${STATUS_DIR}/${STATUS_FOR}" 2>/dev/null || true
+  write_status_json
+}
+
+status_entry() {
+  local state when detail
+  [ -f "${STATUS_DIR}/$1" ] || { echo null; return; }
+  read -r state when detail < "${STATUS_DIR}/$1"
+  detail="$(printf '%s' "$detail" | tr -d '\000-\037' | sed 's/\\/\\\\/g; s/"/\\"/g')"
+  printf '{"state":"%s","at":%s,"detail":"%s"}' "$state" "$when" "$detail"
+}
+
+write_status_json() {
+  [ -d "${DATA}" ] || return 0
+  load_settings
+  printf '{"maxAgeHours":%s,"startedAt":%s,"backup":%s,"verify":%s}\n' \
+    "$(max_age_hours)" "$(cat "${STATUS_DIR}/started" 2>/dev/null || echo 0)" \
+    "$(status_entry backup)" "$(status_entry verify)" \
+    > "${STATUS_JSON}.tmp" 2>/dev/null && mv "${STATUS_JSON}.tmp" "${STATUS_JSON}" || true
+}
 
 ping_health() {
   [ -n "${HEALTHCHECK_URL:-}" ] || return 0
   local suffix=""
   [ "${1:-}" = "fail" ] && suffix="/fail"
   curl -fsS -m 10 --retry 3 "${HEALTHCHECK_URL}${suffix}" >/dev/null 2>&1 || true
+}
+
+# Interval and retention can be changed in Homebox (Collection → Tools), which
+# writes them next to the database. Without that file the env values apply.
+SETTINGS_JSON="${DATA}/.hb-backup-settings.json"
+INTERVAL_DAYS="${BACKUP_INTERVAL_DAYS:-1}"
+KEEP_MONTHS="${BACKUP_KEEP_MONTHS:-}"
+
+load_settings() {
+  [ -f "${SETTINGS_JSON}" ] || return 0
+  local v
+  v="$(grep -o '"intervalDays":[0-9]*' "${SETTINGS_JSON}" | cut -d: -f2)"
+  [ -n "$v" ] && [ "$v" -ge 1 ] && INTERVAL_DAYS="$v"
+  v="$(grep -o '"keepMonths":[0-9]*' "${SETTINGS_JSON}" | cut -d: -f2)"
+  [ -n "$v" ] && [ "$v" -ge 1 ] && KEEP_MONTHS="$v"
+  return 0
+}
+
+# How old the last successful backup may get before it counts as "stopped".
+max_age_hours() {
+  echo "${BACKUP_MAX_AGE_HOURS:-$(( INTERVAL_DAYS * 24 + 12 ))}"
+}
+
+# Scheduled runs happen daily; skip until INTERVAL_DAYS have passed since the
+# last successful backup (with a few hours of slack for timing jitter).
+backup_due() {
+  [ -f "${STATUS_DIR}/backup" ] || return 0
+  local state when
+  read -r state when _ < "${STATUS_DIR}/backup"
+  [ "$state" = ok ] || return 0
+  [ $(( $(date +%s) - when )) -ge $(( INTERVAL_DAYS * 86400 - 4 * 3600 )) ]
 }
 
 # The crypt remote is defined from the environment so the passwords live in
@@ -81,6 +148,12 @@ cmd_check() {
 }
 
 cmd_backup() {
+  load_settings
+  if [ "${1:-}" = "--scheduled" ] && ! backup_due; then
+    log "skipping: last backup is younger than ${INTERVAL_DAYS} day(s)"
+    return 0
+  fi
+  STATUS_FOR=backup
   setup_crypt
   [ -f "${DATA}/${DB_NAME}" ] || die "no database at ${DATA}/${DB_NAME}"
 
@@ -100,13 +173,13 @@ cmd_backup() {
     echo "created=${stamp}"
     echo "host=$(hostname)"
     echo "db_sha256=$(sha256sum "${work}/${DB_NAME}" | cut -d' ' -f1)"
-    echo "files=$(find "${DATA}" -type f ! -name "${DB_NAME}*" ! -path '*/.pre-restore-*' | wc -l)"
+    echo "files=$(find "${DATA}" -type f ! -name "${DB_NAME}*" ! -name '.hb-backup-status.json*' ! -path '*/.pre-restore-*' | wc -l)"
   } > "${work}/BACKUP-INFO"
 
   tar -czf "${work}/${name}" \
     -C "${DATA}" \
     --exclude="./${DB_NAME}" --exclude="./${DB_NAME}-wal" --exclude="./${DB_NAME}-shm" \
-    --exclude='./.pre-restore-*' \
+    --exclude='./.pre-restore-*' --exclude='./.hb-backup-status.json*' \
     . \
     -C "${work}" "${DB_NAME}" BACKUP-INFO || die "tar failed"
   tar -tzf "${work}/${name}" >/dev/null || die "archive is unreadable"
@@ -124,15 +197,23 @@ cmd_backup() {
   fi
 
   rotate
+  write_status ok "${name}"
   ping_health
 }
 
-# Delete remote backups older than BACKUP_KEEP_DAYS, but always keep the newest
-# BACKUP_KEEP_MIN — if backups silently stopped, old ones must not run out.
+# Delete remote backups older than KEEP_MONTHS (or BACKUP_KEEP_DAYS), but always
+# keep the newest BACKUP_KEEP_MIN — if backups silently stopped, old ones must
+# not run out.
 rotate() {
   local keep_min="${BACKUP_KEEP_MIN:-10}" keep_days="${BACKUP_KEEP_DAYS:-60}"
-  local cutoff all count
-  cutoff="$(date -u -d "-${keep_days} days" '+%Y%m%d-%H%M%S')"
+  local cutoff all count age
+  if [ -n "${KEEP_MONTHS}" ]; then
+    cutoff="$(date -u -d "-${KEEP_MONTHS} months" '+%Y%m%d-%H%M%S')"
+    age="${KEEP_MONTHS} months"
+  else
+    cutoff="$(date -u -d "-${keep_days} days" '+%Y%m%d-%H%M%S')"
+    age="${keep_days} days"
+  fi
   all="$(remote_list)"
   count="$(echo "$all" | grep -c . || true)"
   echo "$all" | head -n "-${keep_min}" | while read -r f; do
@@ -142,7 +223,7 @@ rotate() {
       rclone deletefile "${CRYPT}${f}" && log "rotated out ${f}"
     fi
   done
-  log "${count} backup(s) on remote before rotation (keep >= ${keep_min}, max age ${keep_days} days)"
+  log "${count} backup(s) on remote before rotation (keep >= ${keep_min}, max age ${age})"
 }
 
 cmd_list() {
@@ -172,17 +253,68 @@ fetch_backup() {
   fi
 }
 
+# Restore test: download, decrypt and unpack a backup into a temporary folder
+# and check it like a restore would, without touching /data. Runs monthly.
 cmd_verify() {
+  local target="latest" arg
+  for arg in "$@"; do
+    case "$arg" in
+      --remote) export HB_PREFER_REMOTE=true ;;
+      *) target="$arg" ;;
+    esac
+  done
+  STATUS_FOR=verify
   setup_crypt
   local name work
-  name="$(resolve_name "${1:-latest}")"
+  name="$(resolve_name "$target")"
   work="$(mktemp -d)"
   trap 'rm -rf "$work"' RETURN
   fetch_backup "$name" "$work"
-  local entities
-  entities="$(sqlite3 "${work}/x/${DB_NAME}" "SELECT count(*) FROM entities;" 2>/dev/null || echo "?")"
-  log "backup ${name} is readable: database OK, ${entities} entities, $(find "${work}/x" -type f | wc -l) files"
-  cat "${work}/x/BACKUP-INFO" 2>/dev/null || true
+
+  local entities files want_files
+  entities="$(sqlite3 "${work}/x/${DB_NAME}" "SELECT count(*) FROM entities;" 2>/dev/null)" \
+    || die "backup ${name}: database has no readable entities table"
+  files="$(find "${work}/x" -type f ! -name "${DB_NAME}" ! -name BACKUP-INFO | wc -l)"
+  want_files="$(grep '^files=' "${work}/x/BACKUP-INFO" 2>/dev/null | cut -d= -f2)"
+  if [ -n "$want_files" ] && [ "$files" -lt "$want_files" ]; then
+    die "backup ${name}: ${files} of ${want_files} photo/attachment files present"
+  fi
+  log "restore test OK: ${name} – database intact, ${entities} entries, ${files} photo/attachment files"
+  write_status ok "${name} (${entities} entries, ${files} files)"
+}
+
+cmd_status() {
+  local kind state when detail
+  for kind in backup verify; do
+    if [ -f "${STATUS_DIR}/${kind}" ]; then
+      read -r state when detail < "${STATUS_DIR}/${kind}"
+      printf '%-7s %-4s %s  %s\n' "$kind" "$state" "$(date -d "@${when}" '+%F %T')" "$detail"
+    else
+      printf '%-7s %s\n' "$kind" "never ran"
+    fi
+  done
+  write_status_json
+}
+
+# Unhealthy when the last backup or restore test failed, or when no backup has
+# succeeded for longer than the interval allows (cron stopped, container paused).
+cmd_health() {
+  load_settings
+  local max_age=$(( $(max_age_hours) * 3600 )) now state when detail since
+  now="$(date +%s)"
+  if [ -f "${STATUS_DIR}/verify" ]; then
+    read -r state when detail < "${STATUS_DIR}/verify"
+    [ "$state" = ok ] || { echo "restore test failed: ${detail}"; exit 1; }
+  fi
+  if [ -f "${STATUS_DIR}/backup" ]; then
+    read -r state when detail < "${STATUS_DIR}/backup"
+    [ "$state" = ok ] || { echo "last backup failed: ${detail}"; exit 1; }
+    since="$when"
+  else
+    since="$(cat "${STATUS_DIR}/started" 2>/dev/null || echo "$now")"
+  fi
+  [ $(( now - since )) -le "$max_age" ] || { echo "no successful backup for more than $(max_age_hours) hours"; exit 1; }
+  echo "healthy"
 }
 
 homebox_running() {
@@ -232,15 +364,17 @@ cmd_restore() {
 }
 
 cmd_help() {
-  sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 case "${1:-help}" in
-  backup) cmd_backup ;;
+  backup) shift; cmd_backup "${1:-}" ;;
   list) cmd_list ;;
-  verify) shift; cmd_verify "${1:-latest}" ;;
+  verify) shift; cmd_verify "$@" ;;
   restore) shift; cmd_restore "$@" ;;
   check) cmd_check ;;
+  status) cmd_status ;;
+  health) cmd_health ;;
   help|-h|--help) cmd_help ;;
   *) echo "unknown command: $1"; cmd_help; exit 1 ;;
 esac
