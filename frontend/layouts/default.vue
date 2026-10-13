@@ -206,8 +206,12 @@
                   <MdiQrcodeScan />
                 </Button>
               </div>
+              <div>
+                <AppOfflineStatus />
+              </div>
             </div>
           </div>
+          <AppOfflineBanner class="sticky top-[var(--header-height-mobile)] z-10 sm:top-[var(--header-height)]" />
 
           <slot />
           <div class="grow" />
@@ -293,6 +297,8 @@
   import ItemBarcodeModal from "~/components/Item/BarcodeModal.vue";
   import AppQuickMenuModal from "~/components/App/QuickMenuModal.vue";
   import AppScannerModal from "~/components/App/ScannerModal.vue";
+  import AppOfflineStatus from "~/components/App/OfflineStatus.vue";
+  import AppOfflineBanner from "~/components/App/OfflineBanner.vue";
   import AppLogo from "~/components/App/Logo.vue";
   import AppHeaderDecor from "~/components/App/HeaderDecor.vue";
   import AppHeaderText from "~/components/App/HeaderText.vue";

@@ -1,3 +1,5 @@
+import type { OfflineHooks, OfflineRequest } from "../offline/adapter";
+
 export enum Method {
   GET = "GET",
   POST = "POST",
@@ -22,11 +24,30 @@ export type RequestArgs<T> = {
   headers?: Record<string, string>;
 };
 
+/** Gateway errors Cloudflare/reverse proxies return when the origin is unreachable. */
+const UNREACHABLE_STATUSES = new Set([502, 503, 504, 521, 522, 523, 530]);
+
+/** A GET that hangs this long (weak signal in the basement) is answered offline. */
+const GET_TIMEOUT_MS = 10_000;
+
+function jsonResponse(status: number, data: unknown): Response {
+  return new Response(JSON.stringify(data ?? {}), {
+    status,
+    headers: { "Content-Type": "application/json", "X-Homebox-Offline": "1" },
+  });
+}
+
 export class Requests {
+  private offline?: OfflineHooks;
   private baseUrl: string;
   private token: () => string;
   private headers: Record<string, string> = {};
   private responseInterceptors: ResponseInterceptor[] = [];
+
+  /** Enables offline answers and queuing for this client (see lib/offline). */
+  enableOffline(hooks: OfflineHooks) {
+    this.offline = hooks;
+  }
 
   addResponseInterceptor(interceptor: ResponseInterceptor) {
     this.responseInterceptors.push(interceptor);
@@ -71,6 +92,62 @@ export class Requests {
   }
 
   private async do<T>(method: Method, rargs: RequestArgs<unknown>): Promise<TResponse<T>> {
+    if (!this.offline) {
+      return this.send<T>(method, rargs);
+    }
+
+    let req: OfflineRequest = {
+      method,
+      url: rargs.url,
+      headers: { ...rargs.headers, ...this.headers },
+      body: rargs.body,
+      data: rargs.data,
+    };
+    req = this.offline.rewrite(req);
+    const args = { ...rargs, url: req.url, body: req.body };
+
+    const answerOffline = async (sent = false): Promise<TResponse<T> | null> => {
+      const answer = await this.offline!.fallback({ ...req, sent });
+      if (!answer) return null;
+      return {
+        status: answer.status,
+        error: answer.status >= 400,
+        data: answer.data as T,
+        response: jsonResponse(answer.status, answer.data),
+      };
+    };
+
+    if (this.offline.skipNetwork(req)) {
+      return (await answerOffline()) ?? this.unreachable<T>();
+    }
+
+    let result: TResponse<T>;
+    try {
+      result = await this.send<T>(method, args, method === Method.GET ? GET_TIMEOUT_MS : 0);
+    } catch (e) {
+      // Network failure or timeout: the server never answered.
+      const offline = await answerOffline(true);
+      if (offline) return offline;
+      throw e;
+    }
+
+    if (method === Method.GET && UNREACHABLE_STATUSES.has(result.status)) {
+      return (await answerOffline()) ?? result;
+    }
+
+    if (!result.error) {
+      const isJSON = result.response.headers.get("Content-Type")?.startsWith("application/json");
+      this.offline.record(req, isJSON ? result.data : undefined);
+    }
+    return result;
+  }
+
+  private unreachable<T>(): TResponse<T> {
+    const data = { error: "offline" } as unknown as T;
+    return { status: 503, error: true, data, response: jsonResponse(503, data) };
+  }
+
+  private async send<T>(method: Method, rargs: RequestArgs<unknown>, timeoutMs = 0): Promise<TResponse<T>> {
     const payload: RequestInit = {
       method,
       headers: {
@@ -95,7 +172,19 @@ export class Requests {
       }
     }
 
-    const response = await fetch(this.url(rargs.url), payload);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (timeoutMs > 0 && typeof AbortController !== "undefined") {
+      const controller = new AbortController();
+      payload.signal = controller.signal;
+      timer = setTimeout(() => controller.abort(), timeoutMs);
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(this.url(rargs.url), payload);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
     this.callResponseInterceptors(response, payload);
 
     const data: T = await (async () => {

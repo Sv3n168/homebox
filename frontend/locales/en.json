@@ -813,6 +813,38 @@
         "search": "Search",
         "templates": "Templates"
     },
+    "offline": {
+        "available": "{count} entries available offline",
+        "banner": "Offline – showing the saved copy",
+        "banner_as_of": "as of {time}",
+        "discard": "Discard",
+        "entry": {
+            "create": "New: {name}",
+            "photo": "Photo for {name}"
+        },
+        "failed": "{count} change(s) rejected by the server",
+        "hint": "Changes made offline are uploaded automatically when the connection is back. Offline, you can browse, search, scan labels and add new items.",
+        "last_sync": "Last sync {time}",
+        "needs_login": "Your session expired – please log in again to upload the changes.",
+        "never_synced": "Not available offline yet – it is downloaded automatically while online.",
+        "not_synced": "Not synced",
+        "offline": "Offline",
+        "online": "Online",
+        "pending": "{count} change(s) waiting for upload",
+        "phase": {
+            "details": "Downloading details {done}/{total}",
+            "images": "Downloading photos {done}/{total}",
+            "list": "Downloading inventory…",
+            "upload": "Uploading changes {done}/{total}"
+        },
+        "status_button": "Offline status",
+        "sync_now": "Sync now",
+        "toast": {
+            "blocked": "Offline: only new items can be added without a connection.",
+            "queued": "Saved offline – it will be uploaded once you are back online.",
+            "synced": "{count} offline change(s) uploaded"
+        }
+    },
     "pages": {
         "templates": {
             "no_templates": "No templates yet.",

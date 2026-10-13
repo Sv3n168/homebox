@@ -801,6 +801,38 @@
         "search": "Suche",
         "templates": "Vorlagen"
     },
+    "offline": {
+        "available": "{count} Einträge offline verfügbar",
+        "banner": "Offline – du siehst die gespeicherte Kopie",
+        "banner_as_of": "Stand {time}",
+        "discard": "Verwerfen",
+        "entry": {
+            "create": "Neu: {name}",
+            "photo": "Foto für {name}"
+        },
+        "failed": "{count} Änderung(en) vom Server abgelehnt",
+        "hint": "Offline gemachte Änderungen werden automatisch hochgeladen, sobald wieder Netz da ist. Offline kannst du stöbern, suchen, Etiketten scannen und neue Artikel anlegen.",
+        "last_sync": "Zuletzt synchronisiert {time}",
+        "needs_login": "Deine Sitzung ist abgelaufen – bitte neu anmelden, damit die Änderungen hochgeladen werden.",
+        "never_synced": "Noch nicht offline verfügbar – wird automatisch geladen, solange du online bist.",
+        "not_synced": "Nicht synchronisiert",
+        "offline": "Offline",
+        "online": "Online",
+        "pending": "{count} Änderung(en) warten auf Upload",
+        "phase": {
+            "details": "Lade Details {done}/{total}",
+            "images": "Lade Fotos {done}/{total}",
+            "list": "Lade Inventar…",
+            "upload": "Lade Änderungen hoch {done}/{total}"
+        },
+        "status_button": "Offline-Status",
+        "sync_now": "Jetzt synchronisieren",
+        "toast": {
+            "blocked": "Offline: Ohne Netz können nur neue Artikel angelegt werden.",
+            "queued": "Offline gespeichert – wird hochgeladen, sobald wieder Netz da ist.",
+            "synced": "{count} Offline-Änderung(en) hochgeladen"
+        }
+    },
     "pages": {
         "templates": {
             "no_templates": "Noch keine Vorlagen.",

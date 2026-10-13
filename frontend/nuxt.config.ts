@@ -59,17 +59,27 @@ export default defineNuxtConfig({
 
   pwa: {
     workbox: {
+      // The module adds its own patterns (_nuxt/builds/*.json), which replaces
+      // workbox's defaults — without this list the JS bundles and the start
+      // page are never precached and the app can't start offline.
+      globPatterns: ["**/*.{js,css,html,svg,png,jpg,jpeg,webp,ico,woff,woff2,webmanifest}"],
+      maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
       navigateFallbackDenylist: [/^\/api/],
       cleanupOutdatedCaches: true,
+      // API JSON is cached by the app itself (lib/offline) so it can answer
+      // searches and queue writes. Here only photos/attachments: immutable per
+      // id, so cache-first. ignoreSearch because the URL carries an access
+      // token that changes with every login.
       runtimeCaching: [
         {
-          urlPattern: /^\/api/,
-          handler: "NetworkFirst",
+          urlPattern: /\/api\/v1\/entities\/[^/]+\/attachments\/[^/?]+(\?.*)?$/,
+          handler: "CacheFirst",
           method: "GET",
           options: {
-            cacheName: "api-cache",
-            cacheableResponse: { statuses: [0, 200] },
-            expiration: { maxAgeSeconds: 60 * 60 * 24 },
+            cacheName: "hb-attachments",
+            matchOptions: { ignoreSearch: true },
+            cacheableResponse: { statuses: [200] },
+            expiration: { maxEntries: 5000 },
           },
         },
       ],
