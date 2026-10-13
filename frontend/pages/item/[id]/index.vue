@@ -90,6 +90,10 @@
 
   const { markReturned } = useLending();
   const lent = computed(() => isLent(item.value));
+  // Through computeds: this vue-tsc version types useAsyncData's ref as
+  // un-unwrapped inside the template.
+  const lendTarget = computed(() => item.value);
+  const lentTo = computed(() => item.value?.lentTo ?? "");
   const lentOverdue = computed(() => isOverdue(item.value));
   const lentSince = computed(() => lendingDate(item.value?.lentDate));
   const lentDue = computed(() => lendingDate(item.value?.lentReturnDate));
@@ -650,7 +654,7 @@
     <Title>{{ item.name }}</Title>
 
     <ItemImageDialog />
-    <ItemLendDialog :item="item" @saved="refresh" />
+    <ItemLendDialog v-if="lendTarget" :item="lendTarget" @saved="refresh" />
     <Dialog :dialog-id="DialogID.DuplicateTemporarySettings">
       <DialogContent>
         <DialogHeader>
@@ -780,7 +784,7 @@
         <MdiHandExtended class="size-7 shrink-0" :class="lentOverdue ? 'text-destructive' : 'text-amber-600'" />
         <div class="grow">
           <div class="font-semibold">
-            {{ $t("items.lending.badge_to", { name: item.lentTo }) }}
+            {{ $t("items.lending.badge_to", { name: lentTo }) }}
             <span v-if="lentOverdue" class="text-destructive"> · {{ $t("items.lending.overdue") }}</span>
           </div>
           <div class="text-sm text-muted-foreground">
