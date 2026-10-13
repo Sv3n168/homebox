@@ -883,7 +883,9 @@
     },
     "move": {
         "button": "Verschieben",
+        "selected": "{count} ausgewählt",
         "title": "„{name}“ verschieben nach…",
+        "title_many": "{count, plural, =1 {1 Artikel verschieben nach…} other {{count} Artikel verschieben nach…}}",
         "toast": {
             "failed": "{count} Artikel konnten nicht verschoben werden",
             "moved_many": "{count} Artikel nach {target} verschoben",
@@ -894,8 +896,9 @@
     },
     "offline": {
         "available": "{count} Einträge offline verfügbar",
-        "banner": "Offline – du siehst die gespeicherte Kopie",
+        "banner": "Offline",
         "banner_as_of": "Stand {time}",
+        "banner_pending": "{count} wartend",
         "discard": "Verwerfen",
         "entry": {
             "create": "Neu: {name}",

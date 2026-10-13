@@ -895,7 +895,9 @@
     },
     "move": {
         "button": "Move",
+        "selected": "{count} selected",
         "title": "Move \"{name}\" to…",
+        "title_many": "{count, plural, =1 {Move 1 item to…} other {Move {count} items to…}}",
         "toast": {
             "failed": "{count} item(s) could not be moved",
             "moved_many": "{count} items moved to {target}",
@@ -906,8 +908,9 @@
     },
     "offline": {
         "available": "{count} entries available offline",
-        "banner": "Offline – showing the saved copy",
+        "banner": "Offline",
         "banner_as_of": "as of {time}",
+        "banner_pending": "{count} waiting",
         "discard": "Discard",
         "entry": {
             "create": "New: {name}",
