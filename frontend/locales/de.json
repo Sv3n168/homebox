@@ -477,10 +477,18 @@
         }
     },
     "duplicates": {
+        "confirm": {
+            "archive": "„{name}“ ({place}) wird archiviert",
+            "carry": "Tags, Notizen und Fotos werden übernommen. Archivierte Einträge lassen sich in der Suche unter Optionen → „Archivierte Artikel einschließen“ wiederfinden.",
+            "keep": "„{name}“ ({place}) bleibt, Menge danach {count}",
+            "title": "Bitte bestätigen – das passiert:",
+            "yes": "Ja, zusammenführen"
+        },
         "exists": "Gibt es das schon?",
-        "intro": "Einträge mit (fast) gleichem Namen. Beim Zusammenführen werden Mengen addiert, Tags, Notizen und Fotos übernommen und der Rest archiviert.",
+        "include": "dabei",
+        "intro": "Einträge mit (fast) gleichem Namen. Nichts passiert von allein: Du wählst, welcher Eintrag bleibt und welche dazugehören, und bestätigst danach die Zusammenfassung.",
         "keep_which": "Behalten",
-        "merge": "Zusammenführen",
+        "merge": "Zusammenführen…",
         "none": "Keine möglichen Doppelten gefunden.",
         "not_duplicate": "Kein Duplikat",
         "plus_one": "Menge +1",

@@ -7,6 +7,7 @@
   import MdiPackageVariantClosed from "~icons/mdi/package-variant-closed";
   import { Button } from "@/components/ui/button";
   import { Card } from "@/components/ui/card";
+  import { Checkbox } from "@/components/ui/checkbox";
   import BaseContainer from "@/components/Base/Container.vue";
   import { entityToUpdate, findDuplicateGroups, mergeInto, pairKey } from "~/lib/cleanup/duplicates";
 
@@ -25,6 +26,9 @@
   const loading = ref(true);
   const busy = ref<string | null>(null);
   const keep = ref<Record<string, string>>({});
+  // Entries left out of a merge ("not part of this") and the group awaiting a yes.
+  const excluded = ref<Record<string, string[]>>({});
+  const confirming = ref<string | null>(null);
 
   const groups = computed(() => findDuplicateGroups(items.value, new Set(ignored.value)));
   const groupKey = (g: EntitySummary[]) =>
@@ -43,6 +47,26 @@
     )[0]!.id;
   }
   const keptId = (g: EntitySummary[]) => keep.value[groupKey(g)] ?? defaultKeep(g);
+  const isIncluded = (g: EntitySummary[], id: string) =>
+    id === keptId(g) || !(excluded.value[groupKey(g)] ?? []).includes(id);
+  const mergedAway = (g: EntitySummary[]) => g.filter(i => i.id !== keptId(g) && isIncluded(g, i.id));
+  const keptItem = (g: EntitySummary[]) => g.find(i => i.id === keptId(g))!;
+  const totalQuantity = (g: EntitySummary[]) =>
+    [keptItem(g), ...mergedAway(g)].reduce((sum, i) => sum + (i.quantity || 0), 0);
+
+  function toggleIncluded(g: EntitySummary[], id: string) {
+    const key = groupKey(g);
+    const list = excluded.value[key] ?? [];
+    excluded.value = { ...excluded.value, [key]: list.includes(id) ? list.filter(x => x !== id) : [...list, id] };
+    confirming.value = null;
+  }
+
+  function pickKeep(g: EntitySummary[], id: string) {
+    const key = groupKey(g);
+    keep.value = { ...keep.value, [key]: id };
+    excluded.value = { ...excluded.value, [key]: (excluded.value[key] ?? []).filter(x => x !== id) };
+    confirming.value = null;
+  }
 
   async function load() {
     loading.value = true;
@@ -77,13 +101,17 @@
     return data;
   }
 
+  // Only runs after the summary was confirmed; nothing is merged on its own.
   async function merge(g: EntitySummary[]) {
     const key = groupKey(g);
+    const away = mergedAway(g);
+    if (confirming.value !== key || away.length === 0) return;
+    confirming.value = null;
     busy.value = key;
     try {
       const targetId = keptId(g);
       const target = await full(targetId);
-      const others = await Promise.all(g.filter(i => i.id !== targetId).map(i => full(i.id)));
+      const others = await Promise.all(away.map(i => full(i.id)));
 
       const { error } = await api.items.update(targetId, mergeInto(target, others));
       if (error) throw new Error("update");
@@ -132,27 +160,78 @@
 
     <Card v-for="g in groups" v-else :key="groupKey(g)" class="flex flex-col gap-2 p-3" data-testid="duplicate-group">
       <p class="px-1 text-xs font-medium uppercase text-muted-foreground">{{ $t("duplicates.keep_which") }}</p>
-      <label
-        v-for="i in g"
-        :key="i.id"
-        class="flex cursor-pointer items-center gap-3 rounded-xl p-2"
-        :class="keptId(g) === i.id ? 'bg-primary/10 ring-1 ring-primary' : 'hover:bg-accent'"
+      <div v-for="i in g" :key="i.id" class="flex items-center gap-2">
+        <button
+          type="button"
+          class="flex min-w-0 grow items-center gap-3 rounded-xl p-2 text-left"
+          :class="[
+            keptId(g) === i.id ? 'bg-primary/10 ring-1 ring-primary' : 'hover:bg-accent',
+            { 'opacity-50': !isIncluded(g, i.id) },
+          ]"
+          :aria-pressed="keptId(g) === i.id"
+          data-testid="duplicate-keep"
+          @click="pickKeep(g, i.id)"
+        >
+          <div class="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
+            <img v-if="thumb(i)" :src="thumb(i)!" alt="" class="size-full object-cover" />
+            <MdiPackageVariantClosed v-else class="size-6 text-muted-foreground" />
+          </div>
+          <div class="min-w-0 grow">
+            <div class="truncate font-medium">{{ i.name }}</div>
+            <div class="truncate text-xs text-muted-foreground">{{ i.quantity }}× · {{ pathOf(i) }}</div>
+          </div>
+        </button>
+        <label
+          v-if="keptId(g) !== i.id"
+          class="flex shrink-0 cursor-pointer flex-col items-center gap-1 px-1 text-[11px] text-muted-foreground"
+        >
+          <Checkbox
+            :model-value="isIncluded(g, i.id)"
+            data-testid="duplicate-include"
+            @update:model-value="toggleIncluded(g, i.id)"
+          />
+          {{ $t("duplicates.include") }}
+        </label>
+      </div>
+
+      <div
+        v-if="confirming === groupKey(g)"
+        class="flex flex-col gap-2 rounded-xl border border-primary/40 bg-primary/5 p-3 text-sm"
+        data-testid="duplicate-confirm"
       >
-        <input v-model="keep[groupKey(g)]" type="radio" :value="i.id" class="sr-only" />
-        <div class="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
-          <img v-if="thumb(i)" :src="thumb(i)!" alt="" class="size-full object-cover" />
-          <MdiPackageVariantClosed v-else class="size-6 text-muted-foreground" />
+        <p class="font-medium">{{ $t("duplicates.confirm.title") }}</p>
+        <ul class="list-disc space-y-1 pl-5">
+          <li>
+            {{
+              $t("duplicates.confirm.keep", {
+                name: keptItem(g).name,
+                place: pathOf(keptItem(g)),
+                count: totalQuantity(g),
+              })
+            }}
+          </li>
+          <li v-for="o in mergedAway(g)" :key="o.id">
+            {{ $t("duplicates.confirm.archive", { name: o.name, place: pathOf(o) }) }}
+          </li>
+          <li>{{ $t("duplicates.confirm.carry") }}</li>
+        </ul>
+        <div class="flex gap-2 pt-1">
+          <Button variant="outline" class="flex-1" @click="confirming = null">{{ $t("global.cancel") }}</Button>
+          <Button class="flex-1" :disabled="busy !== null" data-testid="duplicate-confirm-yes" @click="merge(g)">
+            {{ $t("duplicates.confirm.yes") }}
+          </Button>
         </div>
-        <div class="min-w-0 grow">
-          <div class="truncate font-medium">{{ i.name }}</div>
-          <div class="truncate text-xs text-muted-foreground">{{ i.quantity }}× · {{ pathOf(i) }}</div>
-        </div>
-      </label>
-      <div class="flex gap-2 pt-1">
+      </div>
+      <div v-else class="flex gap-2 pt-1">
         <Button variant="outline" class="flex-1" data-testid="duplicate-ignore" @click="notDuplicate(g)">
           {{ $t("duplicates.not_duplicate") }}
         </Button>
-        <Button class="flex-1" :disabled="busy !== null" data-testid="duplicate-merge" @click="merge(g)">
+        <Button
+          class="flex-1"
+          :disabled="busy !== null || mergedAway(g).length === 0"
+          data-testid="duplicate-merge"
+          @click="confirming = groupKey(g)"
+        >
           <MdiMerge />
           {{ $t("duplicates.merge") }}
         </Button>
