@@ -8,7 +8,7 @@
 
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
-  import { BrowserMultiFormatReader } from "@zxing/library";
+  import { TolerantReader } from "~~/lib/scanner/reader";
 
   // Minimal live QR reader (back camera) used inside dialogs.
 
@@ -16,7 +16,7 @@
   const { t } = useI18n();
   const video = ref<HTMLVideoElement>();
   const error = ref("");
-  const reader = new BrowserMultiFormatReader();
+  const reader = new TolerantReader();
 
   onMounted(async () => {
     try {
