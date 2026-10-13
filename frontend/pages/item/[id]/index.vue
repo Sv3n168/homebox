@@ -45,6 +45,10 @@
   import DetailsSection from "~/components/global/DetailsSection/DetailsSection.vue";
   import ItemAttachmentsList from "~/components/Item/AttachmentsList.vue";
   import ItemViewSelectable from "~/components/Item/View/Selectable.vue";
+  import ItemLendDialog from "~/components/Item/LendDialog.vue";
+  import MdiHandExtended from "~icons/mdi/hand-extended";
+  import MdiKeyboardReturn from "~icons/mdi/keyboard-return";
+  import { isLent, isOverdue, lendingDate } from "~/lib/lending";
 
   const { t } = useI18n();
 
@@ -83,6 +87,23 @@
   onMounted(() => {
     refresh();
   });
+
+  const { markReturned } = useLending();
+  const lent = computed(() => isLent(item.value));
+  // Through computeds: this vue-tsc version types useAsyncData's ref as
+  // un-unwrapped inside the template.
+  const lendTarget = computed(() => item.value);
+  const lentTo = computed(() => item.value?.lentTo ?? "");
+  const lentOverdue = computed(() => isOverdue(item.value));
+  const lentSince = computed(() => lendingDate(item.value?.lentDate));
+  const lentDue = computed(() => lendingDate(item.value?.lentReturnDate));
+
+  async function returnItem() {
+    if (!item.value) return;
+    if (await markReturned(item.value.id)) {
+      refresh();
+    }
+  }
 
   const lastRoute = ref(route.fullPath);
   watchEffect(() => {
@@ -633,6 +654,7 @@
     <Title>{{ item.name }}</Title>
 
     <ItemImageDialog />
+    <ItemLendDialog v-if="lendTarget" :item="lendTarget" @saved="refresh" />
     <Dialog :dialog-id="DialogID.DuplicateTemporarySettings">
       <DialogContent>
         <DialogHeader>
@@ -706,6 +728,16 @@
                 type="asset"
               />
               <LabelMaker v-else :id="item.id" type="item" />
+              <Button
+                v-if="!lent"
+                variant="outline"
+                class="w-9 md:w-auto"
+                :aria-label="$t('items.lending.lend')"
+                @click="openDialog(DialogID.LendItem)"
+              >
+                <MdiHandExtended />
+                <span class="hidden md:inline">{{ $t("items.lending.lend") }}</span>
+              </Button>
               <Button class="w-9 md:w-auto" :aria-label="$t('global.create_subitem')" @click="createSubitem">
                 <MdiPlus />
                 <span class="hidden md:inline">{{ $t("global.create_subitem") }}</span>
@@ -740,6 +772,35 @@
         <Separator v-if="item.description" />
         <div v-if="item.description" class="prose max-w-full p-1">
           <Markdown class="text-base" :source="item.description" />
+        </div>
+      </Card>
+
+      <Card
+        v-if="lent"
+        data-testid="lent-banner"
+        class="mt-3 flex flex-wrap items-center gap-3 border-2 p-3"
+        :class="lentOverdue ? 'border-destructive bg-destructive/10' : 'border-amber-500 bg-amber-500/10'"
+      >
+        <MdiHandExtended class="size-7 shrink-0" :class="lentOverdue ? 'text-destructive' : 'text-amber-600'" />
+        <div class="grow">
+          <div class="font-semibold">
+            {{ $t("items.lending.badge_to", { name: lentTo }) }}
+            <span v-if="lentOverdue" class="text-destructive"> · {{ $t("items.lending.overdue") }}</span>
+          </div>
+          <div class="text-sm text-muted-foreground">
+            <span v-if="lentSince">{{ $t("items.lending.since", { date: fmtDate(lentSince, "human", "date") }) }}</span>
+            <span v-if="lentSince && lentDue"> · </span>
+            <span v-if="lentDue">{{ $t("items.lending.due", { date: fmtDate(lentDue, "human", "date") }) }}</span>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <Button variant="outline" size="sm" @click="openDialog(DialogID.LendItem)">
+            {{ $t("global.edit") }}
+          </Button>
+          <Button size="sm" data-testid="lent-return" @click="returnItem">
+            <MdiKeyboardReturn class="mr-1" />
+            {{ $t("items.lending.mark_returned") }}
+          </Button>
         </div>
       </Card>
 

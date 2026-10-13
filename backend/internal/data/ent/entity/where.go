@@ -176,6 +176,21 @@ func SoldNotes(v string) predicate.Entity {
 	return predicate.Entity(sql.FieldEQ(FieldSoldNotes, v))
 }
 
+// LentTo applies equality check predicate on the "lent_to" field. It's identical to LentToEQ.
+func LentTo(v string) predicate.Entity {
+	return predicate.Entity(sql.FieldEQ(FieldLentTo, v))
+}
+
+// LentDate applies equality check predicate on the "lent_date" field. It's identical to LentDateEQ.
+func LentDate(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldEQ(FieldLentDate, v))
+}
+
+// LentReturnDate applies equality check predicate on the "lent_return_date" field. It's identical to LentReturnDateEQ.
+func LentReturnDate(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldEQ(FieldLentReturnDate, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Entity {
 	return predicate.Entity(sql.FieldEQ(FieldCreatedAt, v))
@@ -1419,6 +1434,181 @@ func SoldNotesEqualFold(v string) predicate.Entity {
 // SoldNotesContainsFold applies the ContainsFold predicate on the "sold_notes" field.
 func SoldNotesContainsFold(v string) predicate.Entity {
 	return predicate.Entity(sql.FieldContainsFold(FieldSoldNotes, v))
+}
+
+// LentToEQ applies the EQ predicate on the "lent_to" field.
+func LentToEQ(v string) predicate.Entity {
+	return predicate.Entity(sql.FieldEQ(FieldLentTo, v))
+}
+
+// LentToNEQ applies the NEQ predicate on the "lent_to" field.
+func LentToNEQ(v string) predicate.Entity {
+	return predicate.Entity(sql.FieldNEQ(FieldLentTo, v))
+}
+
+// LentToIn applies the In predicate on the "lent_to" field.
+func LentToIn(vs ...string) predicate.Entity {
+	return predicate.Entity(sql.FieldIn(FieldLentTo, vs...))
+}
+
+// LentToNotIn applies the NotIn predicate on the "lent_to" field.
+func LentToNotIn(vs ...string) predicate.Entity {
+	return predicate.Entity(sql.FieldNotIn(FieldLentTo, vs...))
+}
+
+// LentToGT applies the GT predicate on the "lent_to" field.
+func LentToGT(v string) predicate.Entity {
+	return predicate.Entity(sql.FieldGT(FieldLentTo, v))
+}
+
+// LentToGTE applies the GTE predicate on the "lent_to" field.
+func LentToGTE(v string) predicate.Entity {
+	return predicate.Entity(sql.FieldGTE(FieldLentTo, v))
+}
+
+// LentToLT applies the LT predicate on the "lent_to" field.
+func LentToLT(v string) predicate.Entity {
+	return predicate.Entity(sql.FieldLT(FieldLentTo, v))
+}
+
+// LentToLTE applies the LTE predicate on the "lent_to" field.
+func LentToLTE(v string) predicate.Entity {
+	return predicate.Entity(sql.FieldLTE(FieldLentTo, v))
+}
+
+// LentToContains applies the Contains predicate on the "lent_to" field.
+func LentToContains(v string) predicate.Entity {
+	return predicate.Entity(sql.FieldContains(FieldLentTo, v))
+}
+
+// LentToHasPrefix applies the HasPrefix predicate on the "lent_to" field.
+func LentToHasPrefix(v string) predicate.Entity {
+	return predicate.Entity(sql.FieldHasPrefix(FieldLentTo, v))
+}
+
+// LentToHasSuffix applies the HasSuffix predicate on the "lent_to" field.
+func LentToHasSuffix(v string) predicate.Entity {
+	return predicate.Entity(sql.FieldHasSuffix(FieldLentTo, v))
+}
+
+// LentToIsNil applies the IsNil predicate on the "lent_to" field.
+func LentToIsNil() predicate.Entity {
+	return predicate.Entity(sql.FieldIsNull(FieldLentTo))
+}
+
+// LentToNotNil applies the NotNil predicate on the "lent_to" field.
+func LentToNotNil() predicate.Entity {
+	return predicate.Entity(sql.FieldNotNull(FieldLentTo))
+}
+
+// LentToEqualFold applies the EqualFold predicate on the "lent_to" field.
+func LentToEqualFold(v string) predicate.Entity {
+	return predicate.Entity(sql.FieldEqualFold(FieldLentTo, v))
+}
+
+// LentToContainsFold applies the ContainsFold predicate on the "lent_to" field.
+func LentToContainsFold(v string) predicate.Entity {
+	return predicate.Entity(sql.FieldContainsFold(FieldLentTo, v))
+}
+
+// LentDateEQ applies the EQ predicate on the "lent_date" field.
+func LentDateEQ(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldEQ(FieldLentDate, v))
+}
+
+// LentDateNEQ applies the NEQ predicate on the "lent_date" field.
+func LentDateNEQ(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldNEQ(FieldLentDate, v))
+}
+
+// LentDateIn applies the In predicate on the "lent_date" field.
+func LentDateIn(vs ...time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldIn(FieldLentDate, vs...))
+}
+
+// LentDateNotIn applies the NotIn predicate on the "lent_date" field.
+func LentDateNotIn(vs ...time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldNotIn(FieldLentDate, vs...))
+}
+
+// LentDateGT applies the GT predicate on the "lent_date" field.
+func LentDateGT(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldGT(FieldLentDate, v))
+}
+
+// LentDateGTE applies the GTE predicate on the "lent_date" field.
+func LentDateGTE(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldGTE(FieldLentDate, v))
+}
+
+// LentDateLT applies the LT predicate on the "lent_date" field.
+func LentDateLT(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldLT(FieldLentDate, v))
+}
+
+// LentDateLTE applies the LTE predicate on the "lent_date" field.
+func LentDateLTE(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldLTE(FieldLentDate, v))
+}
+
+// LentDateIsNil applies the IsNil predicate on the "lent_date" field.
+func LentDateIsNil() predicate.Entity {
+	return predicate.Entity(sql.FieldIsNull(FieldLentDate))
+}
+
+// LentDateNotNil applies the NotNil predicate on the "lent_date" field.
+func LentDateNotNil() predicate.Entity {
+	return predicate.Entity(sql.FieldNotNull(FieldLentDate))
+}
+
+// LentReturnDateEQ applies the EQ predicate on the "lent_return_date" field.
+func LentReturnDateEQ(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldEQ(FieldLentReturnDate, v))
+}
+
+// LentReturnDateNEQ applies the NEQ predicate on the "lent_return_date" field.
+func LentReturnDateNEQ(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldNEQ(FieldLentReturnDate, v))
+}
+
+// LentReturnDateIn applies the In predicate on the "lent_return_date" field.
+func LentReturnDateIn(vs ...time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldIn(FieldLentReturnDate, vs...))
+}
+
+// LentReturnDateNotIn applies the NotIn predicate on the "lent_return_date" field.
+func LentReturnDateNotIn(vs ...time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldNotIn(FieldLentReturnDate, vs...))
+}
+
+// LentReturnDateGT applies the GT predicate on the "lent_return_date" field.
+func LentReturnDateGT(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldGT(FieldLentReturnDate, v))
+}
+
+// LentReturnDateGTE applies the GTE predicate on the "lent_return_date" field.
+func LentReturnDateGTE(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldGTE(FieldLentReturnDate, v))
+}
+
+// LentReturnDateLT applies the LT predicate on the "lent_return_date" field.
+func LentReturnDateLT(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldLT(FieldLentReturnDate, v))
+}
+
+// LentReturnDateLTE applies the LTE predicate on the "lent_return_date" field.
+func LentReturnDateLTE(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldLTE(FieldLentReturnDate, v))
+}
+
+// LentReturnDateIsNil applies the IsNil predicate on the "lent_return_date" field.
+func LentReturnDateIsNil() predicate.Entity {
+	return predicate.Entity(sql.FieldIsNull(FieldLentReturnDate))
+}
+
+// LentReturnDateNotNil applies the NotNil predicate on the "lent_return_date" field.
+func LentReturnDateNotNil() predicate.Entity {
+	return predicate.Entity(sql.FieldNotNull(FieldLentReturnDate))
 }
 
 // HasGroup applies the HasEdge predicate on the "group" edge.

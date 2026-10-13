@@ -314,6 +314,25 @@
     },
   ];
 
+  const lendingFields: FormField[] = [
+    {
+      type: "text",
+      label: "items.lending.lent_to",
+      ref: "lentTo",
+      maxLength: 255,
+    },
+    {
+      type: "date",
+      label: "items.lending.lent_date",
+      ref: "lentDate",
+    },
+    {
+      type: "date",
+      label: "items.lending.return_date",
+      ref: "lentReturnDate",
+    },
+  ];
+
   // - Attachments
   const attDropZone = ref<HTMLDivElement>();
   const { isOverDropZone: attDropZoneActive } = useDropZone(attDropZone);
@@ -991,6 +1010,31 @@
                 />
                 <FormCheckbox
                   v-else-if="field.type === 'checkbox'"
+                  v-model="item[field.ref]"
+                  :label="$t(field.label)"
+                  inline
+                />
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card class="overflow-visible shadow-xl">
+          <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg font-medium leading-6">{{ $t("items.lending.title") }}</h3>
+          </div>
+          <div class="border-t sm:p-0">
+            <div v-for="field in lendingFields" :key="field.ref" class="grid grid-cols-1 sm:divide-y">
+              <div class="border-b px-4 pb-4 pt-2 sm:px-6">
+                <FormTextField
+                  v-if="field.type === 'text'"
+                  v-model="item[field.ref]"
+                  :label="$t(field.label)"
+                  inline
+                  :max-length="field.maxLength"
+                />
+                <FormDatePicker
+                  v-else-if="field.type === 'date'"
                   v-model="item[field.ref]"
                   :label="$t(field.label)"
                   inline

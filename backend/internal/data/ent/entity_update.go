@@ -455,6 +455,66 @@ func (_u *EntityUpdate) ClearSoldNotes() *EntityUpdate {
 	return _u
 }
 
+// SetLentTo sets the "lent_to" field.
+func (_u *EntityUpdate) SetLentTo(v string) *EntityUpdate {
+	_u.mutation.SetLentTo(v)
+	return _u
+}
+
+// SetNillableLentTo sets the "lent_to" field if the given value is not nil.
+func (_u *EntityUpdate) SetNillableLentTo(v *string) *EntityUpdate {
+	if v != nil {
+		_u.SetLentTo(*v)
+	}
+	return _u
+}
+
+// ClearLentTo clears the value of the "lent_to" field.
+func (_u *EntityUpdate) ClearLentTo() *EntityUpdate {
+	_u.mutation.ClearLentTo()
+	return _u
+}
+
+// SetLentDate sets the "lent_date" field.
+func (_u *EntityUpdate) SetLentDate(v time.Time) *EntityUpdate {
+	_u.mutation.SetLentDate(v)
+	return _u
+}
+
+// SetNillableLentDate sets the "lent_date" field if the given value is not nil.
+func (_u *EntityUpdate) SetNillableLentDate(v *time.Time) *EntityUpdate {
+	if v != nil {
+		_u.SetLentDate(*v)
+	}
+	return _u
+}
+
+// ClearLentDate clears the value of the "lent_date" field.
+func (_u *EntityUpdate) ClearLentDate() *EntityUpdate {
+	_u.mutation.ClearLentDate()
+	return _u
+}
+
+// SetLentReturnDate sets the "lent_return_date" field.
+func (_u *EntityUpdate) SetLentReturnDate(v time.Time) *EntityUpdate {
+	_u.mutation.SetLentReturnDate(v)
+	return _u
+}
+
+// SetNillableLentReturnDate sets the "lent_return_date" field if the given value is not nil.
+func (_u *EntityUpdate) SetNillableLentReturnDate(v *time.Time) *EntityUpdate {
+	if v != nil {
+		_u.SetLentReturnDate(*v)
+	}
+	return _u
+}
+
+// ClearLentReturnDate clears the value of the "lent_return_date" field.
+func (_u *EntityUpdate) ClearLentReturnDate() *EntityUpdate {
+	_u.mutation.ClearLentReturnDate()
+	return _u
+}
+
 // SetGroupID sets the "group" edge to the Group entity by ID.
 func (_u *EntityUpdate) SetGroupID(id uuid.UUID) *EntityUpdate {
 	_u.mutation.SetGroupID(id)
@@ -843,6 +903,11 @@ func (_u *EntityUpdate) check() error {
 			return &ValidationError{Name: "sold_notes", err: fmt.Errorf(`ent: validator failed for field "Entity.sold_notes": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.LentTo(); ok {
+		if err := entity.LentToValidator(v); err != nil {
+			return &ValidationError{Name: "lent_to", err: fmt.Errorf(`ent: validator failed for field "Entity.lent_to": %w`, err)}
+		}
+	}
 	if _u.mutation.GroupCleared() && len(_u.mutation.GroupIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Entity.group"`)
 	}
@@ -983,6 +1048,24 @@ func (_u *EntityUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.SoldNotesCleared() {
 		_spec.ClearField(entity.FieldSoldNotes, field.TypeString)
+	}
+	if value, ok := _u.mutation.LentTo(); ok {
+		_spec.SetField(entity.FieldLentTo, field.TypeString, value)
+	}
+	if _u.mutation.LentToCleared() {
+		_spec.ClearField(entity.FieldLentTo, field.TypeString)
+	}
+	if value, ok := _u.mutation.LentDate(); ok {
+		_spec.SetField(entity.FieldLentDate, field.TypeTime, value)
+	}
+	if _u.mutation.LentDateCleared() {
+		_spec.ClearField(entity.FieldLentDate, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LentReturnDate(); ok {
+		_spec.SetField(entity.FieldLentReturnDate, field.TypeTime, value)
+	}
+	if _u.mutation.LentReturnDateCleared() {
+		_spec.ClearField(entity.FieldLentReturnDate, field.TypeTime)
 	}
 	if _u.mutation.GroupCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1810,6 +1893,66 @@ func (_u *EntityUpdateOne) ClearSoldNotes() *EntityUpdateOne {
 	return _u
 }
 
+// SetLentTo sets the "lent_to" field.
+func (_u *EntityUpdateOne) SetLentTo(v string) *EntityUpdateOne {
+	_u.mutation.SetLentTo(v)
+	return _u
+}
+
+// SetNillableLentTo sets the "lent_to" field if the given value is not nil.
+func (_u *EntityUpdateOne) SetNillableLentTo(v *string) *EntityUpdateOne {
+	if v != nil {
+		_u.SetLentTo(*v)
+	}
+	return _u
+}
+
+// ClearLentTo clears the value of the "lent_to" field.
+func (_u *EntityUpdateOne) ClearLentTo() *EntityUpdateOne {
+	_u.mutation.ClearLentTo()
+	return _u
+}
+
+// SetLentDate sets the "lent_date" field.
+func (_u *EntityUpdateOne) SetLentDate(v time.Time) *EntityUpdateOne {
+	_u.mutation.SetLentDate(v)
+	return _u
+}
+
+// SetNillableLentDate sets the "lent_date" field if the given value is not nil.
+func (_u *EntityUpdateOne) SetNillableLentDate(v *time.Time) *EntityUpdateOne {
+	if v != nil {
+		_u.SetLentDate(*v)
+	}
+	return _u
+}
+
+// ClearLentDate clears the value of the "lent_date" field.
+func (_u *EntityUpdateOne) ClearLentDate() *EntityUpdateOne {
+	_u.mutation.ClearLentDate()
+	return _u
+}
+
+// SetLentReturnDate sets the "lent_return_date" field.
+func (_u *EntityUpdateOne) SetLentReturnDate(v time.Time) *EntityUpdateOne {
+	_u.mutation.SetLentReturnDate(v)
+	return _u
+}
+
+// SetNillableLentReturnDate sets the "lent_return_date" field if the given value is not nil.
+func (_u *EntityUpdateOne) SetNillableLentReturnDate(v *time.Time) *EntityUpdateOne {
+	if v != nil {
+		_u.SetLentReturnDate(*v)
+	}
+	return _u
+}
+
+// ClearLentReturnDate clears the value of the "lent_return_date" field.
+func (_u *EntityUpdateOne) ClearLentReturnDate() *EntityUpdateOne {
+	_u.mutation.ClearLentReturnDate()
+	return _u
+}
+
 // SetGroupID sets the "group" edge to the Group entity by ID.
 func (_u *EntityUpdateOne) SetGroupID(id uuid.UUID) *EntityUpdateOne {
 	_u.mutation.SetGroupID(id)
@@ -2211,6 +2354,11 @@ func (_u *EntityUpdateOne) check() error {
 			return &ValidationError{Name: "sold_notes", err: fmt.Errorf(`ent: validator failed for field "Entity.sold_notes": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.LentTo(); ok {
+		if err := entity.LentToValidator(v); err != nil {
+			return &ValidationError{Name: "lent_to", err: fmt.Errorf(`ent: validator failed for field "Entity.lent_to": %w`, err)}
+		}
+	}
 	if _u.mutation.GroupCleared() && len(_u.mutation.GroupIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Entity.group"`)
 	}
@@ -2368,6 +2516,24 @@ func (_u *EntityUpdateOne) sqlSave(ctx context.Context) (_node *Entity, err erro
 	}
 	if _u.mutation.SoldNotesCleared() {
 		_spec.ClearField(entity.FieldSoldNotes, field.TypeString)
+	}
+	if value, ok := _u.mutation.LentTo(); ok {
+		_spec.SetField(entity.FieldLentTo, field.TypeString, value)
+	}
+	if _u.mutation.LentToCleared() {
+		_spec.ClearField(entity.FieldLentTo, field.TypeString)
+	}
+	if value, ok := _u.mutation.LentDate(); ok {
+		_spec.SetField(entity.FieldLentDate, field.TypeTime, value)
+	}
+	if _u.mutation.LentDateCleared() {
+		_spec.ClearField(entity.FieldLentDate, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LentReturnDate(); ok {
+		_spec.SetField(entity.FieldLentReturnDate, field.TypeTime, value)
+	}
+	if _u.mutation.LentReturnDateCleared() {
+		_spec.ClearField(entity.FieldLentReturnDate, field.TypeTime)
 	}
 	if _u.mutation.GroupCleared() {
 		edge := &sqlgraph.EdgeSpec{

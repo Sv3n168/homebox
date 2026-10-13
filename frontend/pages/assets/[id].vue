@@ -29,7 +29,11 @@
         navigateTo("/home");
         break;
       case 1:
-        navigateTo(`/item/${data.items[0]!.id}`, { replace: true, redirectCode: 302 });
+        // A labelled box is a location; open it as one so its contents show.
+        navigateTo(`/${data.items[0]!.entityType?.isLocation ? "location" : "item"}/${data.items[0]!.id}`, {
+          replace: true,
+          redirectCode: 302,
+        });
         break;
       default:
         return data.items;

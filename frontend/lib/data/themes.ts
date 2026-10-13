@@ -1,4 +1,7 @@
 export type DaisyTheme =
+  | "glass"
+  | "glass-light"
+  | "glass-dark"
   | "homebox"
   | "light"
   | "dark"
@@ -36,6 +39,18 @@ export type ThemeOption = {
 };
 
 export const themes: ThemeOption[] = [
+  {
+    label: "Liquid Glass (Auto)",
+    value: "glass",
+  },
+  {
+    label: "Liquid Glass Light",
+    value: "glass-light",
+  },
+  {
+    label: "Liquid Glass Dark",
+    value: "glass-dark",
+  },
   {
     label: "Homebox",
     value: "homebox",
@@ -155,6 +170,7 @@ export const themes: ThemeOption[] = [
 ];
 
 export const darkThemes: DaisyTheme[] = [
+  "glass-dark",
   "synthwave",
   "retro",
   "cyberpunk",

@@ -1035,3 +1035,103 @@ func TestEntityRepository_QueryByGroup_TimestampOrderDefaultsDesc(t *testing.T) 
 	assert.Equal(t, []uuid.UUID{first.ID, third.ID, second.ID}, order("updatedAt", ""))
 	assert.Equal(t, []uuid.UUID{second.ID, third.ID, first.ID}, order("updatedAt", "asc"))
 }
+
+func TestEntityRepository_Lending(t *testing.T) {
+	entities := useEntities(t, 3)
+	e := entities[0]
+
+	lend := func(lentTo string, lentDate, returnDate types.Date) EntityOut {
+		t.Helper()
+		full, err := tRepos.Entities.GetOne(context.Background(), e.ID)
+		require.NoError(t, err)
+
+		update := EntityUpdate{
+			ID:             e.ID,
+			Name:           e.Name,
+			Quantity:       full.Quantity,
+			LentTo:         lentTo,
+			LentDate:       lentDate,
+			LentReturnDate: returnDate,
+		}
+		if full.Parent != nil {
+			update.ParentID = full.Parent.ID
+		}
+		if full.EntityType != nil {
+			update.EntityTypeID = full.EntityType.ID
+		}
+		_, err = tRepos.Entities.UpdateByGroup(context.Background(), tGroup.ID, update)
+		require.NoError(t, err)
+
+		got, err := tRepos.Entities.GetOne(context.Background(), e.ID)
+		require.NoError(t, err)
+		return got
+	}
+
+	queryLent := func() []uuid.UUID {
+		t.Helper()
+		res, err := tRepos.Entities.QueryByGroup(context.Background(), tGroup.ID, EntityQuery{OnlyLent: true, Page: -1, PageSize: -1})
+		require.NoError(t, err)
+		ids := make([]uuid.UUID, 0, len(res.Items))
+		for _, s := range res.Items {
+			ids = append(ids, s.ID)
+		}
+		return ids
+	}
+
+	lentDate := types.DateFromTime(time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC))
+	returnDate := types.DateFromTime(time.Date(2026, 6, 15, 0, 0, 0, 0, time.UTC))
+
+	got := lend("Nachbar Peter", lentDate, returnDate)
+	assert.Equal(t, "Nachbar Peter", got.LentTo)
+	assert.Equal(t, lentDate.Time().Format("2006-01-02"), got.LentDate.Time().Format("2006-01-02"))
+	assert.Equal(t, returnDate.Time().Format("2006-01-02"), got.LentReturnDate.Time().Format("2006-01-02"))
+
+	ids := queryLent()
+	assert.Contains(t, ids, e.ID)
+	assert.NotContains(t, ids, entities[1].ID)
+
+	// Marking it returned clears all lending fields and drops it from the filter.
+	got = lend("", types.Date{}, types.Date{})
+	assert.Empty(t, got.LentTo)
+	assert.True(t, got.LentDate.Time().IsZero())
+	assert.True(t, got.LentReturnDate.Time().IsZero())
+	assert.NotContains(t, queryLent(), e.ID)
+}
+
+func TestEntityRepository_PatchLending(t *testing.T) {
+	e := useEntities(t, 1)[0]
+	ctx := context.Background()
+
+	returnDate := types.DateFromTime(time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC))
+	err := tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{
+		ID:      e.ID,
+		Lending: &EntityLending{LentTo: "  Anna  ", LentDate: types.DateFromTime(time.Now()), LentReturnDate: returnDate},
+	})
+	require.NoError(t, err)
+
+	got, err := tRepos.Entities.GetOne(ctx, e.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "Anna", got.LentTo)
+	assert.False(t, got.LentDate.Time().IsZero())
+	assert.Equal(t, "2026-07-01", got.LentReturnDate.Time().Format("2006-01-02"))
+	assert.Equal(t, e.Name, got.Name, "patching lending must not touch other fields")
+
+	// A patch without lending leaves it alone.
+	q := 5.0
+	require.NoError(t, tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{ID: e.ID, Quantity: &q}))
+	got, err = tRepos.Entities.GetOne(ctx, e.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "Anna", got.LentTo)
+
+	// Returned: empty LentTo clears everything, even if dates are sent.
+	err = tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{
+		ID:      e.ID,
+		Lending: &EntityLending{LentTo: "", LentReturnDate: returnDate},
+	})
+	require.NoError(t, err)
+	got, err = tRepos.Entities.GetOne(ctx, e.ID)
+	require.NoError(t, err)
+	assert.Empty(t, got.LentTo)
+	assert.True(t, got.LentDate.Time().IsZero())
+	assert.True(t, got.LentReturnDate.Time().IsZero())
+}

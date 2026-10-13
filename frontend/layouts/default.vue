@@ -176,7 +176,7 @@
           </div>
           <!-- IMPORTANT: if you change the height of this div, alter the top value in the item edit page-->
           <div
-            class="sticky top-0 z-20 flex h-[var(--header-height-mobile)] translate-y-[-0.5px] flex-col bg-secondary p-2 shadow-md sm:h-[var(--header-height)] sm:flex-row"
+            class="app-header sticky top-0 z-20 flex h-[var(--header-height-mobile)] translate-y-[-0.5px] flex-col bg-secondary p-2 shadow-md sm:h-[var(--header-height)] sm:flex-row"
             :class="{
               'lg:hidden': preferences.displayLegacyHeader,
             }"
@@ -206,8 +206,12 @@
                   <MdiQrcodeScan />
                 </Button>
               </div>
+              <div>
+                <AppOfflineStatus />
+              </div>
             </div>
           </div>
+          <AppOfflineBanner class="sticky top-[var(--header-height-mobile)] z-10 sm:top-[var(--header-height)]" />
 
           <slot />
           <div class="grow" />
@@ -293,6 +297,8 @@
   import ItemBarcodeModal from "~/components/Item/BarcodeModal.vue";
   import AppQuickMenuModal from "~/components/App/QuickMenuModal.vue";
   import AppScannerModal from "~/components/App/ScannerModal.vue";
+  import AppOfflineStatus from "~/components/App/OfflineStatus.vue";
+  import AppOfflineBanner from "~/components/App/OfflineBanner.vue";
   import AppLogo from "~/components/App/Logo.vue";
   import AppHeaderDecor from "~/components/App/HeaderDecor.vue";
   import AppHeaderText from "~/components/App/HeaderText.vue";

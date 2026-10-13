@@ -39,6 +39,7 @@ export enum DialogID {
   CreateEntityType = "create-entity-type",
   UpdateEntityType = "update-entity-type",
   WipeInventory = "wipe-inventory",
+  LendItem = "lend-item",
 }
 
 /**

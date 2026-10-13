@@ -30,6 +30,7 @@ export type ItemsQuery = {
   matchAllTags?: boolean;
   onlyWithoutPhoto?: boolean;
   onlyWithPhoto?: boolean;
+  onlyLent?: boolean;
   q?: string;
   fields?: string[];
 };

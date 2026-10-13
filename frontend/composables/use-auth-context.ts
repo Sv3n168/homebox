@@ -2,6 +2,7 @@ import type { CookieRef } from "nuxt/app";
 import type { PublicApi } from "~~/lib/api/public";
 import type { UserOut } from "~~/lib/api/types/data-contracts";
 import type { UserClient } from "~~/lib/api/user";
+import { clearCachedData, offlineStorageAvailable } from "~~/lib/offline/store";
 
 export interface IAuthContext {
   get token(): boolean | null;
@@ -103,6 +104,11 @@ class AuthContext implements IAuthContext {
 
     if (!r.error) {
       this.invalidateSession();
+      // The offline copy belongs to this session; queued writes stay so
+      // nothing typed offline is lost.
+      if (offlineStorageAvailable()) {
+        await clearCachedData().catch(e => console.warn("failed to clear offline data", e));
+      }
     }
 
     return r;

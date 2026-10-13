@@ -25,6 +25,13 @@
           :src="imageUrl"
           :alt="item.name"
         />
+        <div v-if="lent || pending" class="absolute right-1 top-1 flex flex-col items-end gap-1">
+          <ItemLentBadge v-if="lent" :item="item" class="shadow-md" />
+          <Badge v-if="pending" class="gap-1 bg-sky-600 text-white shadow-md hover:bg-sky-600/80">
+            <MdiCloudUploadOutline class="size-3.5" />
+            {{ $t("offline.not_synced") }}
+          </Badge>
+        </div>
         <div v-if="item.parent" class="absolute inset-x-1 bottom-1">
           <Badge class="text-wrap bg-secondary text-secondary-foreground hover:bg-secondary/70 hover:underline">
             <NuxtLink v-if="item.parent" :to="`/location/${item.parent.id}`">
@@ -88,6 +95,10 @@
   import TagChip from "@/components/Tag/Chip.vue";
   import type { Row } from "@tanstack/vue-table";
   import { Checkbox } from "@/components/ui/checkbox";
+  import ItemLentBadge from "~/components/Item/LentBadge.vue";
+  import { isLent } from "~/lib/lending";
+  import { PENDING_FLAG } from "~/lib/offline/query";
+  import MdiCloudUploadOutline from "~icons/mdi/cloud-upload-outline";
 
   const api = useUserApi();
   const preferences = useViewPreferences();
@@ -123,6 +134,9 @@
       default: () => null,
     },
   });
+
+  const lent = computed(() => isLent(props.item));
+  const pending = computed(() => PENDING_FLAG in props.item);
 
   const objectContain = computed(() => imageUrl.value !== "/no-image.jpg" && !preferences.value.legacyImageFit);
 

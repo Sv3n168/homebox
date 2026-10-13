@@ -58,6 +58,8 @@ func main() {
 		NewReDate("createdAt"),
 		NewReDate("updatedAt"),
 		NewReDate("soldDate"),
+		NewReDate("lentDate"),
+		NewReDate("lentReturnDate"),
 		NewReDate("purchaseDate"),
 		NewReDate("warrantyExpires"),
 		NewReDate("expiresAt"),

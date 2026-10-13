@@ -1,6 +1,7 @@
 import { PublicApi } from "~~/lib/api/public";
 import { UserClient } from "~~/lib/api/user";
 import { Requests } from "~~/lib/requests";
+import { offlineHooks } from "~~/lib/offline/adapter";
 
 export type Observer = {
   handler: (r: Response, req?: RequestInit) => void;
@@ -25,6 +26,7 @@ function logger(r: Response) {
 
 export function usePublicApi(): PublicApi {
   const requests = new Requests("", "", {});
+  requests.enableOffline(offlineHooks);
   return new PublicApi(requests);
 }
 
@@ -38,6 +40,7 @@ export function useUserApi(): UserClient {
   }
 
   const requests = new Requests("", "", headers);
+  requests.enableOffline(offlineHooks);
   requests.addResponseInterceptor(logger);
   requests.addResponseInterceptor(async r => {
     if (r.status === 401) {

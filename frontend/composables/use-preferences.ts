@@ -47,7 +47,7 @@ const DEFAULT_PREFERENCES: LocationViewPreferences = {
   showEmpty: true,
   editorAdvancedView: false,
   itemDisplayView: "card",
-  theme: "homebox",
+  theme: "glass",
   itemsPerTablePage: 12,
   displayLegacyHeader: false,
   legacyImageFit: false,
