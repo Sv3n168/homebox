@@ -335,6 +335,14 @@
                         "schema": {
                             "type": "boolean"
                         }
+                    },
+                    {
+                        "description": "only entities without any tag",
+                        "name": "onlyWithoutTags",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
                     }
                 ],
                 "responses": {

@@ -6,7 +6,14 @@ Diese Version von Homebox (Fork von [sysadminsmedia/homebox](https://github.com/
 - **Verliehen**: an wen, seit wann, zurück bis wann. Mit Badge auf jedem Artikel, Übersicht auf der Startseite und Markierung von Überfälligem.
 - **Verschlüsseltes Backup nach OneDrive**: jede Nacht automatisch, mit Restore per Befehl.
 - **Liquid-Glass-Design** im Stil von iOS, hell, dunkel oder automatisch passend zum iPhone. Auswahl unter **Profil → Theme**. Wer bisher Homebox genutzt hat, behält zunächst sein altes Theme und muss einmal umstellen.
-- **Schnelle Statistiken** auf der Startseite lassen sich per Tipp auf die Überschrift einklappen.
+- **Schnelle Statistiken** und **Verliehen** auf der Startseite lassen sich per Tipp auf die Überschrift einklappen.
+- **Für das Handy gemacht**: Tab-Leiste unten (Start, Suche, Scannen, Orte, Neu), kompakte Listenansicht, Menge per +/−, Ziehen zum Aktualisieren.
+- **Umräumen**: Artikel per **Verschieben** in eine andere Box bringen (Box suchen oder ihr Etikett scannen), mit **Rückgängig**. Auf einer Box holt **Hierher holen** Artikel per Suche hinein. Funktioniert auch offline. **Meine Boxen** auf der Startseite zeigt angeheftete und zuletzt benutzte Boxen.
+- **Foto zuerst**: **Neu → Mit Foto** öffnet direkt die Kamera und danach das Formular.
+- **Tags vergeben**: Filter „Nur Artikel ohne Tags“ in der Suche und ein **Tag-Assistent**, der alle Artikel ohne Tag nacheinander durchgeht.
+- **Doppelte vermeiden**: Beim Anlegen warnt Homebox vor ähnlichen Namen und bietet stattdessen **Menge +1** an. **Mögliche Doppelte** findet bestehende Dopplungen und führt sie zusammen (Mengen, Tags, Notizen und Fotos werden übernommen, der Rest archiviert).
+- **Unsortiert**: Neue Artikel ohne Box landen im Lagerort „Unsortiert“ (einmal unter **Einsortieren** anlegen) und werden dort mit einem Tipp in ihre Box gebracht.
+- **Box prüfen** (Mini-Inventur): Auf einer Box **Prüfen** antippen und jeden Artikel als da, fehlt oder woanders markieren. Fehlende bekommen den Tag **„Vermisst“** (verschwindet wieder, sobald du den Artikel verschiebst), die Box bekommt das Feld **„Zuletzt geprüft“**.
 
 ---
 
@@ -64,9 +71,11 @@ Im Tunnel ist das Ziel dann `http://homebox:7745`.
 
 **Im Keller:** App über das Icon öffnen. Oben erscheint ein orangefarbener Hinweis „Offline – du siehst die gespeicherte Kopie“. Du kannst stöbern, suchen, Boxen öffnen und neue Artikel anlegen, auch mit Fotos. Neue Artikel tragen das Badge **„Nicht synchronisiert“**, bis sie hochgeladen sind. Das passiert automatisch, sobald wieder Netz da ist. Die Zahl am Wolken-Symbol zeigt, wie viel noch wartet.
 
-**QR-Codes:** Scanne mit dem **Scanner-Knopf in der Homebox-App** (Symbol neben der Suche), **nicht mit der Kamera-App**. Die Kamera-App öffnet Links in Safari. Safari hat auf dem iPhone einen eigenen Speicher, getrennt von der Home-Bildschirm-App, und kennt die Offline-Kopie nicht. Der Scanner in der App öffnet die Box direkt, auch offline.
+**QR-Codes:** Scanne mit dem **Scannen-Knopf unten in der Homebox-App**, **nicht mit der Kamera-App**. Die Kamera-App öffnet Links in Safari. Safari hat auf dem iPhone einen eigenen Speicher, getrennt von der Home-Bildschirm-App, und kennt die Offline-Kopie nicht. Der Scanner in der App öffnet die Box direkt, auch offline.
 
-**Was offline nicht geht:** Bestehende Artikel bearbeiten, verschieben, verleihen oder löschen. Diese Aktionen sind ohne Netz gesperrt (mit Hinweis), damit sich keine widersprüchlichen Änderungen aufstauen. Fotos werden für alle Artikel als Vorschaubild offline gespeichert, Originalbilder und PDFs nur, wenn du sie einmal online geöffnet hast.
+**Was offline geht:** Neben dem Anlegen auch **Verschieben**. Hat jemand anderes denselben Artikel inzwischen woanders hingelegt, gewinnt die letzte Änderung.
+
+**Was offline nicht geht:** Bestehende Artikel bearbeiten, verleihen oder löschen. Diese Aktionen sind ohne Netz gesperrt (mit Hinweis), damit sich keine widersprüchlichen Änderungen aufstauen. Fotos werden für alle Artikel als Vorschaubild offline gespeichert, Originalbilder und PDFs nur, wenn du sie einmal online geöffnet hast.
 
 Android (Chrome) funktioniert genauso: Menü **⋮ → App installieren**.
 

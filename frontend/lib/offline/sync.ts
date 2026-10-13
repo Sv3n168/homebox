@@ -176,6 +176,29 @@ export async function flushOutbox(): Promise<FlushResult> {
         }
         await mapId(entry.tempId, created.id);
         rememberIdMapping(entry.tempId, created.id);
+      } else if (entry.kind === "move") {
+        if (failedTempIds.has(entry.entityId) || failedTempIds.has(entry.parentId)) {
+          await fail("entity could not be created");
+          continue;
+        }
+        const url = withMappedIds(entry.url, map);
+        const body = withMappedIds(entry.body, map);
+        if (url.includes("offline-") || JSON.stringify(body).includes("offline-")) {
+          // Waits for a create queued after it; try again next round.
+          continue;
+        }
+        // Last write wins: whatever was changed online meanwhile, the place set
+        // in the basement is the one that counts.
+        const r = await fetch(url, {
+          method: "PATCH",
+          headers: { ...entry.headers, "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (r.status === 401) return { synced, stoppedBy: "auth" };
+        if (!r.ok) {
+          await fail(`${r.status} ${(await r.text()).slice(0, 200)}`);
+          continue;
+        }
       } else {
         const entityId = map[entry.entityId] ?? entry.entityId;
         if (failedTempIds.has(entry.entityId)) {

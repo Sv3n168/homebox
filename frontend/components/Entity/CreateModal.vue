@@ -162,6 +162,12 @@
         :max-length="255"
         :min-length="1"
       />
+      <EntityDuplicateHint
+        v-if="!selectedEntityType?.isLocation"
+        :name="form.name"
+        @navigated="closeDialog(DialogID.CreateEntity)"
+        @increased="onIncreased"
+      />
       <FormTextField
         v-if="!selectedEntityType?.isLocation"
         v-model.number="form.quantity"
@@ -260,12 +266,14 @@
   import {
     deletePhoto,
     dataURLtoFile,
+    filesToPhotoPreviews,
     rotatePhotoPreview,
     setPrimaryPhoto,
     type PhotoPreview,
   } from "~/components/Form/photo-uploader";
   import { useEntityTypeStore } from "~~/stores/entityTypes";
   import EntitySelector from "~/components/Entity/Selector.vue";
+  import EntityDuplicateHint from "~/components/Entity/DuplicateHint.vue";
 
   const { t } = useI18n();
   const { openDialog, closeDialog, registerOpenDialogCallback } = useDialog();
@@ -283,6 +291,7 @@
 
   const locationsStore = useLocationStore();
   const locations = computed(() => locationsStore.allLocations);
+  const { inbox } = useInbox();
 
   const tagStore = useTagStore();
   const tags = computed(() => tagStore.tags);
@@ -557,6 +566,12 @@
       parent.value = {};
       resolvedParent.value = null;
       form.parentId = null;
+      // A cancelled earlier dialog must not leave its photos behind.
+      form.photos = [];
+
+      if (params.baseType === "item" && params.photoFile) {
+        appendPhotos(await filesToPhotoPreviews([params.photoFile]));
+      }
 
       if (params.baseType === "item") {
         selectedEntityType.value = entityTypes.value.find(t => !t.isLocation) || null;
@@ -616,6 +631,10 @@
         if (found) {
           form.location = found;
         }
+      } else if (params.baseType === "item" && inbox.value && !templateData.value?.defaultLocation) {
+        // No box in sight: park it in "Unsortiert", sorted in later.
+        const found = locations.value.find(l => l.id === inbox.value!.id);
+        if (found) form.location = found;
       }
 
       if (tagId.value) {
@@ -625,6 +644,14 @@
 
     onUnmounted(cleanup);
   });
+
+  // "Quantity +1" on an existing item instead of creating a duplicate.
+  function onIncreased(id: string) {
+    form.name = "";
+    form.photos = [];
+    closeDialog(DialogID.CreateEntity);
+    navigateTo(`/item/${id}`);
+  }
 
   async function create(close = true) {
     // An empty entityTypeId serializes to "" and fails UUID unmarshalling on the

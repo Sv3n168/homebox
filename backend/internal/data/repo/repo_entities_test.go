@@ -1135,3 +1135,31 @@ func TestEntityRepository_PatchLending(t *testing.T) {
 	assert.True(t, got.LentDate.Time().IsZero())
 	assert.True(t, got.LentReturnDate.Time().IsZero())
 }
+
+func TestEntityRepository_OnlyWithoutTags(t *testing.T) {
+	entities := useEntities(t, 2)
+	ctx := context.Background()
+
+	tag, err := tRepos.Tags.Create(ctx, tGroup.ID, TagCreate{Name: "werkzeug-" + fk.Str(6)})
+	require.NoError(t, err)
+	tagged := entities[0]
+	update := EntityUpdate{ID: tagged.ID, Name: tagged.Name, Quantity: 1, TagIDs: []uuid.UUID{tag.ID}}
+	if tagged.Parent != nil {
+		update.ParentID = tagged.Parent.ID
+	}
+	if tagged.EntityType != nil {
+		update.EntityTypeID = tagged.EntityType.ID
+	}
+	_, err = tRepos.Entities.UpdateByGroup(ctx, tGroup.ID, update)
+	require.NoError(t, err)
+
+	res, err := tRepos.Entities.QueryByGroup(ctx, tGroup.ID, EntityQuery{OnlyWithoutTags: true, Page: -1, PageSize: -1})
+	require.NoError(t, err)
+	ids := make([]uuid.UUID, 0, len(res.Items))
+	for _, s := range res.Items {
+		assert.Empty(t, s.Tags)
+		ids = append(ids, s.ID)
+	}
+	assert.NotContains(t, ids, tagged.ID)
+	assert.Contains(t, ids, entities[1].ID)
+}

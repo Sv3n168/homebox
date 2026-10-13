@@ -74,8 +74,9 @@ type (
 		OnlyWithoutPhoto bool    `json:"onlyWithoutPhoto"`
 		OnlyWithPhoto    bool    `json:"onlyWithPhoto"`
 		IncludeArchived  bool    `json:"includeArchived"`
-		FilterChildren   bool    `json:"filterChildren"` // when true, only return root entities (no parent)
-		OnlyLent         bool    `json:"onlyLent"`       // only entities that are currently lent out
+		FilterChildren   bool    `json:"filterChildren"`  // when true, only return root entities (no parent)
+		OnlyLent         bool    `json:"onlyLent"`        // only entities that are currently lent out
+		OnlyWithoutTags  bool    `json:"onlyWithoutTags"` // only entities that have no tag at all
 	}
 
 	DuplicateOptions struct {
@@ -863,6 +864,10 @@ func (r *EntityRepository) QueryByGroup(ctx context.Context, gid uuid.UUID, q En
 
 	if q.OnlyLent {
 		qb = qb.Where(entity.LentToNotNil(), entity.LentToNEQ(""))
+	}
+
+	if q.OnlyWithoutTags {
+		qb = qb.Where(entity.Not(entity.HasTag()))
 	}
 
 	if q.IncludeArchived {

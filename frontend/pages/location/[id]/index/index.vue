@@ -8,6 +8,19 @@
   import MdiPlus from "~icons/mdi/plus";
   import MdiPencil from "~icons/mdi/pencil";
   import MdiDelete from "~icons/mdi/delete";
+  import MdiDotsVertical from "~icons/mdi/dots-vertical";
+  import MdiArrowDownBold from "~icons/mdi/arrow-down-bold";
+  import MdiStar from "~icons/mdi/star";
+  import MdiStarOutline from "~icons/mdi/star-outline";
+  import MdiClipboardCheckOutline from "~icons/mdi/clipboard-check-outline";
+  import LocationCollectDialog from "~/components/Location/CollectDialog.vue";
+  import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+  } from "@/components/ui/dropdown-menu";
   import { useDialog } from "@/components/ui/dialog-provider";
   import { Card } from "@/components/ui/card";
   import {
@@ -44,9 +57,17 @@
 
   const route = useRoute();
   const api = useUserApi();
-  const preferences = useViewPreferences();
 
   const locationId = computed<string>(() => route.params.id as string);
+
+  const places = usePlaces();
+  const collectOpen = ref(false);
+  const pinned = computed(() => places.isPinned(locationId.value));
+  const togglePin = () => places.togglePin(locationId.value);
+  // Remember the box for "recently used" on the home page and in the box picker.
+  watch(locationId, id => id && places.visit(id), { immediate: true });
+
+  const collectTarget = computed(() => ({ id: locationId.value, name: location.value?.name ?? "" }));
 
   const { data: location } = useAsyncData(locationId.value, async () => {
     const { data, error } = await api.items.getLocation(locationId.value);
@@ -185,11 +206,8 @@
       }),
     ];
 
-    if (!preferences.value.showEmpty) {
-      return filterZeroValues(ret);
-    }
-
-    return ret;
+    // No "show empty" switch on this page, so empty notes never take up space.
+    return filterZeroValues(ret);
   });
 
   const { data: items, refresh: refreshItemList } = useAsyncData(
@@ -283,30 +301,54 @@
             </div>
             <div class="ml-auto mt-2 flex flex-wrap items-center justify-between gap-2">
               <LabelMaker :id="location.id" type="location" />
-              <Button class="w-9 md:w-auto" @click="openCreateItem">
+              <Button data-testid="location-create-item" @click="openCreateItem">
                 <MdiPlus name="mdi-plus" />
-                <span class="hidden md:inline">
-                  {{ $t("components.location.create_item") }}
-                </span>
+                <span>{{ $t("components.location.create_item") }}</span>
               </Button>
-              <Button class="w-9 md:w-auto" @click="goToEdit">
-                <MdiPencil name="mdi-pencil" />
-                <span class="hidden md:inline">
-                  {{ $t("global.edit") }}
-                </span>
-              </Button>
-              <Button variant="destructive" class="w-9 md:w-auto" @click="confirmDelete()">
-                <MdiDelete name="mdi-delete" />
-                <span class="hidden md:inline">
-                  {{ $t("global.delete") }}
-                </span>
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <Button variant="outline" size="icon" :aria-label="$t('global.more_actions')">
+                    <MdiDotsVertical class="size-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" class="w-48">
+                  <DropdownMenuItem @click="goToEdit">
+                    <MdiPencil class="mr-2 size-4" />
+                    {{ $t("global.edit") }}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem class="text-destructive focus:text-destructive" @click="confirmDelete()">
+                    <MdiDelete class="mr-2 size-4" />
+                    {{ $t("global.delete") }}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
         <Separator v-if="location && location.description" />
         <Markdown v-if="location && location.description" class="mt-3 text-base" :source="location.description" />
       </Card>
+
+      <!-- Quick actions for the box you just scanned -->
+      <div class="mt-3 flex flex-wrap gap-2" data-testid="box-actions">
+        <Button variant="outline" data-testid="box-collect" @click="collectOpen = true">
+          <MdiArrowDownBold />
+          {{ $t("collect.button") }}
+        </Button>
+        <Button variant="outline" data-testid="box-pin" @click="togglePin">
+          <MdiStar v-if="pinned" class="text-amber-500" />
+          <MdiStarOutline v-else />
+          {{ pinned ? $t("places.pinned") : $t("places.pin") }}
+        </Button>
+        <Button variant="outline" as-child data-testid="box-check">
+          <NuxtLink :to="`/location/${locationId}/check`">
+            <MdiClipboardCheckOutline />
+            {{ $t("box_check.button") }}
+          </NuxtLink>
+        </Button>
+      </div>
+      <LocationCollectDialog v-model:open="collectOpen" :box="collectTarget" @moved="refreshItemList" />
 
       <!-- Details (notes, custom fields) -->
       <BaseCard v-if="locationDetails.length > 0" class="mt-4">

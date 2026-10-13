@@ -167,6 +167,7 @@ html:is(.theme-glass, .theme-glass-light, .theme-glass-dark) {
 
 :is(.theme-glass, .theme-glass-light, .theme-glass-dark) .bg-card,
 :is(.theme-glass, .theme-glass-light, .theme-glass-dark) .app-header,
+:is(.theme-glass, .theme-glass-light, .theme-glass-dark) .app-tabbar,
 :is(.theme-glass, .theme-glass-light, .theme-glass-dark) [data-sidebar="sidebar"] {
   background-color: var(--glass-tint);
   background-image: linear-gradient(150deg, var(--glass-sheen) 0%, transparent 42%);
@@ -208,6 +209,10 @@ html:is(.theme-glass, .theme-glass-light, .theme-glass-dark) {
 }
 
 /* Header: a floating glass bar, detached from the screen edges. */
+:is(.theme-glass, .theme-glass-light, .theme-glass-dark) .app-tabbar {
+  color: hsl(var(--foreground));
+}
+
 :is(.theme-glass, .theme-glass-light, .theme-glass-dark) .app-header {
   --secondary-foreground: var(--foreground);
   color: hsl(var(--foreground));

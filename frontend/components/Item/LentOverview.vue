@@ -1,13 +1,22 @@
 <template>
   <section v-if="lentItems.length > 0" data-testid="lent-overview">
     <Subtitle>
-      {{ $t("items.lending.overview_title") }}
-      <Badge class="ml-2 border-transparent bg-amber-500 text-white">{{ lentItems.length }}</Badge>
-      <Badge v-if="overdueCount > 0" variant="destructive" class="ml-1">
-        {{ $t("items.lending.overdue_count", { count: overdueCount }) }}
-      </Badge>
+      <button
+        type="button"
+        class="flex items-center gap-1"
+        :aria-expanded="!collapsed"
+        data-testid="toggle-lent-overview"
+        @click="collapsed = !collapsed"
+      >
+        {{ $t("items.lending.overview_title") }}
+        <Badge class="ml-2 border-transparent bg-amber-500 text-white">{{ lentItems.length }}</Badge>
+        <Badge v-if="overdueCount > 0" variant="destructive" class="ml-1">
+          {{ $t("items.lending.overdue_count", { count: overdueCount }) }}
+        </Badge>
+        <MdiChevronDown class="size-5 transition-transform" :class="{ '-rotate-90': collapsed }" />
+      </button>
     </Subtitle>
-    <BaseCard>
+    <BaseCard v-show="!collapsed">
       <ul class="divide-y">
         <li
           v-for="entry in lentItems"
@@ -45,6 +54,7 @@
   import type { EntitySummary } from "~~/lib/api/types/data-contracts";
   import MdiHandExtended from "~icons/mdi/hand-extended";
   import MdiKeyboardReturn from "~icons/mdi/keyboard-return";
+  import MdiChevronDown from "~icons/mdi/chevron-down";
   import { Badge } from "@/components/ui/badge";
   import { Button } from "@/components/ui/button";
   import BaseCard from "@/components/Base/Card.vue";
@@ -53,6 +63,9 @@
 
   const api = useUserApi();
   const { markReturned } = useLending();
+
+  // Remembered per device, like the quick statistics.
+  const collapsed = useLocalStorage("homebox/home/lent-overview-collapsed", false);
 
   const { data, refresh } = useAsyncData("lent-items", async () => {
     const { data, error } = await api.items.getAll({ onlyLent: true, page: -1, pageSize: -1 });

@@ -88,6 +88,7 @@
   const matchAllTags = useOptionalRouteQuery("matchAllTags", false);
   const onlyWithoutPhoto = useOptionalRouteQuery("onlyWithoutPhoto", false);
   const onlyWithPhoto = useOptionalRouteQuery("onlyWithPhoto", false);
+  const onlyWithoutTags = useOptionalRouteQuery("onlyWithoutTags", false);
   const orderBy = useOptionalRouteQuery("orderBy", "name");
   const orderDirection = useOptionalRouteQuery("orderDirection", "asc");
   const qLoc = useOptionalRouteQuery("loc", []);
@@ -99,6 +100,21 @@
 
   const route = useRoute();
   const router = useRouter();
+
+  // Opened from the tab bar: put the cursor in the search field (autofocus only
+  // works on a full page load, not on in-app navigation).
+  onMounted(() => {
+    if (route.query.focus === "1") {
+      // The field renders once locations and tags are loaded.
+      let tries = 0;
+      const focus = () => {
+        const el = document.querySelector<HTMLInputElement>("[data-testid=search-input]");
+        if (el) el.focus();
+        else if (tries++ < 20) setTimeout(focus, 100);
+      };
+      nextTick(focus);
+    }
+  });
 
   onMounted(async () => {
     loading.value = true;
@@ -169,6 +185,11 @@
   const effectiveEntityTypeIDs = computed(() => {
     if (entityTypeIDs.value.length > 0) {
       return entityTypeIDs.value;
+    }
+
+    // "Only items without tags" is about items; boxes rarely carry tags.
+    if (onlyWithoutTags.value) {
+      return entityTypes.value.filter(t => !t.isLocation).map(t => t.id);
     }
 
     return entityTypes.value.map(t => t.id);
@@ -254,6 +275,12 @@
     }
   });
 
+  watch(onlyWithoutTags, (newV, oldV) => {
+    if (newV !== oldV) {
+      search();
+    }
+  });
+
   watch(orderBy, (newV, oldV) => {
     if (newV !== oldV) {
       search();
@@ -313,6 +340,7 @@
       matchAllTags: matchAllTags.value,
       onlyWithoutPhoto: onlyWithoutPhoto.value,
       onlyWithPhoto: onlyWithPhoto.value,
+      onlyWithoutTags: onlyWithoutTags.value,
       orderBy: orderBy.value,
       orderDirection: orderDirection.value,
       page: page.value,
@@ -354,6 +382,7 @@
       matchAllTags: matchAllTags.value,
       onlyWithoutPhoto: onlyWithoutPhoto.value,
       onlyWithPhoto: onlyWithPhoto.value,
+      onlyWithoutTags: onlyWithoutTags.value,
       includeArchived: includeArchived.value,
       page: page.value,
       pageSize: pageSize.value,
@@ -473,7 +502,14 @@
     <div v-if="locations && tags">
       <div class="flex flex-wrap items-end gap-4 md:flex-nowrap">
         <div class="w-full">
-          <Input v-model:model-value="query" :placeholder="$t('global.search')" class="h-12" />
+          <Input
+            v-model:model-value="query"
+            :placeholder="$t('global.search')"
+            class="h-12"
+            type="search"
+            :autofocus="route.query.focus === '1'"
+            data-testid="search-input"
+          />
           <div v-if="byAssetId" class="pl-2 pt-2 text-sm">
             <p>{{ $t("items.query_id", { id: parsedAssetId }) }}</p>
           </div>
@@ -523,6 +559,11 @@
               <Switch v-model="onlyWithPhoto" class="ml-auto" />
               <div class="grow" />
               <span class="text-right"> {{ $t("items.only_with_photo") }} </span>
+            </Label>
+            <Label class="flex cursor-pointer items-center">
+              <Switch v-model="onlyWithoutTags" class="ml-auto" data-testid="only-without-tags" />
+              <div class="grow" />
+              <span class="text-right"> {{ $t("tag_assistant.only_without_tags") }} </span>
             </Label>
             <Label class="flex cursor-pointer flex-col gap-2">
               <span class="text-right">

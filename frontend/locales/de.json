@@ -1,4 +1,45 @@
 {
+    "box_check": {
+        "back": "Zurück zur Box",
+        "button": "Prüfen",
+        "done": "Prüfung gespeichert – {missing} vermisst.",
+        "elsewhere": "Woanders",
+        "empty": "In dieser Box liegen keine Artikel.",
+        "finish": "Prüfung abschließen",
+        "intro": "Geh die Box durch: da, fehlt oder liegt woanders. Fehlende Artikel bekommen den Tag „Vermisst“.",
+        "missing": "Fehlt",
+        "missing_hint": "{count} Artikel vermisst",
+        "moved": "Verschoben",
+        "present": "Da",
+        "progress": "{done} von {total} geprüft",
+        "rest_present": "Rest ist da",
+        "show": "Anzeigen",
+        "title": "{name} prüfen",
+        "toast": {
+            "load_failed": "Box konnte nicht geladen werden",
+            "save_failed": "Prüfung konnte nicht vollständig gespeichert werden",
+            "saved": "Prüfung gespeichert"
+        }
+    },
+    "box_picker": {
+        "favorites": "Angeheftet & zuletzt",
+        "none": "Keine Box gefunden",
+        "not_a_box": "Dieses Etikett gehört zu keiner Box",
+        "not_a_label": "Kein Homebox-Etikett",
+        "same_box": "Da liegt es schon",
+        "scan": "Box scannen",
+        "search": "Box suchen…",
+        "search_instead": "Lieber suchen",
+        "title": "Box wählen"
+    },
+    "collect": {
+        "button": "Hierher räumen",
+        "done": "Drin",
+        "here": "Hierher",
+        "hint": "Suche den Artikel, den du in diese Box räumst.",
+        "search": "Artikel suchen…",
+        "title": "In {box} räumen"
+    },
     "collection": {
         "copy_invite": "Einladungslink kopieren",
         "create_invite": "Einladung erstellen",
@@ -289,6 +330,7 @@
                 "selectable": {
                     "card": "Karte",
                     "items": "Artikel",
+                    "list": "Liste",
                     "no_items": "Keine Artikel zum anzeigen",
                     "select_all": "Alles auswählen",
                     "select_card": "Karte auswählen",
@@ -434,6 +476,23 @@
             "using_template": "Verwendet Vorlage: {name}"
         }
     },
+    "duplicates": {
+        "exists": "Gibt es das schon?",
+        "intro": "Einträge mit (fast) gleichem Namen. Beim Zusammenführen werden Mengen addiert, Tags, Notizen und Fotos übernommen und der Rest archiviert.",
+        "keep_which": "Behalten",
+        "merge": "Zusammenführen",
+        "none": "Keine möglichen Doppelten gefunden.",
+        "not_duplicate": "Kein Duplikat",
+        "plus_one": "Menge +1",
+        "title": "Mögliche Doppelte",
+        "toast": {
+            "load_failed": "Artikel konnten nicht geladen werden",
+            "merge_failed": "Zusammenführen fehlgeschlagen",
+            "merged": "In {name} zusammengeführt",
+            "plus_one": "{name}: Menge jetzt {count}",
+            "plus_one_failed": "Menge konnte nicht geändert werden"
+        }
+    },
     "errors": {
         "api_failure": "Backend-API-Aufruf fehlgeschlagen: "
     },
@@ -471,6 +530,7 @@
         "location": "Lagerort",
         "locations": "Lagerorte",
         "maintenance": "Wartung",
+        "more_actions": "Weitere Aktionen",
         "name": "Name",
         "navigate": "Navigieren",
         "no": "Nein",
@@ -801,6 +861,17 @@
         "search": "Suche",
         "templates": "Vorlagen"
     },
+    "move": {
+        "button": "Verschieben",
+        "title": "„{name}“ verschieben nach…",
+        "toast": {
+            "failed": "{count} Artikel konnten nicht verschoben werden",
+            "moved_many": "{count} Artikel nach {target} verschoben",
+            "moved_one": "{name} nach {target} verschoben",
+            "undone": "Verschieben rückgängig gemacht"
+        },
+        "undo": "Rückgängig"
+    },
     "offline": {
         "available": "{count} Einträge offline verfügbar",
         "banner": "Offline – du siehst die gespeicherte Kopie",
@@ -808,10 +879,11 @@
         "discard": "Verwerfen",
         "entry": {
             "create": "Neu: {name}",
+            "move": "Verschoben: {name} → {target}",
             "photo": "Foto für {name}"
         },
         "failed": "{count} Änderung(en) vom Server abgelehnt",
-        "hint": "Offline gemachte Änderungen werden automatisch hochgeladen, sobald wieder Netz da ist. Offline kannst du stöbern, suchen, Etiketten scannen und neue Artikel anlegen.",
+        "hint": "Offline gemachte Änderungen werden automatisch hochgeladen, sobald wieder Netz da ist. Offline kannst du stöbern, suchen, Etiketten scannen, neue Artikel anlegen und Artikel verschieben.",
         "last_sync": "Zuletzt synchronisiert {time}",
         "needs_login": "Deine Sitzung ist abgelaufen – bitte neu anmelden, damit die Änderungen hochgeladen werden.",
         "never_synced": "Noch nicht offline verfügbar – wird automatisch geladen, solange du online bist.",
@@ -828,7 +900,7 @@
         "status_button": "Offline-Status",
         "sync_now": "Jetzt synchronisieren",
         "toast": {
-            "blocked": "Offline: Ohne Netz können nur neue Artikel angelegt werden.",
+            "blocked": "Offline: Ohne Netz kannst du nur Artikel anlegen und verschieben.",
             "queued": "Offline gespeichert – wird hochgeladen, sobald wieder Netz da ist.",
             "synced": "{count} Offline-Änderung(en) hochgeladen"
         }
@@ -838,6 +910,11 @@
             "no_templates": "Noch keine Vorlagen.",
             "title": "Vorlagen"
         }
+    },
+    "places": {
+        "my_boxes": "Meine Boxen",
+        "pin": "Anheften",
+        "pinned": "Angeheftet"
     },
     "profile": {
         "active": "Aktiv",
@@ -979,6 +1056,46 @@
         "switch_camera": "Kamera wechseln",
         "title": "AR-Scanner",
         "unsupported": "AR-Scannen wird von diesem Browser nicht unterstützt"
+    },
+    "sort": {
+        "all_done": "Alles einsortiert!",
+        "create_inbox": "„Unsortiert“ anlegen",
+        "hint": "{count} Artikel in {name}",
+        "into_box": "Einsortieren",
+        "intro": "Alles aus „Unsortiert“ in die richtige Box bringen – Box scannen oder suchen.",
+        "no_inbox": "Es gibt noch keinen Lagerort „Unsortiert“. Neue Artikel ohne Box landen dort und werden später hier einsortiert.",
+        "title": "Einsortieren",
+        "toast": {
+            "create_failed": "„Unsortiert“ konnte nicht angelegt werden",
+            "load_failed": "Artikel konnten nicht geladen werden"
+        }
+    },
+    "tabbar": {
+        "create": "Neu",
+        "create_photo": "Mit Foto",
+        "create_plain": "Ohne Foto",
+        "home": "Start",
+        "locations": "Orte",
+        "scan": "Scannen",
+        "search": "Suche"
+    },
+    "tag_assistant": {
+        "add": "Hinzufügen",
+        "all_done": "Alle Artikel haben mindestens einen Tag.",
+        "hint": "{count} Artikel ohne Tag",
+        "loading": "Lade…",
+        "new_tag": "Neuer Tag…",
+        "only_without_tags": "Nur Artikel ohne Tags",
+        "remaining": "Noch {count} von {total}",
+        "save_next": "Speichern & weiter",
+        "skip": "Überspringen",
+        "start": "Tags vergeben",
+        "title": "Tag-Assistent",
+        "toast": {
+            "create_failed": "Tag konnte nicht angelegt werden",
+            "load_failed": "Artikel konnten nicht geladen werden",
+            "save_failed": "Tags konnten nicht gespeichert werden"
+        }
     },
     "tags": {
         "no_results": "Keine Tags gefunden",

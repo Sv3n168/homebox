@@ -52,6 +52,14 @@ export default defineNuxtConfig({
   app: {
     head: {
       script: [{ src: "/set-theme.js" }],
+      meta: [
+        // viewport-fit=cover exposes the iPhone safe-area insets (tab bar above the home indicator).
+        { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+        { name: "apple-mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-title", content: "Homebox" },
+        { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      ],
+      link: [{ rel: "apple-touch-icon", href: "/pwa-192x192.png" }],
     },
   },
 

@@ -175,6 +175,8 @@
       await codeReader.decodeFromVideoDevice(newSource, video.value!, (result, err) => {
         if (result && !loading.value) {
           loading.value = true;
+          // Short buzz as confirmation (Android; iOS doesn't let web apps vibrate).
+          navigator.vibrate?.(40);
           try {
             const url = new URL(result.getText());
             if (!url.pathname.startsWith("/")) {

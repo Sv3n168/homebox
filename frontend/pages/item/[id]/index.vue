@@ -48,6 +48,7 @@
   import ItemLendDialog from "~/components/Item/LendDialog.vue";
   import MdiHandExtended from "~icons/mdi/hand-extended";
   import MdiKeyboardReturn from "~icons/mdi/keyboard-return";
+  import MdiFolderMoveOutline from "~icons/mdi/folder-move-outline";
   import { isLent, isOverdue, lendingDate } from "~/lib/lending";
 
   const { t } = useI18n();
@@ -93,10 +94,23 @@
   // Through computeds: this vue-tsc version types useAsyncData's ref as
   // un-unwrapped inside the template.
   const lendTarget = computed(() => item.value);
+  const quantity = computed(() => item.value?.quantity ?? 0);
   const lentTo = computed(() => item.value?.lentTo ?? "");
   const lentOverdue = computed(() => isOverdue(item.value));
   const lentSince = computed(() => lendingDate(item.value?.lentDate));
   const lentDue = computed(() => lendingDate(item.value?.lentReturnDate));
+
+  const { pick } = useBoxPicker();
+  const { move } = useMove();
+
+  async function moveItem() {
+    const it = item.value;
+    if (!it) return;
+    const box = await pick({ title: t("move.title", { name: it.name }), exclude: it.parent ? [it.parent.id] : [] });
+    if (box && (await move([it], box)) > 0) {
+      refresh();
+    }
+  }
 
   async function returnItem() {
     if (!item.value) return;
@@ -720,6 +734,16 @@
                   <DateTime :date="item?.updatedAt" />
                 </div>
               </div>
+              <div class="mt-2 flex items-center gap-2" data-testid="quantity-stepper">
+                <span class="text-sm text-muted-foreground">{{ $t("items.quantity") }}</span>
+                <Button size="icon" variant="outline" :aria-label="'-1'" @click="adjustQuantity(-1)">
+                  <MdiMinus />
+                </Button>
+                <span class="min-w-8 text-center text-xl font-semibold tabular-nums">{{ quantity }}</span>
+                <Button size="icon" variant="outline" :aria-label="'+1'" @click="adjustQuantity(1)">
+                  <MdiPlus />
+                </Button>
+              </div>
             </div>
             <div class="ml-auto mt-2 flex flex-wrap items-center justify-between gap-2">
               <LabelMaker
@@ -728,6 +752,16 @@
                 type="asset"
               />
               <LabelMaker v-else :id="item.id" type="item" />
+              <Button
+                variant="outline"
+                class="w-9 md:w-auto"
+                :aria-label="$t('move.button')"
+                data-testid="item-move"
+                @click="moveItem"
+              >
+                <MdiFolderMoveOutline />
+                <span class="hidden md:inline">{{ $t("move.button") }}</span>
+              </Button>
               <Button
                 v-if="!lent"
                 variant="outline"

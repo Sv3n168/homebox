@@ -1047,7 +1047,7 @@
 
 :root {
   --header-height: 4rem;
-  --header-height-mobile: 7rem;
+  --header-height-mobile: 3.75rem;
 }
 
 /* Non-scoped styles for regular text */

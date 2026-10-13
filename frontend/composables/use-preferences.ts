@@ -2,7 +2,7 @@ import type { Ref } from "vue";
 import type { EntitySummary } from "~/lib/api/types/data-contracts";
 import type { DaisyTheme } from "~~/lib/data/themes";
 
-export type ViewType = "table" | "card";
+export type ViewType = "table" | "card" | "list";
 
 export type DuplicateSettings = {
   copyMaintenance: boolean;
@@ -44,9 +44,9 @@ type PreferenceChanges = Partial<Record<keyof LocationViewPreferences, Preferenc
 
 const DEFAULT_PREFERENCES: LocationViewPreferences = {
   showDetails: true,
-  showEmpty: true,
+  showEmpty: false,
   editorAdvancedView: false,
-  itemDisplayView: "card",
+  itemDisplayView: "list",
   theme: "glass",
   itemsPerTablePage: 12,
   displayLegacyHeader: false,

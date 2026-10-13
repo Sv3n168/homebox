@@ -4,59 +4,72 @@
       {{ $t("components.location.selector.parent_location") }}
     </Label>
 
-    <Popover v-model:open="open">
-      <PopoverTrigger as-child>
-        <Button :id="id" variant="outline" role="combobox" :aria-expanded="open" class="w-full justify-between">
-          <span class="min-w-0 flex-auto truncate text-left">
-            {{ value && value.name ? value.name : $t("components.location.selector.select_location") }}
-          </span>
+    <div class="flex gap-2">
+      <Popover v-model:open="open">
+        <PopoverTrigger as-child>
+          <Button :id="id" variant="outline" role="combobox" :aria-expanded="open" class="w-full justify-between">
+            <span class="min-w-0 flex-auto truncate text-left">
+              {{ value && value.name ? value.name : $t("components.location.selector.select_location") }}
+            </span>
 
-          <span class="ml-2 flex items-center">
-            <button
-              v-if="value"
-              type="button"
-              class="shrink-0 rounded p-1 hover:bg-primary/20"
-              :aria-label="$t('components.location.selector.clear')"
-              @click.stop.prevent="clearSelection"
-            >
-              <X class="size-4" />
-            </button>
-
-            <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
-          </span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent class="w-[--reka-popper-anchor-width] p-0">
-        <Command :ignore-filter="true">
-          <CommandInput
-            v-model="search"
-            :placeholder="$t('components.location.selector.search_location')"
-            :display-value="_ => ''"
-          />
-          <CommandEmpty>{{ $t("components.location.selector.no_location_found") }}</CommandEmpty>
-          <CommandList>
-            <CommandGroup>
-              <CommandItem
-                v-for="location in filteredLocations"
-                :key="location.id"
-                :value="location.id"
-                @select="selectLocation(location as unknown as EntitySummary)"
+            <span class="ml-2 flex items-center">
+              <button
+                v-if="value"
+                type="button"
+                class="shrink-0 rounded p-1 hover:bg-primary/20"
+                :aria-label="$t('components.location.selector.clear')"
+                @click.stop.prevent="clearSelection"
               >
-                <Check :class="cn('mr-2 h-4 w-4', value?.id === location.id ? 'opacity-100' : 'opacity-0')" />
-                <div>
-                  <div class="flex w-full">
-                    {{ location.name }}
+                <X class="size-4" />
+              </button>
+
+              <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
+            </span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent class="w-[--reka-popper-anchor-width] p-0">
+          <Command :ignore-filter="true">
+            <CommandInput
+              v-model="search"
+              :placeholder="$t('components.location.selector.search_location')"
+              :display-value="_ => ''"
+            />
+            <CommandEmpty>{{ $t("components.location.selector.no_location_found") }}</CommandEmpty>
+            <CommandList>
+              <CommandGroup>
+                <CommandItem
+                  v-for="location in filteredLocations"
+                  :key="location.id"
+                  :value="location.id"
+                  @select="selectLocation(location as unknown as EntitySummary)"
+                >
+                  <Check :class="cn('mr-2 h-4 w-4', value?.id === location.id ? 'opacity-100' : 'opacity-0')" />
+                  <div>
+                    <div class="flex w-full">
+                      {{ location.name }}
+                    </div>
+                    <div v-if="location.name !== location.treeString" class="mt-1 text-xs text-muted-foreground">
+                      {{ location.treeString }}
+                    </div>
                   </div>
-                  <div v-if="location.name !== location.treeString" class="mt-1 text-xs text-muted-foreground">
-                    {{ location.treeString }}
-                  </div>
-                </div>
-              </CommandItem>
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+                </CommandItem>
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        class="shrink-0"
+        :aria-label="$t('box_picker.scan')"
+        data-testid="location-selector-scan"
+        @click="scanBox"
+      >
+        <MdiQrcodeScan />
+      </Button>
+    </div>
   </div>
 </template>
 
@@ -70,6 +83,7 @@
   import { cn } from "~/lib/utils";
   import type { EntitySummary } from "~~/lib/api/types/data-contracts";
   import { useFlatLocations } from "~~/composables/use-location-helpers";
+  import MdiQrcodeScan from "~icons/mdi/qrcode-scan";
 
   type Props = {
     modelValue?: EntitySummary | null;
@@ -88,6 +102,7 @@
   function selectLocation(location: EntitySummary) {
     if (value.value?.id !== location.id) {
       value.value = location;
+      places.visit(location.id);
     } else {
       value.value = null;
     }
@@ -100,7 +115,25 @@
     open.value = false;
   }
 
+  const places = usePlaces();
+  const { pick } = useBoxPicker();
+
+  async function scanBox() {
+    open.value = false;
+    const box = await pick({ scan: true });
+    if (box) {
+      value.value = box as unknown as EntitySummary;
+      places.visit(box.id);
+    }
+  }
+
   const filteredLocations = computed(() => {
+    // Without a search term, pinned and recently used boxes come first.
+    if (!search.value) {
+      const fav = places.favorites.value;
+      const rank = (id: string) => (fav.includes(id) ? fav.indexOf(id) : fav.length);
+      return [...locations.value].sort((a, b) => rank(a.id) - rank(b.id));
+    }
     const keys = ["name", "treeString"];
     const filtered = fuzzysort.go(search.value, locations.value, { keys, all: true }).map(i => i.obj);
 

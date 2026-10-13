@@ -5,12 +5,15 @@
   import MdiSelectSearch from "~icons/mdi/select-search";
   import { Checkbox } from "@/components/ui/checkbox";
   import DropdownAction from "./data-table-dropdown.vue";
+  import ItemListRow from "@/components/Item/ListRow.vue";
 
   const preferences = useViewPreferences();
 
   const props = defineProps<{
     table: TableType<EntitySummary>;
     locationFlatTree?: FlatTreeItem[];
+    /** One row per item instead of picture cards. */
+    compact?: boolean;
   }>();
 
   defineEmits<{
@@ -53,6 +56,15 @@
   <div v-if="table.getRowModel().rows?.length === 0" class="flex flex-col items-center gap-2">
     <MdiSelectSearch class="size-10" />
     <p>{{ $t("items.no_results") }}</p>
+  </div>
+  <div v-else-if="compact" class="divide-y overflow-hidden rounded-xl border bg-card">
+    <ItemListRow
+      v-for="item in table.getRowModel().rows"
+      :key="item.original.id"
+      :item="item.original"
+      :table-row="preferences.quickActions.enabled ? item : null"
+      :location-flat-tree="locationFlatTree"
+    />
   </div>
   <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
     <ItemCard

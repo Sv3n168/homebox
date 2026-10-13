@@ -2644,6 +2644,10 @@ paths:
         in: query
         name: onlyLent
         type: boolean
+      - description: only entities without any tag
+        in: query
+        name: onlyWithoutTags
+        type: boolean
       produces:
       - application/json
       responses:

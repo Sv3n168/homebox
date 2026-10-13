@@ -8,11 +8,14 @@
   import BaseCard from "@/components/Base/Card.vue";
   import Subtitle from "~/components/global/Subtitle.vue";
   import StatCard from "~/components/global/StatCard/StatCard.vue";
-  import ItemCard from "~/components/Item/Card.vue";
+  import ItemListRow from "~/components/Item/ListRow.vue";
   import LocationCard from "~/components/Location/Card.vue";
   import TagChip from "~/components/Tag/Chip.vue";
   import Table from "~/components/Item/View/Table.vue";
   import ItemLentOverview from "~/components/Item/LentOverview.vue";
+  import ItemUntaggedHint from "~/components/Item/UntaggedHint.vue";
+  import LocationMyBoxes from "~/components/Location/MyBoxes.vue";
+  import HomeTidy from "~/components/Home/Tidy.vue";
   import MdiChevronDown from "~icons/mdi/chevron-down";
 
   const { t } = useI18n();
@@ -61,6 +64,12 @@
         </div>
       </section>
 
+      <ItemUntaggedHint />
+
+      <HomeTidy />
+
+      <LocationMyBoxes />
+
       <ItemLentOverview />
 
       <section>
@@ -70,8 +79,8 @@
         <BaseCard v-else-if="breakpoints.lg">
           <Table :items="itemTable.items" />
         </BaseCard>
-        <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <ItemCard v-for="item in itemTable.items" :key="item.id" :item="item" />
+        <div v-else class="divide-y overflow-hidden rounded-xl border bg-card">
+          <ItemListRow v-for="item in itemTable.items" :key="item.id" :item="item" />
         </div>
       </section>
 

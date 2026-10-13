@@ -31,7 +31,7 @@
     columns: ColumnDef<EntitySummary, TValue>[];
     data: EntitySummary[];
     disableControls?: boolean;
-    view: "table" | "card";
+    view: "table" | "card" | "list";
     locationFlatTree?: FlatTreeItem[];
     externalPagination?: Pagination;
   }>();
@@ -168,6 +168,13 @@
 
   watch(() => pagination.value.pageIndex, scrollToTop);
   watch(() => props.externalPagination?.page, scrollToTop);
+
+  // Pagination twice around a short list is just clutter; keep the bottom bar for long lists.
+  const multiPage = computed(() =>
+    props.externalPagination
+      ? props.externalPagination.totalSize > props.externalPagination.pageSize
+      : table.getPageCount() > 1
+  );
 </script>
 
 <template>
@@ -261,8 +268,13 @@
           :external-pagination="externalPagination"
         />
       </div>
-      <CardView :table="table" :location-flat-tree="locationFlatTree" @refresh="$emit('refresh')" />
-      <div v-if="!props.disableControls" class="pt-2">
+      <CardView
+        :table="table"
+        :location-flat-tree="locationFlatTree"
+        :compact="props.view === 'list'"
+        @refresh="$emit('refresh')"
+      />
+      <div v-if="!props.disableControls && multiPage" class="pt-2">
         <DataTableControls
           :table="table"
           :pagination="pagination"

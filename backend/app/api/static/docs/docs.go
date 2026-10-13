@@ -316,6 +316,12 @@ const docTemplate = `{
                         "description": "only entities that are currently lent out",
                         "name": "onlyLent",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "only entities without any tag",
+                        "name": "onlyWithoutTags",
+                        "in": "query"
                     }
                 ],
                 "responses": {

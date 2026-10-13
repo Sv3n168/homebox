@@ -123,6 +123,9 @@
     if (entry.kind === "create") {
       return t("offline.entry.create", { name: String(entry.body.name ?? "") });
     }
+    if (entry.kind === "move") {
+      return t("offline.entry.move", { name: entry.entityName, target: entry.targetName });
+    }
     return t("offline.entry.photo", { name: nameOf(entry.entityId) || entry.fileName });
   }
 

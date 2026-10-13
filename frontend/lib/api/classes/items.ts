@@ -31,6 +31,7 @@ export type ItemsQuery = {
   onlyWithoutPhoto?: boolean;
   onlyWithPhoto?: boolean;
   onlyLent?: boolean;
+  onlyWithoutTags?: boolean;
   q?: string;
   fields?: string[];
 };
