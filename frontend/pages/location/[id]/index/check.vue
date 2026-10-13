@@ -3,6 +3,8 @@
   import { toast } from "@/components/ui/sonner";
   import type { EntityFieldData, EntitySummary } from "~~/lib/api/types/data-contracts";
   import { entityToUpdate } from "~~/lib/cleanup/duplicates";
+  import { queueFieldUpdate } from "~~/lib/offline/adapter";
+  import { offlineState } from "~~/lib/offline/state";
   import MdiCheck from "~icons/mdi/check";
   import MdiClose from "~icons/mdi/close";
   import MdiFolderMoveOutline from "~icons/mdi/folder-move-outline";
@@ -86,29 +88,40 @@
     return failed;
   }
 
+  // Offline (basement): the date is queued and set once the server is reachable.
+  const prefs = useViewPreferences();
+  const isOffline = () => !offlineState.online || (typeof navigator !== "undefined" && navigator.onLine === false);
+
   async function stampBox(): Promise<boolean> {
-    const { data, error } = await api.items.getLocation(boxId.value);
-    if (error) return false;
-    const update = entityToUpdate(data);
     const today = new Date().toISOString().slice(0, 10);
-    const fields = [...(update.fields ?? [])];
-    const existing = fields.find(f => f.name === CHECKED_FIELD);
-    if (existing) {
-      existing.type = "text";
-      existing.textValue = today;
-    } else {
-      fields.push({
-        id: null,
-        name: CHECKED_FIELD,
-        type: "text",
-        textValue: today,
-        numberValue: 0,
-        booleanValue: false,
-      } as unknown as EntityFieldData);
+    if (!isOffline()) {
+      const { data, error } = await api.items.getLocation(boxId.value);
+      if (!error && data) {
+        const update = entityToUpdate(data);
+        const fields = [...(update.fields ?? [])];
+        const existing = fields.find(f => f.name === CHECKED_FIELD);
+        if (existing) {
+          existing.type = "text";
+          existing.textValue = today;
+        } else {
+          fields.push({
+            id: null,
+            name: CHECKED_FIELD,
+            type: "text",
+            textValue: today,
+            numberValue: 0,
+            booleanValue: false,
+          } as unknown as EntityFieldData);
+        }
+        update.fields = fields;
+        const res = await api.items.update(boxId.value, update);
+        if (!res.error) return true;
+      }
+      if (!isOffline()) return false;
     }
-    update.fields = fields;
-    const res = await api.items.update(boxId.value, update);
-    return !res.error;
+    const tenant = prefs.value.collectionId;
+    await queueFieldUpdate(tenant ? { "X-Tenant": tenant } : {}, boxId.value, CHECKED_FIELD, today);
+    return true;
   }
 
   async function finish() {

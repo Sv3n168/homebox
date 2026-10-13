@@ -203,6 +203,28 @@ export function applyMoves(all: EntitySummary[], moves: PendingMove[]): EntitySu
   return all.map(e => byId.get(e.id)!);
 }
 
+export type PendingPatch = { entityId: string; quantity?: number; tagIds?: string[] };
+
+/** Queued quantity / tag edits, oldest first, applied on top of the summaries. */
+export function applyPatches(all: EntitySummary[], patches: PendingPatch[], tags: TagSummary[]): EntitySummary[] {
+  if (patches.length === 0) return all;
+  const byId = new Map(all.map(e => [e.id, e]));
+  const tagById = new Map(tags.map(t => [t.id, t]));
+  for (const p of patches) {
+    const e = byId.get(p.entityId);
+    if (!e) continue;
+    const next = { ...e };
+    if (p.quantity !== undefined) next.quantity = p.quantity;
+    if (p.tagIds !== undefined) {
+      next.tags = p.tagIds
+        .map(id => tagById.get(id) ?? e.tags.find(t => t.id === id))
+        .filter((t): t is TagSummary => !!t);
+    }
+    byId.set(e.id, next);
+  }
+  return all.map(e => byId.get(e.id)!);
+}
+
 /** GET /v1/assets/{id}: entities carrying that asset ID. */
 export function queryAsset(all: EntitySummary[], assetId: string): ListResult {
   const wanted = parseAssetId(assetId);

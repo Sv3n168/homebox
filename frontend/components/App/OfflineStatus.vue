@@ -126,6 +126,18 @@
     if (entry.kind === "move") {
       return t("offline.entry.move", { name: entry.entityName, target: entry.targetName });
     }
+    if (entry.kind === "patch") {
+      const name = entry.entityName || nameOf(entry.entityId);
+      return entry.body.quantity !== undefined && entry.body.tagIds === undefined
+        ? t("offline.entry.quantity", { name, quantity: entry.body.quantity })
+        : t("offline.entry.patch", { name });
+    }
+    if (entry.kind === "tag") {
+      return t("offline.entry.tag", { name: entry.body.name });
+    }
+    if (entry.kind === "field") {
+      return t("offline.entry.field", { name: entry.entityName, field: entry.name, value: entry.value });
+    }
     return t("offline.entry.photo", { name: nameOf(entry.entityId) || entry.fileName });
   }
 

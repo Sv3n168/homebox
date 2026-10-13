@@ -892,11 +892,15 @@
         "discard": "Verwerfen",
         "entry": {
             "create": "Neu: {name}",
+            "field": "{name}: {field} {value}",
             "move": "Verschoben: {name} → {target}",
-            "photo": "Foto für {name}"
+            "patch": "Tags geändert: {name}",
+            "photo": "Foto für {name}",
+            "quantity": "Menge: {name} → {quantity}",
+            "tag": "Neuer Tag: {name}"
         },
         "failed": "{count} Änderung(en) vom Server abgelehnt",
-        "hint": "Offline gemachte Änderungen werden automatisch hochgeladen, sobald wieder Netz da ist. Offline kannst du stöbern, suchen, Etiketten scannen, neue Artikel anlegen und Artikel verschieben.",
+        "hint": "Offline gemachte Änderungen werden automatisch hochgeladen, sobald wieder Netz da ist. Offline kannst du stöbern, suchen, Etiketten scannen, neue Artikel anlegen, Artikel verschieben, Mengen ändern und Boxen prüfen.",
         "last_sync": "Zuletzt synchronisiert {time}",
         "needs_login": "Deine Sitzung ist abgelaufen – bitte neu anmelden, damit die Änderungen hochgeladen werden.",
         "never_synced": "Noch nicht offline verfügbar – wird automatisch geladen, solange du online bist.",
@@ -913,7 +917,7 @@
         "status_button": "Offline-Status",
         "sync_now": "Jetzt synchronisieren",
         "toast": {
-            "blocked": "Offline: Ohne Netz kannst du nur Artikel anlegen und verschieben.",
+            "blocked": "Offline: Ohne Netz kannst du Artikel anlegen, verschieben, Mengen ändern und Boxen prüfen.",
             "queued": "Offline gespeichert – wird hochgeladen, sobald wieder Netz da ist.",
             "synced": "{count} Offline-Änderung(en) hochgeladen"
         }

@@ -9,6 +9,7 @@
 //  5. warm the cache for the few other endpoints the pages need
 
 import type { EntityListResult, EntityOut } from "../api/types/data-contracts";
+import { entityToUpdate } from "../cleanup/duplicates";
 import { rememberIdMapping } from "./adapter";
 import { offlineState } from "./state";
 import {
@@ -133,7 +134,7 @@ export async function flushOutbox(): Promise<FlushResult> {
 
   progress("upload", entries.length);
   const failedTempIds = new Set(
-    entries.filter(e => e.kind === "create" && e.error).map(e => (e as { tempId: string }).tempId)
+    entries.filter(e => (e.kind === "create" || e.kind === "tag") && e.error).map(e => (e as { tempId: string }).tempId)
   );
 
   for (const entry of entries) {
@@ -144,7 +145,7 @@ export async function flushOutbox(): Promise<FlushResult> {
     const fail = async (message: string) => {
       entry.error = message;
       await putOutbox(entry);
-      if (entry.kind === "create") failedTempIds.add(entry.tempId);
+      if (entry.kind === "create" || entry.kind === "tag") failedTempIds.add(entry.tempId);
     };
 
     try {
@@ -176,8 +177,37 @@ export async function flushOutbox(): Promise<FlushResult> {
         }
         await mapId(entry.tempId, created.id);
         rememberIdMapping(entry.tempId, created.id);
-      } else if (entry.kind === "move") {
-        if (failedTempIds.has(entry.entityId) || failedTempIds.has(entry.parentId)) {
+      } else if (entry.kind === "tag") {
+        // Reuse a tag of the same name (made online meanwhile, or an earlier
+        // attempt that did reach the server) instead of creating a twin.
+        const listed = await fetch(`${API}/tags`, { headers: entry.headers });
+        if (listed.status === 401) return { synced, stoppedBy: "auth" };
+        const existing = listed.ok
+          ? ((await listed.json()) as { id: string; name: string }[]).find(
+              tg => tg.name.trim().toLowerCase() === entry.body.name.trim().toLowerCase()
+            )
+          : undefined;
+        let tagId = existing?.id;
+        if (!tagId) {
+          entry.attempted = true;
+          await putOutbox(entry);
+          const r = await fetch(entry.url, {
+            method: "POST",
+            headers: { ...entry.headers, "Content-Type": "application/json" },
+            body: JSON.stringify(entry.body),
+          });
+          if (r.status === 401) return { synced, stoppedBy: "auth" };
+          if (!r.ok) {
+            await fail(`${r.status} ${(await r.text()).slice(0, 200)}`);
+            continue;
+          }
+          tagId = ((await r.json()) as { id: string }).id;
+        }
+        await mapId(entry.tempId, tagId);
+        rememberIdMapping(entry.tempId, tagId);
+      } else if (entry.kind === "move" || entry.kind === "patch") {
+        const parentId = entry.kind === "move" ? entry.parentId : "";
+        if (failedTempIds.has(entry.entityId) || failedTempIds.has(parentId)) {
           await fail("entity could not be created");
           continue;
         }
@@ -187,12 +217,47 @@ export async function flushOutbox(): Promise<FlushResult> {
           // Waits for a create queued after it; try again next round.
           continue;
         }
-        // Last write wins: whatever was changed online meanwhile, the place set
-        // in the basement is the one that counts.
+        // Last write wins: whatever was changed online meanwhile, the place,
+        // quantity or tags set in the basement are the ones that count.
         const r = await fetch(url, {
           method: "PATCH",
           headers: { ...entry.headers, "Content-Type": "application/json" },
           body: JSON.stringify(body),
+        });
+        if (r.status === 401) return { synced, stoppedBy: "auth" };
+        if (!r.ok) {
+          await fail(`${r.status} ${(await r.text()).slice(0, 200)}`);
+          continue;
+        }
+      } else if (entry.kind === "field") {
+        const entityId = map[entry.entityId] ?? entry.entityId;
+        if (failedTempIds.has(entry.entityId)) {
+          await fail("entity could not be created");
+          continue;
+        }
+        if (entityId.startsWith("offline-")) continue;
+        // No PATCH for custom fields: merge into the current entity and PUT it.
+        const url = `${API}/entities/${entityId}`;
+        const got = await fetch(url, { headers: entry.headers });
+        if (got.status === 401) return { synced, stoppedBy: "auth" };
+        if (!got.ok) {
+          await fail(`${got.status} ${(await got.text()).slice(0, 200)}`);
+          continue;
+        }
+        const update = entityToUpdate((await got.json()) as EntityOut);
+        const fields = (update.fields ?? []).filter(f => f.name !== entry.name);
+        fields.push({
+          id: null,
+          name: entry.name,
+          type: "text",
+          textValue: entry.value,
+          numberValue: 0,
+          booleanValue: false,
+        } as never);
+        const r = await fetch(url, {
+          method: "PUT",
+          headers: { ...entry.headers, "Content-Type": "application/json" },
+          body: JSON.stringify({ ...update, fields }),
         });
         if (r.status === 401) return { synced, stoppedBy: "auth" };
         if (!r.ok) {

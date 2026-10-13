@@ -904,11 +904,15 @@
         "discard": "Discard",
         "entry": {
             "create": "New: {name}",
+            "field": "{name}: {field} {value}",
             "move": "Moved: {name} → {target}",
-            "photo": "Photo for {name}"
+            "patch": "Tags changed: {name}",
+            "photo": "Photo for {name}",
+            "quantity": "Quantity: {name} → {quantity}",
+            "tag": "New tag: {name}"
         },
         "failed": "{count} change(s) rejected by the server",
-        "hint": "Changes made offline are uploaded automatically when the connection is back. Offline, you can browse, search, scan labels, add new items and move items.",
+        "hint": "Changes made offline are uploaded automatically when the connection is back. Offline, you can browse, search, scan labels, add and move items, change quantities and check boxes.",
         "last_sync": "Last sync {time}",
         "needs_login": "Your session expired – please log in again to upload the changes.",
         "never_synced": "Not available offline yet – it is downloaded automatically while online.",
@@ -925,7 +929,7 @@
         "status_button": "Offline status",
         "sync_now": "Sync now",
         "toast": {
-            "blocked": "Offline: only adding and moving items works without a connection.",
+            "blocked": "Offline: only adding and moving items, changing quantities and checking boxes work without a connection.",
             "queued": "Saved offline – it will be uploaded once you are back online.",
             "synced": "{count} offline change(s) uploaded"
         }
