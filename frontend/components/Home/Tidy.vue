@@ -3,20 +3,20 @@
     <NuxtLink
       v-if="inboxCount > 0"
       to="/sort"
-      class="flex items-center gap-3 rounded-xl border bg-card p-3 shadow-sm"
+      class="flex items-center gap-2 rounded-xl border bg-card px-3 py-2 text-sm shadow-sm"
       data-testid="inbox-hint"
     >
-      <MdiInboxArrowDown class="size-6 shrink-0 text-primary" />
+      <MdiInboxArrowDown class="size-5 shrink-0 text-primary" />
       <span class="grow">{{ $t("sort.hint", { count: inboxCount, name: inbox?.name ?? "" }) }}</span>
       <span class="font-medium text-primary">{{ $t("sort.into_box") }}</span>
     </NuxtLink>
     <NuxtLink
       v-if="missing && missingCount > 0"
       :to="`/tag/${missing.id}`"
-      class="flex items-center gap-3 rounded-xl border bg-card p-3 shadow-sm"
+      class="flex items-center gap-2 rounded-xl border bg-card px-3 py-2 text-sm shadow-sm"
       data-testid="missing-hint"
     >
-      <MdiHelpCircleOutline class="size-6 shrink-0 text-destructive" />
+      <MdiHelpCircleOutline class="size-5 shrink-0 text-destructive" />
       <span class="grow">{{ $t("box_check.missing_hint", { count: missingCount }) }}</span>
       <span class="font-medium text-primary">{{ $t("box_check.show") }}</span>
     </NuxtLink>

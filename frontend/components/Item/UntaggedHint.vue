@@ -2,10 +2,10 @@
   <NuxtLink
     v-if="count > 0"
     to="/tag-assistant"
-    class="flex items-center gap-3 rounded-xl border bg-card p-3 shadow-sm"
+    class="flex items-center gap-2 rounded-xl border bg-card px-3 py-2 text-sm shadow-sm"
     data-testid="untagged-hint"
   >
-    <MdiTagOffOutline class="size-6 shrink-0 text-amber-600" />
+    <MdiTagOffOutline class="size-5 shrink-0 text-amber-600" />
     <span class="grow">{{ $t("tag_assistant.hint", { count }) }}</span>
     <span class="font-medium text-primary">{{ $t("tag_assistant.start") }}</span>
   </NuxtLink>
