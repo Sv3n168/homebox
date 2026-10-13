@@ -20,6 +20,7 @@
       <span class="grow">{{ $t("box_check.missing_hint", { count: missingCount }) }}</span>
       <span class="font-medium text-primary">{{ $t("box_check.show") }}</span>
     </NuxtLink>
+    <HomeCheckReminder />
     <!-- One row on the phone, so the shortcuts never take two lines. -->
     <div class="grid grid-cols-3 gap-2 sm:flex">
       <NuxtLink
@@ -39,6 +40,7 @@
   import MdiInboxArrowDown from "~icons/mdi/inbox-arrow-down";
   import MdiHelpCircleOutline from "~icons/mdi/help-circle-outline";
   import { useTagStore } from "~/stores/tags";
+  import HomeCheckReminder from "~/components/Home/CheckReminder.vue";
 
   // Home shortcuts for keeping things in order: unsorted items, missing items,
   // duplicates and untagged items.

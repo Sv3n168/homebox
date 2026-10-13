@@ -32,6 +32,13 @@
         "search_instead": "Search instead",
         "title": "Choose a box"
     },
+    "check_reminder": {
+        "ack": "Dismiss",
+        "ack_failed": "Could not save",
+        "hint": "{count, plural, =1 {1 box not checked for over 6 months} other {{count} boxes not checked for over 6 months}}",
+        "last": "last checked {date}",
+        "never": "never checked"
+    },
     "collect": {
         "button": "Put items here",
         "done": "Here",

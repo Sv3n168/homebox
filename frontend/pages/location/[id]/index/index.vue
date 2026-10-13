@@ -198,12 +198,15 @@
         type: "markdown",
         text: location.value.notes,
       },
-      ...(location.value.fields || []).map(field => {
-        return {
-          name: field.name,
-          text: field.textValue,
-        } as AnyDetail;
-      }),
+      // The box-check reminder's bookkeeping field is not meant for reading.
+      ...(location.value.fields || [])
+        .filter(field => field.name !== ACK_FIELD)
+        .map(field => {
+          return {
+            name: field.name,
+            text: field.textValue,
+          } as AnyDetail;
+        }),
     ];
 
     // No "show empty" switch on this page, so empty notes never take up space.

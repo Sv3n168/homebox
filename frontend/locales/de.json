@@ -32,6 +32,13 @@
         "search_instead": "Lieber suchen",
         "title": "Box wählen"
     },
+    "check_reminder": {
+        "ack": "Quittieren",
+        "ack_failed": "Konnte nicht gespeichert werden",
+        "hint": "{count, plural, =1 {1 Box seit über 6 Monaten nicht geprüft} other {{count} Boxen seit über 6 Monaten nicht geprüft}}",
+        "last": "zuletzt geprüft {date}",
+        "never": "noch nie geprüft"
+    },
     "collect": {
         "button": "Hierher räumen",
         "done": "Drin",
