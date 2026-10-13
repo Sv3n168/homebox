@@ -596,6 +596,27 @@
         "insured": "Versichert",
         "invalid_asset_id": "Ungültige Asset-ID",
         "last": "Letzte",
+        "lending": {
+            "badge": "Verliehen",
+            "badge_to": "Verliehen an {name}",
+            "due": "zurück bis {date}",
+            "lend": "Verleihen",
+            "lend_title": "„{name}“ verleihen",
+            "lent_date": "Verliehen am",
+            "lent_to": "Verliehen an",
+            "mark_returned": "Zurückgegeben",
+            "overdue": "Überfällig",
+            "overdue_count": "{count} überfällig",
+            "overview_title": "Verliehen",
+            "return_date": "Zurück bis",
+            "since": "seit {date}",
+            "title": "Verliehen",
+            "toast": {
+                "failed": "Verleih konnte nicht gespeichert werden",
+                "lent": "Verliehen an {name}",
+                "returned": "Als zurückgegeben markiert"
+            }
+        },
         "lifetime_warranty": "Lebenslange Garantie",
         "location": "Lagerort",
         "manual": "Bedienungsanleitung",

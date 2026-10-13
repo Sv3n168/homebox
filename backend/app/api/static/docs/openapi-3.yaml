@@ -3268,6 +3268,16 @@ components:
           type: string
         type:
           type: string
+    repo.EntityLending:
+      type: object
+      properties:
+        lentDate:
+          type: string
+        lentReturnDate:
+          type: string
+        lentTo:
+          type: string
+          maxLength: 255
     repo.EntityListResult:
       type: object
       properties:
@@ -3416,6 +3426,14 @@ components:
           nullable: true
         id:
           type: string
+        lending:
+          description: |-
+            Lending replaces all lending fields when set; an empty LentTo marks
+            the entity as returned and clears the dates.
+          allOf:
+            - $ref: "#/components/schemas/repo.EntityLending"
+          x-omitempty: true
+          nullable: true
         locationId:
           type: string
           x-omitempty: true

@@ -1169,6 +1169,16 @@ definitions:
       type:
         type: string
     type: object
+  repo.EntityLending:
+    properties:
+      lentDate:
+        type: string
+      lentReturnDate:
+        type: string
+      lentTo:
+        maxLength: 255
+        type: string
+    type: object
   repo.EntityListResult:
     properties:
       items:
@@ -1313,6 +1323,14 @@ definitions:
         x-omitempty: true
       id:
         type: string
+      lending:
+        allOf:
+        - $ref: '#/definitions/repo.EntityLending'
+        description: |-
+          Lending replaces all lending fields when set; an empty LentTo marks
+          the entity as returned and clears the dates.
+        x-nullable: true
+        x-omitempty: true
       locationId:
         type: string
         x-nullable: true

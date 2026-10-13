@@ -4918,6 +4918,21 @@ const docTemplate = `{
                 }
             }
         },
+        "repo.EntityLending": {
+            "type": "object",
+            "properties": {
+                "lentDate": {
+                    "type": "string"
+                },
+                "lentReturnDate": {
+                    "type": "string"
+                },
+                "lentTo": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
         "repo.EntityListResult": {
             "type": "object",
             "properties": {
@@ -5120,6 +5135,16 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "lending": {
+                    "description": "Lending replaces all lending fields when set; an empty LentTo marks\nthe entity as returned and clears the dates.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/repo.EntityLending"
+                        }
+                    ],
+                    "x-nullable": true,
+                    "x-omitempty": true
                 },
                 "locationId": {
                     "type": "string",

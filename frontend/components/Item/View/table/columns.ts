@@ -9,6 +9,8 @@ import type { EntitySummary } from "~/lib/api/types/data-contracts";
 import Currency from "~/components/global/Currency.vue";
 import DateTime from "~/components/global/DateTime.vue";
 import { cn } from "~/lib/utils";
+import ItemLentBadge from "~/components/Item/LentBadge.vue";
+import { isLent } from "~/lib/lending";
 
 /**
  * Create columns with i18n support.
@@ -89,7 +91,11 @@ export function makeColumns({
           },
           () => sortable(column, "items.name")
         ),
-      cell: ({ row }) => h("span", { class: "text-sm font-medium" }, row.getValue("name")),
+      cell: ({ row }) =>
+        h("span", { class: "flex flex-wrap items-center gap-2" }, [
+          h("span", { class: "text-sm font-medium" }, row.getValue("name")),
+          isLent(row.original) ? h(ItemLentBadge, { item: row.original, compact: true }) : null,
+        ]),
     },
     {
       id: "quantity",

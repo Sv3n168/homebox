@@ -25,6 +25,9 @@
           :src="imageUrl"
           :alt="item.name"
         />
+        <div v-if="lent" class="absolute right-1 top-1">
+          <ItemLentBadge :item="item" class="shadow-md" />
+        </div>
         <div v-if="item.parent" class="absolute inset-x-1 bottom-1">
           <Badge class="text-wrap bg-secondary text-secondary-foreground hover:bg-secondary/70 hover:underline">
             <NuxtLink v-if="item.parent" :to="`/location/${item.parent.id}`">
@@ -88,6 +91,8 @@
   import TagChip from "@/components/Tag/Chip.vue";
   import type { Row } from "@tanstack/vue-table";
   import { Checkbox } from "@/components/ui/checkbox";
+  import ItemLentBadge from "~/components/Item/LentBadge.vue";
+  import { isLent } from "~/lib/lending";
 
   const api = useUserApi();
   const preferences = useViewPreferences();
@@ -123,6 +128,8 @@
       default: () => null,
     },
   });
+
+  const lent = computed(() => isLent(props.item));
 
   const objectContain = computed(() => imageUrl.value !== "/no-image.jpg" && !preferences.value.legacyImageFit);
 

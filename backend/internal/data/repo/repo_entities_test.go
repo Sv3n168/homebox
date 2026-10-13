@@ -1097,3 +1097,41 @@ func TestEntityRepository_Lending(t *testing.T) {
 	assert.True(t, got.LentReturnDate.Time().IsZero())
 	assert.NotContains(t, queryLent(), e.ID)
 }
+
+func TestEntityRepository_PatchLending(t *testing.T) {
+	e := useEntities(t, 1)[0]
+	ctx := context.Background()
+
+	returnDate := types.DateFromTime(time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC))
+	err := tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{
+		ID:      e.ID,
+		Lending: &EntityLending{LentTo: "  Anna  ", LentDate: types.DateFromTime(time.Now()), LentReturnDate: returnDate},
+	})
+	require.NoError(t, err)
+
+	got, err := tRepos.Entities.GetOne(ctx, e.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "Anna", got.LentTo)
+	assert.False(t, got.LentDate.Time().IsZero())
+	assert.Equal(t, "2026-07-01", got.LentReturnDate.Time().Format("2006-01-02"))
+	assert.Equal(t, e.Name, got.Name, "patching lending must not touch other fields")
+
+	// A patch without lending leaves it alone.
+	q := 5.0
+	require.NoError(t, tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{ID: e.ID, Quantity: &q}))
+	got, err = tRepos.Entities.GetOne(ctx, e.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "Anna", got.LentTo)
+
+	// Returned: empty LentTo clears everything, even if dates are sent.
+	err = tRepos.Entities.Patch(ctx, tGroup.ID, e.ID, EntityPatch{
+		ID:      e.ID,
+		Lending: &EntityLending{LentTo: "", LentReturnDate: returnDate},
+	})
+	require.NoError(t, err)
+	got, err = tRepos.Entities.GetOne(ctx, e.ID)
+	require.NoError(t, err)
+	assert.Empty(t, got.LentTo)
+	assert.True(t, got.LentDate.Time().IsZero())
+	assert.True(t, got.LentReturnDate.Time().IsZero())
+}

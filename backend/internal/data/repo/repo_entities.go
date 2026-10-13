@@ -164,6 +164,15 @@ type (
 		LocationID   uuid.UUID   `json:"locationId"         extensions:"x-nullable,x-omitempty"`
 		EntityTypeID uuid.UUID   `json:"entityTypeId"       extensions:"x-nullable,x-omitempty"`
 		TagIDs       []uuid.UUID `json:"tagIds"             extensions:"x-nullable,x-omitempty"`
+		// Lending replaces all lending fields when set; an empty LentTo marks
+		// the entity as returned and clears the dates.
+		Lending *EntityLending `json:"lending,omitempty" extensions:"x-nullable,x-omitempty"`
+	}
+
+	EntityLending struct {
+		LentTo         string     `json:"lentTo"         validate:"max=255"`
+		LentDate       types.Date `json:"lentDate"`
+		LentReturnDate types.Date `json:"lentReturnDate"`
 	}
 
 	EntitySummary struct {
@@ -1803,7 +1812,6 @@ func (r *EntityRepository) UpdateByGroup(ctx context.Context, gid uuid.UUID, dat
 		SetSoldTo(data.SoldTo).
 		SetSoldPrice(data.SoldPrice).
 		SetSoldNotes(data.SoldNotes).
-		SetLentTo(data.LentTo).
 		SetNotes(data.Notes).
 		SetLifetimeWarranty(data.LifetimeWarranty).
 		SetInsured(data.Insured).
@@ -1830,16 +1838,7 @@ func (r *EntityRepository) UpdateByGroup(ctx context.Context, gid uuid.UUID, dat
 	} else {
 		q.SetWarrantyExpires(t)
 	}
-	if t := data.LentDate.Time(); t.IsZero() {
-		q.ClearLentDate()
-	} else {
-		q.SetLentDate(t)
-	}
-	if t := data.LentReturnDate.Time(); t.IsZero() {
-		q.ClearLentReturnDate()
-	} else {
-		q.SetLentReturnDate(t)
-	}
+	applyLending(q, EntityLending{LentTo: data.LentTo, LentDate: data.LentDate, LentReturnDate: data.LentReturnDate})
 
 	if data.EntityTypeID != uuid.Nil {
 		q.SetEntityTypeID(data.EntityTypeID)
@@ -2149,6 +2148,10 @@ func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data En
 		q.SetQuantity(*data.Quantity)
 	}
 
+	if data.Lending != nil {
+		applyLending(q, *data.Lending)
+	}
+
 	switch {
 	case data.LocationID != uuid.Nil:
 		// Validate against the parent we'll end up with, not the one we were
@@ -2311,6 +2314,28 @@ func (r *EntityRepository) GetAllCustomFieldNames(ctx context.Context, gid uuid.
 
 	span.SetAttributes(attribute.Int("names.count", len(fieldNames)))
 	return fieldNames, nil
+}
+
+// applyLending writes the lending fields. Not lent (empty LentTo) always
+// clears the dates too, so a returned entity carries no stale loan data.
+func applyLending(q *ent.EntityUpdate, l EntityLending) {
+	lentTo := strings.TrimSpace(l.LentTo)
+	if lentTo == "" {
+		q.ClearLentTo().ClearLentDate().ClearLentReturnDate()
+		return
+	}
+
+	q.SetLentTo(lentTo)
+	if t := l.LentDate.Time(); t.IsZero() {
+		q.ClearLentDate()
+	} else {
+		q.SetLentDate(t)
+	}
+	if t := l.LentReturnDate.Time(); t.IsZero() {
+		q.ClearLentReturnDate()
+	} else {
+		q.SetLentReturnDate(t)
+	}
 }
 
 // ZeroOutTimeFields sets all date fields to the beginning of the day.

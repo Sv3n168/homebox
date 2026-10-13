@@ -600,6 +600,27 @@
         "insured": "Insured",
         "invalid_asset_id": "Invalid Asset ID",
         "last": "Last",
+        "lending": {
+            "badge": "Lent",
+            "badge_to": "Lent to {name}",
+            "due": "due back {date}",
+            "lend": "Lend",
+            "lend_title": "Lend \"{name}\"",
+            "lent_date": "Lent on",
+            "lent_to": "Lent to",
+            "mark_returned": "Returned",
+            "overdue": "Overdue",
+            "overdue_count": "{count} overdue",
+            "overview_title": "Lent items",
+            "return_date": "Due back",
+            "since": "since {date}",
+            "title": "Lending",
+            "toast": {
+                "failed": "Could not save lending",
+                "lent": "Lent to {name}",
+                "returned": "Marked as returned"
+            }
+        },
         "lifetime_warranty": "Lifetime Warranty",
         "location": "Location",
         "manual": "Manual",

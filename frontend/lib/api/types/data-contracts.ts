@@ -1,5 +1,4 @@
 /* post-processed by ./scripts/process-types.go */
-/* post-processed by ./scripts/process-types.go */
 /* eslint-disable */
 /* tslint:disable */
 // @ts-nocheck
@@ -786,6 +785,13 @@ export interface EntityFieldData {
   type: string;
 }
 
+export interface EntityLending {
+  lentDate: Date | string;
+  lentReturnDate: Date | string;
+  /** @maxLength 255 */
+  lentTo: string;
+}
+
 export interface EntityListResult {
   items: EntitySummary[];
   page: number;
@@ -857,6 +863,11 @@ export interface EntityOut {
 export interface EntityPatch {
   entityTypeId?: string | null;
   id: string;
+  /**
+   * Lending replaces all lending fields when set; an empty LentTo marks
+   * the entity as returned and clears the dates.
+   */
+  lending?: EntityLending | null;
   locationId?: string | null;
   parentId?: string | null;
   quantity?: number | null;
