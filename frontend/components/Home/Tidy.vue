@@ -3,32 +3,33 @@
     <NuxtLink
       v-if="inboxCount > 0"
       to="/sort"
-      class="flex items-center gap-3 rounded-xl border bg-card p-3 shadow-sm"
+      class="flex items-center gap-2 rounded-xl border bg-card px-3 py-2 text-sm shadow-sm"
       data-testid="inbox-hint"
     >
-      <MdiInboxArrowDown class="size-6 shrink-0 text-primary" />
+      <MdiInboxArrowDown class="size-5 shrink-0 text-primary" />
       <span class="grow">{{ $t("sort.hint", { count: inboxCount, name: inbox?.name ?? "" }) }}</span>
       <span class="font-medium text-primary">{{ $t("sort.into_box") }}</span>
     </NuxtLink>
     <NuxtLink
       v-if="missing && missingCount > 0"
       :to="`/tag/${missing.id}`"
-      class="flex items-center gap-3 rounded-xl border bg-card p-3 shadow-sm"
+      class="flex items-center gap-2 rounded-xl border bg-card px-3 py-2 text-sm shadow-sm"
       data-testid="missing-hint"
     >
-      <MdiHelpCircleOutline class="size-6 shrink-0 text-destructive" />
+      <MdiHelpCircleOutline class="size-5 shrink-0 text-destructive" />
       <span class="grow">{{ $t("box_check.missing_hint", { count: missingCount }) }}</span>
       <span class="font-medium text-primary">{{ $t("box_check.show") }}</span>
     </NuxtLink>
-    <div class="flex flex-wrap gap-2 text-sm">
-      <NuxtLink to="/duplicates" class="rounded-full border bg-card px-3 py-1.5" data-testid="tidy-duplicates">
-        {{ $t("duplicates.title") }}
-      </NuxtLink>
-      <NuxtLink to="/tag-assistant" class="rounded-full border bg-card px-3 py-1.5">
-        {{ $t("tag_assistant.title") }}
-      </NuxtLink>
-      <NuxtLink to="/sort" class="rounded-full border bg-card px-3 py-1.5" data-testid="tidy-sort">
-        {{ $t("sort.title") }}
+    <!-- One row on the phone, so the shortcuts never take two lines. -->
+    <div class="grid grid-cols-3 gap-2 sm:flex">
+      <NuxtLink
+        v-for="link in links"
+        :key="link.to"
+        :to="link.to"
+        class="truncate rounded-full border bg-card px-1 py-1.5 text-center text-[13px] sm:px-3 sm:text-sm"
+        :data-testid="link.testid"
+      >
+        {{ $t(link.label) }}
       </NuxtLink>
     </div>
   </section>
@@ -41,6 +42,12 @@
 
   // Home shortcuts for keeping things in order: unsorted items, missing items,
   // duplicates and untagged items.
+
+  const links = [
+    { to: "/duplicates", label: "home.tidy.duplicates", testid: "tidy-duplicates" },
+    { to: "/tag-assistant", label: "home.tidy.tags", testid: "tidy-tags" },
+    { to: "/sort", label: "home.tidy.sort", testid: "tidy-sort" },
+  ];
 
   const api = useUserApi();
   const { inbox } = useInbox();

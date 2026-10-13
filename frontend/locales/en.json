@@ -477,10 +477,18 @@
         }
     },
     "duplicates": {
+        "confirm": {
+            "archive": "\"{name}\" ({place}) gets archived",
+            "carry": "Tags, notes and photos are carried over. Archived entries can be found again in search under Options → \"Include archived items\".",
+            "keep": "\"{name}\" ({place}) stays, quantity afterwards {count}",
+            "title": "Please confirm – this will happen:",
+            "yes": "Yes, merge"
+        },
         "exists": "Already in your inventory?",
-        "intro": "Entries with (almost) the same name. Merging adds up the quantities, keeps tags, notes and photos, and archives the rest.",
+        "include": "include",
+        "intro": "Entries with (almost) the same name. Nothing happens on its own: choose which entry stays and which belong to it, then confirm the summary.",
         "keep_which": "Keep",
-        "merge": "Merge",
+        "merge": "Merge…",
         "none": "No likely duplicates found.",
         "not_duplicate": "Not a duplicate",
         "plus_one": "Quantity +1",
@@ -563,6 +571,11 @@
         "recently_added": "Recently Added",
         "storage_locations": "Storage Locations",
         "tags": "Tags",
+        "tidy": {
+            "duplicates": "Duplicates",
+            "sort": "Sort in",
+            "tags": "Tag assistant"
+        },
         "total_items": "Total Items",
         "total_locations": "Total Locations",
         "total_tags": "Total Tags",

@@ -45,8 +45,8 @@
   --glass-border: rgba(255, 255, 255, 0.7);
   --glass-edge: rgba(255, 255, 255, 0.95);
   --glass-sheen: rgba(255, 255, 255, 0.45);
-  --glass-shadow: 0 12px 32px -12px rgba(28, 38, 90, 0.28), 0 2px 6px rgba(28, 38, 90, 0.06);
-  --glass-wallpaper: radial-gradient(60% 50% at 8% 0%, #9cc2ff 0%, transparent 70%), radial-gradient(50% 45% at 95% 12%, #f6bfe3 0%, transparent 70%), radial-gradient(55% 50% at 12% 95%, #aef0de 0%, transparent 70%), radial-gradient(50% 45% at 92% 90%, #ffe0a6 0%, transparent 70%), linear-gradient(180deg, #eef2fb 0%, #f4f1fa 100%);
+  --glass-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.05);
+  --glass-wallpaper: linear-gradient(180deg, #f5f5f8 0%, #ececf1 100%);
   --radius: 1.1rem;
   color-scheme: light;
 }
@@ -87,7 +87,7 @@
   --glass-edge: rgba(255, 255, 255, 0.28);
   --glass-sheen: rgba(255, 255, 255, 0.08);
   --glass-shadow: 0 14px 36px -12px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.35);
-  --glass-wallpaper: radial-gradient(60% 50% at 8% 0%, #1d3b8f 0%, transparent 70%), radial-gradient(50% 45% at 95% 12%, #5b1f86 0%, transparent 70%), radial-gradient(55% 50% at 12% 95%, #0d5e58 0%, transparent 70%), radial-gradient(50% 45% at 92% 90%, #7d1845 0%, transparent 70%), linear-gradient(180deg, #0b0c14 0%, #0f0b16 100%);
+  --glass-wallpaper: linear-gradient(180deg, #0c0c0f 0%, #060608 100%);
   --radius: 1.1rem;
   color-scheme: dark;
 }
@@ -129,7 +129,7 @@
     --glass-edge: rgba(255, 255, 255, 0.28);
     --glass-sheen: rgba(255, 255, 255, 0.08);
     --glass-shadow: 0 14px 36px -12px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.35);
-    --glass-wallpaper: radial-gradient(60% 50% at 8% 0%, #1d3b8f 0%, transparent 70%), radial-gradient(50% 45% at 95% 12%, #5b1f86 0%, transparent 70%), radial-gradient(55% 50% at 12% 95%, #0d5e58 0%, transparent 70%), radial-gradient(50% 45% at 92% 90%, #7d1845 0%, transparent 70%), linear-gradient(180deg, #0b0c14 0%, #0f0b16 100%);
+    --glass-wallpaper: linear-gradient(180deg, #0c0c0f 0%, #060608 100%);
     color-scheme: dark;
   }
 }
