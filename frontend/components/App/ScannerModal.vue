@@ -57,7 +57,13 @@
 
 <script setup lang="ts">
   import { computed, ref, watch } from "vue";
-  import { BarcodeFormat, BrowserMultiFormatReader, NotFoundException } from "@zxing/library";
+  import {
+    BarcodeFormat,
+    BrowserMultiFormatReader,
+    ChecksumException,
+    FormatException,
+    NotFoundException,
+  } from "@zxing/library";
   import { useI18n } from "vue-i18n";
   import { DialogID } from "@/components/ui/dialog-provider/utils";
   import { Dialog, DialogHeader, DialogScrollContent, DialogTitle } from "@/components/ui/dialog";
@@ -177,8 +183,16 @@
           loading.value = true;
           // Short buzz as confirmation (Android; iOS doesn't let web apps vibrate).
           navigator.vibrate?.(40);
+          errorMessage.value = null;
+          const text = result.getText().trim();
+          // A bare asset ID (e.g. "000-123") instead of a full label link.
+          if (/^\d{3}-?\d{3}$/.test(text)) {
+            closeDialog(DialogID.Scanner);
+            navigateTo(`/a/${text}`);
+            return;
+          }
           try {
-            const url = new URL(result.getText());
+            const url = new URL(text);
             if (!url.pathname.startsWith("/")) {
               throw new Error(t("scanner.invalid_url"));
             }
@@ -200,13 +214,24 @@
                 break;
 
               default:
-                handleError(err);
+                // Readable, but not a Homebox label: say what was scanned.
+                console.warn("Scanner: not a Homebox label", err);
+                errorMessage.value = t("scanner.unknown_code", {
+                  text: text.length > 60 ? `${text.slice(0, 60)}…` : text,
+                });
             }
 
             loading.value = false;
           }
         }
-        if (err && !(err instanceof NotFoundException)) {
+        // Not found / checksum / format errors just mean "no clean read in this
+        // frame yet" (blurry, half in view); the reader keeps trying.
+        if (
+          err &&
+          !(err instanceof NotFoundException) &&
+          !(err instanceof ChecksumException) &&
+          !(err instanceof FormatException)
+        ) {
           console.error(err);
           handleError(err);
         }

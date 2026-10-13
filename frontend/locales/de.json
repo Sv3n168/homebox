@@ -1094,6 +1094,7 @@
         "permission_denied": "Kameraberechtigung verweigert, bitte erlauben Sie den Zugriff auf die Kamera in Ihren Browsereinstellungen",
         "select_video_source": "Wählen Sie eine Videoquelle",
         "title": "Der Scanner",
+        "unknown_code": "Kein Homebox-Etikett erkannt: „{text}“",
         "unsupported": "Media Stream API wird nicht unterstützt ohne HTTPS/SSL"
     },
     "scanner_ar": {

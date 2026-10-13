@@ -1107,6 +1107,7 @@
         "permission_denied": "Camera permission denied, please allow access to the camera in your browser settings",
         "select_video_source": "Pick a video source",
         "title": "Scanner",
+        "unknown_code": "Not a Homebox label: \"{text}\"",
         "unsupported": "Media Stream API is not supported without HTTPS"
     },
     "scanner_ar": {
