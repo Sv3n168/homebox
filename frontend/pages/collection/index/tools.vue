@@ -120,6 +120,7 @@
             </template>
           </DetailAction>
           <BackupOffsiteStatus />
+          <AppVersionInfo />
         </div>
       </BaseCard>
       <BaseCard>
@@ -193,6 +194,7 @@
   import BaseSectionHeader from "@/components/Base/SectionHeader.vue";
   import DetailAction from "@/components/DetailAction.vue";
   import BackupOffsiteStatus from "@/components/Backup/OffsiteStatus.vue";
+  import AppVersionInfo from "@/components/App/VersionInfo.vue";
 
   const { t } = useI18n();
   const prefs = useViewPreferences();
