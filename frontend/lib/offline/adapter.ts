@@ -7,11 +7,13 @@
 //    remembered responses
 //  - creating entities and uploading their photos is queued in the outbox and
 //    answered with a pending entity, so the create dialog just works offline
+//  - moves, quantity/tag edits and box-check fields are queued the same way
 //  - every other write is refused with a clear offline error
 
 import type { EntitySummary, EntityTypeSummary, TagSummary } from "../api/types/data-contracts";
 import {
   applyMoves,
+  applyPatches,
   entityFromCreate,
   entityFromSummary,
   entityPath,
@@ -20,6 +22,7 @@ import {
   type CreateBody,
   type PendingEntity,
   type PendingMove,
+  type PendingPatch,
 } from "./query";
 import {
   addOutbox,
@@ -30,7 +33,10 @@ import {
   offlineStorageAvailable,
   putResponse,
   type OutboxCreate,
+  type OutboxField,
   type OutboxMove,
+  type OutboxPatch,
+  type OutboxTag,
 } from "./store";
 import { offlineState } from "./state";
 
@@ -94,22 +100,99 @@ export function newTempId(): string {
   return OFFLINE_ID_PREFIX + uuid;
 }
 
-/** Everything the offline queries see: the snapshot plus queued creates and moves. */
-async function entities(
-  tenant: string
-): Promise<{ all: EntitySummary[]; pending: PendingEntity[]; moved: Set<string> }> {
+/** Everything the offline queries see: the snapshot plus queued creates, moves and edits. */
+async function entities(tenant: string): Promise<{
+  all: EntitySummary[];
+  pending: PendingEntity[];
+  moved: Set<string>;
+  patched: Map<string, PendingPatch>;
+  fields: Map<string, { name: string; value: string }[]>;
+}> {
   const snapshot = await getSnapshot(tenant);
   const pending = await pendingEntities(tenant, snapshot?.summaries ?? []);
-  const moves = await pendingMoves(tenant);
-  const all = applyMoves([...(snapshot?.summaries ?? []), ...pending], moves);
-  return { all, pending, moved: new Set(moves.map(m => m.entityId)) };
+  const outbox = (await listOutbox()).filter(e => e.tenant === tenant && !e.error);
+  const mapped = (id: string) => idMap[id] ?? id;
+
+  const moves: PendingMove[] = outbox
+    .filter((e): e is OutboxMove => e.kind === "move")
+    .map(e => ({ entityId: mapped(e.entityId), parentId: mapped(e.parentId) }));
+  const patches: PendingPatch[] = outbox
+    .filter((e): e is OutboxPatch => e.kind === "patch")
+    .map(e => ({ entityId: mapped(e.entityId), quantity: e.body.quantity, tagIds: e.body.tagIds?.map(mapped) }));
+  const tags = await localTags(tenant);
+  const all = applyPatches(applyMoves([...(snapshot?.summaries ?? []), ...pending], moves), patches, tags);
+
+  // Merged per entity, so a detail page shows the latest queued values.
+  const patched = new Map<string, PendingPatch>();
+  for (const p of patches) patched.set(p.entityId, { ...patched.get(p.entityId), ...withoutUndefined(p) });
+  const fields = new Map<string, { name: string; value: string }[]>();
+  for (const e of outbox) {
+    if (e.kind !== "field") continue;
+    const id = mapped(e.entityId);
+    fields.set(id, [...(fields.get(id) ?? []).filter(f => f.name !== e.name), { name: e.name, value: e.value }]);
+  }
+  return { all, pending, moved: new Set(moves.map(m => m.entityId)), patched, fields };
 }
 
-async function pendingMoves(tenant: string): Promise<PendingMove[]> {
-  const outbox = await listOutbox();
-  return outbox
-    .filter((e): e is OutboxMove => e.kind === "move" && e.tenant === tenant && !e.error)
-    .map(e => ({ entityId: idMap[e.entityId] ?? e.entityId, parentId: idMap[e.parentId] ?? e.parentId }));
+/** Cached tag list plus tags created offline and not synced yet. */
+async function localTags(tenant: string): Promise<TagSummary[]> {
+  const cached = (await getResponse<TagSummary[]>(tenant, `${API}/tags`)) ?? [];
+  const queued = (await listOutbox()).filter(
+    (e): e is OutboxTag => e.kind === "tag" && e.tenant === tenant && !e.error && !idMap[e.tempId]
+  );
+  return [...cached, ...queued.map(tagFromQueue)];
+}
+
+function tagFromQueue(e: OutboxTag): TagSummary {
+  return {
+    id: e.tempId,
+    name: e.body.name,
+    description: e.body.description ?? "",
+    color: e.body.color ?? "",
+    icon: e.body.icon ?? "",
+    parentId: e.body.parentId ?? null,
+    createdAt: e.queuedAt,
+    updatedAt: e.queuedAt,
+  };
+}
+
+function withoutUndefined<T extends object>(o: T): T {
+  return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T;
+}
+
+/** Queued edits on top of a cached detail answer (GET /entities/{id}). */
+function withLocalEdits(
+  detail: PendingEntity,
+  summary: EntitySummary | undefined,
+  patch: PendingPatch | undefined,
+  fields: { name: string; value: string }[] | undefined
+): PendingEntity {
+  let out = detail;
+  if (patch && summary) {
+    out = { ...out };
+    if (patch.quantity !== undefined) out.quantity = summary.quantity;
+    if (patch.tagIds !== undefined) out.tags = summary.tags;
+  }
+  if (fields?.length) {
+    const current = ((out as { fields?: { name: string }[] }).fields ?? []).filter(
+      f => !fields.some(x => x.name === f.name)
+    );
+    out = {
+      ...out,
+      fields: [
+        ...current,
+        ...fields.map(f => ({
+          id: "",
+          name: f.name,
+          type: "text",
+          textValue: f.value,
+          numberValue: 0,
+          booleanValue: false,
+        })),
+      ],
+    } as PendingEntity;
+  }
+  return out;
 }
 
 async function pendingEntities(tenant: string, all: EntitySummary[]): Promise<PendingEntity[]> {
@@ -168,19 +251,24 @@ async function answerGet(req: OfflineRequest): Promise<OfflineAnswer | null> {
   const entityMatch = path.match(new RegExp(`^${API}/entities/([^/]+)$`));
   if (entityMatch && !RESERVED_ENTITY_PATHS.has(entityMatch[1]!)) {
     const id = entityMatch[1]!;
-    const { all, pending, moved } = await entities(tenant);
+    const { all, pending, moved, patched, fields } = await entities(tenant);
+    const summary = all.find(e => e.id === id);
+    const edits = (d: PendingEntity) => withLocalEdits(d, summary, patched.get(id), fields.get(id));
     const p = all.find(e => e.id === id && pending.some(x => x.id === id));
-    if (p) return { status: 200, data: { ...pending.find(x => x.id === id), parent: p.parent } };
+    if (p) return { status: 200, data: edits({ ...pending.find(x => x.id === id)!, parent: p.parent }) };
     const cached = await getResponse<PendingEntity>(tenant, path);
     if (cached) {
-      if (!moved.has(id)) return { status: 200, data: cached };
-      const parent = all.find(e => e.id === id)?.parent ?? cached.parent;
+      if (!moved.has(id)) return { status: 200, data: edits(cached) };
+      const parent = summary?.parent ?? cached.parent;
       const location = parent?.entityType?.isLocation ? parent : cached.location;
-      return { status: 200, data: { ...cached, parent, location, locationId: undefined } };
+      return { status: 200, data: edits({ ...cached, parent, location, locationId: undefined }) };
     }
-    const summary = all.find(e => e.id === id);
-    if (summary) return { status: 200, data: entityFromSummary(summary, all) };
+    if (summary) return { status: 200, data: edits(entityFromSummary(summary, all) as PendingEntity) };
     return { status: 404, data: { error: "not available offline" } };
+  }
+
+  if (path === `${API}/tags`) {
+    return { status: 200, data: await localTags(tenant) };
   }
 
   const exact = await getResponse(tenant, req.url);
@@ -252,6 +340,86 @@ function isMoveBody(body: unknown): body is { parentId: string } {
   return typeof b.parentId === "string" && keys.every(k => ["id", "parentId", "locationId"].includes(k));
 }
 
+/** A quantity and/or tag edit: { id, quantity?, tagIds? }. */
+function isPatchBody(body: unknown): body is { id: string; quantity?: number; tagIds?: string[] } {
+  if (!body || typeof body !== "object") return false;
+  const b = body as Record<string, unknown>;
+  const keys = Object.keys(b).filter(k => b[k] !== undefined && b[k] !== null);
+  return (
+    keys.some(k => k === "quantity" || k === "tagIds") &&
+    keys.every(k => ["id", "quantity", "tagIds"].includes(k)) &&
+    (b.quantity === undefined || b.quantity === null || typeof b.quantity === "number") &&
+    (b.tagIds === undefined || b.tagIds === null || Array.isArray(b.tagIds))
+  );
+}
+
+async function queuePatch(req: OfflineRequest, entityId: string): Promise<OfflineAnswer> {
+  const tenant = tenantOf(req.headers);
+  const { all } = await entities(tenant);
+  const b = req.body as { quantity?: number | null; tagIds?: string[] | null };
+  const entry: OutboxPatch = {
+    kind: "patch",
+    entityId,
+    url: req.url,
+    body: withoutUndefined({ id: entityId, quantity: b.quantity ?? undefined, tagIds: b.tagIds ?? undefined }),
+    tenant,
+    headers: req.headers,
+    queuedAt: new Date().toISOString(),
+    entityName: all.find(e => e.id === entityId)?.name ?? "",
+  };
+  entry.seq = await addOutbox(entry);
+  offlineState.outbox.push(entry);
+  offlineState.queuedAt = Date.now();
+
+  const answer = await answerGet({ ...req, method: "GET", url: `${API}/entities/${entityId}`, body: undefined });
+  return { status: 200, data: answer?.data ?? {} };
+}
+
+async function queueTag(req: OfflineRequest): Promise<OfflineAnswer> {
+  const tenant = tenantOf(req.headers);
+  const entry: OutboxTag = {
+    kind: "tag",
+    tempId: newTempId(),
+    url: req.url,
+    body: req.body as OutboxTag["body"],
+    tenant,
+    headers: req.headers,
+    queuedAt: new Date().toISOString(),
+    attempted: req.sent,
+  };
+  entry.seq = await addOutbox(entry);
+  offlineState.outbox.push(entry);
+  offlineState.queuedAt = Date.now();
+  return { status: 201, data: tagFromQueue(entry) };
+}
+
+/**
+ * Sets a custom text field once the server is reachable (there is no PATCH for
+ * fields, so the sync merges it into the current entity). Used by the box check.
+ */
+export async function queueFieldUpdate(
+  headers: Record<string, string>,
+  entityId: string,
+  name: string,
+  value: string
+): Promise<void> {
+  const tenant = tenantOf(headers);
+  const { all } = await entities(tenant);
+  const entry: OutboxField = {
+    kind: "field",
+    entityId,
+    name,
+    value,
+    tenant,
+    headers,
+    queuedAt: new Date().toISOString(),
+    entityName: all.find(e => e.id === entityId)?.name ?? "",
+  };
+  entry.seq = await addOutbox(entry);
+  offlineState.outbox.push(entry);
+  offlineState.queuedAt = Date.now();
+}
+
 async function queueMove(req: OfflineRequest, entityId: string, parentId: string): Promise<OfflineAnswer> {
   const tenant = tenantOf(req.headers);
   const { all } = await entities(tenant);
@@ -285,9 +453,16 @@ async function answerWrite(req: OfflineRequest): Promise<OfflineAnswer | null> {
     return queueCreate(req, req.body as Record<string, unknown>);
   }
 
+  if (req.method === "POST" && path === `${API}/tags` && req.body && typeof req.body === "object") {
+    return queueTag(req);
+  }
+
   const patch = path.match(new RegExp(`^${API}/entities/([^/]+)$`));
   if (req.method === "PATCH" && patch && isMoveBody(req.body)) {
     return queueMove(req, patch[1]!, req.body.parentId);
+  }
+  if (req.method === "PATCH" && patch && isPatchBody(req.body)) {
+    return queuePatch(req, patch[1]!);
   }
 
   const attachment = path.match(new RegExp(`^${API}/entities/([^/]+)/attachments$`));

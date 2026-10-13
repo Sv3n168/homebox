@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import type { EntitySummary } from "../api/types/data-contracts";
 import {
   applyMoves,
+  applyPatches,
   entityFromCreate,
   entityPath,
   parseAssetId,
@@ -180,5 +181,35 @@ describe("applyMoves", () => {
     expect(moved.find(e => e.id === "bohrer")?.parent?.id).toBe("regal");
     // input untouched
     expect(all.find(e => e.id === "lichter")?.parent?.id).toBe("box");
+  });
+});
+
+describe("applyPatches", () => {
+  const tags = [
+    { id: "t1", name: "Werkzeug" },
+    { id: "t2", name: "Vermisst" },
+  ] as EntitySummary["tags"];
+
+  test("quantity and tags from queued edits, latest wins", () => {
+    const out = applyPatches(
+      all,
+      [
+        { entityId: "bohrer", quantity: 3 },
+        { entityId: "bohrer", quantity: 4 },
+        { entityId: "lichter", tagIds: ["t2", "unknown"] },
+      ],
+      tags
+    );
+    expect(out.find(e => e.id === "bohrer")?.quantity).toBe(4);
+    expect(out.find(e => e.id === "lichter")?.tags.map(t => t.name)).toEqual(["Vermisst"]);
+    // untouched fields stay, input untouched
+    expect(out.find(e => e.id === "bohrer")?.tags).toEqual(all.find(e => e.id === "bohrer")?.tags);
+    expect(all.find(e => e.id === "bohrer")?.quantity).toBe(1);
+  });
+
+  test("a tag-only edit keeps the quantity", () => {
+    const out = applyPatches(all, [{ entityId: "bohrer", tagIds: ["t1"] }], tags);
+    expect(out.find(e => e.id === "bohrer")?.quantity).toBe(1);
+    expect(out.find(e => e.id === "bohrer")?.tags.map(t => t.id)).toEqual(["t1"]);
   });
 });

@@ -32,6 +32,13 @@
         "search_instead": "Lieber suchen",
         "title": "Box wählen"
     },
+    "check_reminder": {
+        "ack": "Quittieren",
+        "ack_failed": "Konnte nicht gespeichert werden",
+        "hint": "{count, plural, =1 {1 Box seit über 6 Monaten nicht geprüft} other {{count} Boxen seit über 6 Monaten nicht geprüft}}",
+        "last": "zuletzt geprüft {date}",
+        "never": "noch nie geprüft"
+    },
     "collect": {
         "button": "Hierher räumen",
         "done": "Drin",
@@ -876,7 +883,9 @@
     },
     "move": {
         "button": "Verschieben",
+        "selected": "{count} ausgewählt",
         "title": "„{name}“ verschieben nach…",
+        "title_many": "{count, plural, =1 {1 Artikel verschieben nach…} other {{count} Artikel verschieben nach…}}",
         "toast": {
             "failed": "{count} Artikel konnten nicht verschoben werden",
             "moved_many": "{count} Artikel nach {target} verschoben",
@@ -887,16 +896,21 @@
     },
     "offline": {
         "available": "{count} Einträge offline verfügbar",
-        "banner": "Offline – du siehst die gespeicherte Kopie",
+        "banner": "Offline",
         "banner_as_of": "Stand {time}",
+        "banner_pending": "{count} wartend",
         "discard": "Verwerfen",
         "entry": {
             "create": "Neu: {name}",
+            "field": "{name}: {field} {value}",
             "move": "Verschoben: {name} → {target}",
-            "photo": "Foto für {name}"
+            "patch": "Tags geändert: {name}",
+            "photo": "Foto für {name}",
+            "quantity": "Menge: {name} → {quantity}",
+            "tag": "Neuer Tag: {name}"
         },
         "failed": "{count} Änderung(en) vom Server abgelehnt",
-        "hint": "Offline gemachte Änderungen werden automatisch hochgeladen, sobald wieder Netz da ist. Offline kannst du stöbern, suchen, Etiketten scannen, neue Artikel anlegen und Artikel verschieben.",
+        "hint": "Offline gemachte Änderungen werden automatisch hochgeladen, sobald wieder Netz da ist. Offline kannst du stöbern, suchen, Etiketten scannen, neue Artikel anlegen, Artikel verschieben, Mengen ändern und Boxen prüfen.",
         "last_sync": "Zuletzt synchronisiert {time}",
         "needs_login": "Deine Sitzung ist abgelaufen – bitte neu anmelden, damit die Änderungen hochgeladen werden.",
         "never_synced": "Noch nicht offline verfügbar – wird automatisch geladen, solange du online bist.",
@@ -913,10 +927,33 @@
         "status_button": "Offline-Status",
         "sync_now": "Jetzt synchronisieren",
         "toast": {
-            "blocked": "Offline: Ohne Netz kannst du nur Artikel anlegen und verschieben.",
+            "blocked": "Offline: Ohne Netz kannst du Artikel anlegen, verschieben, Mengen ändern und Boxen prüfen.",
             "queued": "Offline gespeichert – wird hochgeladen, sobald wieder Netz da ist.",
             "synced": "{count} Offline-Änderung(en) hochgeladen"
         }
+    },
+    "offsite_backup": {
+        "backup": "Letztes Backup",
+        "backup_failed": "Fehlgeschlagen {when}: {detail}",
+        "backup_never": "Noch keins – das erste läuft heute Nacht.",
+        "backup_never_overdue": "Noch kein Backup, obwohl der Container schon länger läuft – OneDrive-Verbindung prüfen.",
+        "backup_ok": "Erfolgreich {when}",
+        "backup_stale": "Kein Backup mehr seit {when} – läuft der Backup-Container?",
+        "every_days": "{n, plural, =1 {täglich} other {alle {n} Tage}}",
+        "interval": "Backup",
+        "keep": "Löschen nach",
+        "months": "{n, plural, =1 {1 Monat} other {{n} Monaten}}",
+        "not_configured": "Kein Backup-Container eingerichtet. Wie das geht, steht in deploy/README.de.md.",
+        "settings_hint": "Gilt ab dem nächsten nächtlichen Lauf. Die 10 neuesten Backups bleiben immer erhalten, auch wenn sie älter sind.",
+        "title": "Verschlüsseltes Backup nach OneDrive",
+        "toast": {
+            "save_failed": "Einstellungen konnten nicht gespeichert werden",
+            "saved": "Backup-Einstellungen gespeichert"
+        },
+        "verify": "Probe-Wiederherstellung",
+        "verify_failed": "Fehlgeschlagen {when}: {detail}",
+        "verify_never": "Noch nicht gelaufen – sie läuft automatisch am 1. jedes Monats.",
+        "verify_ok": "Klappt – zuletzt getestet {when}"
     },
     "pages": {
         "templates": {

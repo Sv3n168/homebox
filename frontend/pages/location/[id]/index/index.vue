@@ -67,6 +67,10 @@
   // Remember the box for "recently used" on the home page and in the box picker.
   watch(locationId, id => id && places.visit(id), { immediate: true });
 
+  // Phone: text only, so "Hierher räumen" fits; icons from sm up.
+  const boxActionClass =
+    "min-w-0 gap-1 px-1 text-xs min-[375px]:text-[13px] sm:gap-2 sm:px-4 sm:text-sm [&_svg]:hidden [&_svg]:size-4 sm:[&_svg]:inline-block";
+
   const collectTarget = computed(() => ({ id: locationId.value, name: location.value?.name ?? "" }));
 
   const { data: location } = useAsyncData(locationId.value, async () => {
@@ -198,12 +202,15 @@
         type: "markdown",
         text: location.value.notes,
       },
-      ...(location.value.fields || []).map(field => {
-        return {
-          name: field.name,
-          text: field.textValue,
-        } as AnyDetail;
-      }),
+      // The box-check reminder's bookkeeping field is not meant for reading.
+      ...(location.value.fields || [])
+        .filter(field => field.name !== ACK_FIELD)
+        .map(field => {
+          return {
+            name: field.name,
+            text: field.textValue,
+          } as AnyDetail;
+        }),
     ];
 
     // No "show empty" switch on this page, so empty notes never take up space.
@@ -261,14 +268,14 @@
       </section>
 
       <Card class="p-3">
-        <header :class="{ 'mb-2': location?.description }">
+        <header class="relative" :class="{ 'mb-2': location?.description }">
           <div class="flex flex-wrap items-end gap-2">
             <div
               class="mb-auto flex size-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
             >
               <MdiPackageVariant class="size-7" />
             </div>
-            <div>
+            <div class="pr-10 sm:pr-0">
               <Breadcrumb v-if="location?.parent">
                 <BreadcrumbList>
                   <BreadcrumbItem>
@@ -299,30 +306,34 @@
                 <TagChip v-for="tag in location.tags" :key="tag.id" :tag="tag" size="sm" />
               </div>
             </div>
-            <div class="ml-auto mt-2 flex flex-wrap items-center justify-between gap-2">
+            <!-- Phone: labels and "+ Artikel" share one row, ⋯ sits top right. -->
+            <div class="mt-2 flex flex-wrap items-center gap-2 sm:ml-auto">
               <LabelMaker :id="location.id" type="location" />
-              <Button data-testid="location-create-item" @click="openCreateItem">
+              <Button data-testid="location-create-item" class="px-3 sm:px-4" @click="openCreateItem">
                 <MdiPlus name="mdi-plus" />
-                <span>{{ $t("components.location.create_item") }}</span>
+                <span class="sm:hidden">{{ $t("global.item") }}</span>
+                <span class="hidden sm:inline">{{ $t("components.location.create_item") }}</span>
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                  <Button variant="outline" size="icon" :aria-label="$t('global.more_actions')">
-                    <MdiDotsVertical class="size-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" class="w-48">
-                  <DropdownMenuItem @click="goToEdit">
-                    <MdiPencil class="mr-2 size-4" />
-                    {{ $t("global.edit") }}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem class="text-destructive focus:text-destructive" @click="confirmDelete()">
-                    <MdiDelete class="mr-2 size-4" />
-                    {{ $t("global.delete") }}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div class="absolute right-0 top-0 sm:static">
+                <DropdownMenu>
+                  <DropdownMenuTrigger as-child>
+                    <Button variant="outline" size="icon" :aria-label="$t('global.more_actions')">
+                      <MdiDotsVertical class="size-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" class="w-48">
+                    <DropdownMenuItem @click="goToEdit">
+                      <MdiPencil class="mr-2 size-4" />
+                      {{ $t("global.edit") }}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem class="text-destructive focus:text-destructive" @click="confirmDelete()">
+                      <MdiDelete class="mr-2 size-4" />
+                      {{ $t("global.delete") }}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
         </header>
@@ -331,20 +342,21 @@
       </Card>
 
       <!-- Quick actions for the box you just scanned -->
-      <div class="mt-3 flex flex-wrap gap-2" data-testid="box-actions">
-        <Button variant="outline" data-testid="box-collect" @click="collectOpen = true">
+      <!-- One row on the phone: three equal, compact buttons. -->
+      <div class="mt-3 grid grid-cols-3 gap-2 sm:flex" data-testid="box-actions">
+        <Button variant="outline" :class="boxActionClass" data-testid="box-collect" @click="collectOpen = true">
           <MdiArrowDownBold />
-          {{ $t("collect.button") }}
+          <span class="truncate">{{ $t("collect.button") }}</span>
         </Button>
-        <Button variant="outline" data-testid="box-pin" @click="togglePin">
+        <Button variant="outline" :class="boxActionClass" data-testid="box-pin" @click="togglePin">
           <MdiStar v-if="pinned" class="text-amber-500" />
           <MdiStarOutline v-else />
-          {{ pinned ? $t("places.pinned") : $t("places.pin") }}
+          <span class="truncate">{{ pinned ? $t("places.pinned") : $t("places.pin") }}</span>
         </Button>
-        <Button variant="outline" as-child data-testid="box-check">
+        <Button variant="outline" as-child :class="boxActionClass" data-testid="box-check">
           <NuxtLink :to="`/location/${locationId}/check`">
             <MdiClipboardCheckOutline />
-            {{ $t("box_check.button") }}
+            <span class="truncate">{{ $t("box_check.button") }}</span>
           </NuxtLink>
         </Button>
       </div>

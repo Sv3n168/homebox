@@ -1,7 +1,7 @@
 import { useEntityTypeStore } from "~~/stores/entityTypes";
 
 export const INBOX_NAME = "Unsortiert";
-const INBOX_RE = /^(unsortiert|inbox|eingang)$/i;
+export const INBOX_RE = /^(unsortiert|inbox|eingang)$/i;
 
 /**
  * The inbox is a plain top-level location called "Unsortiert". New things land

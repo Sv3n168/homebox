@@ -32,6 +32,13 @@
         "search_instead": "Search instead",
         "title": "Choose a box"
     },
+    "check_reminder": {
+        "ack": "Dismiss",
+        "ack_failed": "Could not save",
+        "hint": "{count, plural, =1 {1 box not checked for over 6 months} other {{count} boxes not checked for over 6 months}}",
+        "last": "last checked {date}",
+        "never": "never checked"
+    },
     "collect": {
         "button": "Put items here",
         "done": "Here",
@@ -888,7 +895,9 @@
     },
     "move": {
         "button": "Move",
+        "selected": "{count} selected",
         "title": "Move \"{name}\" to…",
+        "title_many": "{count, plural, =1 {Move 1 item to…} other {Move {count} items to…}}",
         "toast": {
             "failed": "{count} item(s) could not be moved",
             "moved_many": "{count} items moved to {target}",
@@ -899,16 +908,21 @@
     },
     "offline": {
         "available": "{count} entries available offline",
-        "banner": "Offline – showing the saved copy",
+        "banner": "Offline",
         "banner_as_of": "as of {time}",
+        "banner_pending": "{count} waiting",
         "discard": "Discard",
         "entry": {
             "create": "New: {name}",
+            "field": "{name}: {field} {value}",
             "move": "Moved: {name} → {target}",
-            "photo": "Photo for {name}"
+            "patch": "Tags changed: {name}",
+            "photo": "Photo for {name}",
+            "quantity": "Quantity: {name} → {quantity}",
+            "tag": "New tag: {name}"
         },
         "failed": "{count} change(s) rejected by the server",
-        "hint": "Changes made offline are uploaded automatically when the connection is back. Offline, you can browse, search, scan labels, add new items and move items.",
+        "hint": "Changes made offline are uploaded automatically when the connection is back. Offline, you can browse, search, scan labels, add and move items, change quantities and check boxes.",
         "last_sync": "Last sync {time}",
         "needs_login": "Your session expired – please log in again to upload the changes.",
         "never_synced": "Not available offline yet – it is downloaded automatically while online.",
@@ -925,10 +939,33 @@
         "status_button": "Offline status",
         "sync_now": "Sync now",
         "toast": {
-            "blocked": "Offline: only adding and moving items works without a connection.",
+            "blocked": "Offline: only adding and moving items, changing quantities and checking boxes work without a connection.",
             "queued": "Saved offline – it will be uploaded once you are back online.",
             "synced": "{count} offline change(s) uploaded"
         }
+    },
+    "offsite_backup": {
+        "backup": "Last backup",
+        "backup_failed": "Failed {when}: {detail}",
+        "backup_never": "None yet – the first one runs tonight.",
+        "backup_never_overdue": "No backup yet although the container has been running for a while – check the OneDrive connection.",
+        "backup_ok": "Succeeded {when}",
+        "backup_stale": "No backup since {when} – is the backup container running?",
+        "every_days": "{n, plural, =1 {daily} other {every {n} days}}",
+        "interval": "Backup",
+        "keep": "Delete after",
+        "months": "{n, plural, =1 {1 month} other {{n} months}}",
+        "not_configured": "No backup container set up. See deploy/README.de.md.",
+        "settings_hint": "Applies from the next nightly run. The 10 newest backups are always kept, even when older.",
+        "title": "Encrypted backup to OneDrive",
+        "toast": {
+            "save_failed": "Could not save the settings",
+            "saved": "Backup settings saved"
+        },
+        "verify": "Restore test",
+        "verify_failed": "Failed {when}: {detail}",
+        "verify_never": "Not run yet – it runs automatically on the 1st of every month.",
+        "verify_ok": "Works – last tested {when}"
     },
     "pages": {
         "templates": {

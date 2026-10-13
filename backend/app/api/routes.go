@@ -170,6 +170,8 @@ func (a *app) mountRoutes(r *chi.Mux, chain *errchain.ErrChain, repos *repo.AllR
 		r.Get("/group/exports/{id}", chain.ToHandlerFunc(v1Ctrl.HandleExportGet(), userMW...))
 		r.Get("/group/exports/{id}/download", chain.ToHandlerFunc(v1Ctrl.HandleExportDownload(), userMW...))
 		r.Delete("/group/exports/{id}", chain.ToHandlerFunc(v1Ctrl.HandleExportDelete(), userMW...))
+		r.Get("/offsite-backup/status", chain.ToHandlerFunc(v1Ctrl.HandleOffsiteBackupStatus(), userMW...))
+		r.Put("/offsite-backup/settings", chain.ToHandlerFunc(v1Ctrl.HandleOffsiteBackupSettingsUpdate(), ownerMW...))
 		r.Post("/group/import", chain.ToHandlerFunc(v1Ctrl.HandleCollectionImport(), userMW...))
 
 		r.Get("/groups/statistics", chain.ToHandlerFunc(v1Ctrl.HandleGroupStatistics(), userMW...))

@@ -54,7 +54,33 @@ export type OutboxMove = OutboxBase & {
   targetName: string;
 };
 
-export type OutboxEntry = OutboxCreate | OutboxAttachment | OutboxMove;
+/** A small edit made offline: quantity and/or tags (PATCH). Last write wins. */
+export type OutboxPatch = OutboxBase & {
+  kind: "patch";
+  entityId: string;
+  url: string;
+  body: { id: string; quantity?: number; tagIds?: string[] };
+  entityName: string;
+};
+
+/** Set one custom text field, e.g. "Zuletzt geprüft" after a box check. */
+export type OutboxField = OutboxBase & {
+  kind: "field";
+  entityId: string;
+  name: string;
+  value: string;
+  entityName: string;
+};
+
+/** A tag created offline; its temporary id is mapped like a new entity's. */
+export type OutboxTag = OutboxBase & {
+  kind: "tag";
+  tempId: string;
+  url: string;
+  body: { name: string; description?: string; color?: string; icon?: string; parentId?: string | null };
+};
+
+export type OutboxEntry = OutboxCreate | OutboxAttachment | OutboxMove | OutboxPatch | OutboxField | OutboxTag;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 

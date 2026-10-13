@@ -1,8 +1,7 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
   import { toast } from "@/components/ui/sonner";
-  import type { EntityFieldData, EntitySummary } from "~~/lib/api/types/data-contracts";
-  import { entityToUpdate } from "~~/lib/cleanup/duplicates";
+  import type { EntitySummary } from "~~/lib/api/types/data-contracts";
   import MdiCheck from "~icons/mdi/check";
   import MdiClose from "~icons/mdi/close";
   import MdiFolderMoveOutline from "~icons/mdi/folder-move-outline";
@@ -86,30 +85,9 @@
     return failed;
   }
 
-  async function stampBox(): Promise<boolean> {
-    const { data, error } = await api.items.getLocation(boxId.value);
-    if (error) return false;
-    const update = entityToUpdate(data);
-    const today = new Date().toISOString().slice(0, 10);
-    const fields = [...(update.fields ?? [])];
-    const existing = fields.find(f => f.name === CHECKED_FIELD);
-    if (existing) {
-      existing.type = "text";
-      existing.textValue = today;
-    } else {
-      fields.push({
-        id: null,
-        name: CHECKED_FIELD,
-        type: "text",
-        textValue: today,
-        numberValue: 0,
-        booleanValue: false,
-      } as unknown as EntityFieldData);
-    }
-    update.fields = fields;
-    const res = await api.items.update(boxId.value, update);
-    return !res.error;
-  }
+  // Offline (basement) the date is queued and set once the server is reachable.
+  const { setField } = useBoxField();
+  const stampBox = () => setField(boxId.value, CHECKED_FIELD, isoToday());
 
   async function finish() {
     saving.value = true;
@@ -121,6 +99,11 @@
       return;
     }
     finished.value = true;
+    try {
+      sessionStorage.removeItem(CHECK_REMINDER_CACHE);
+    } catch {
+      // nothing cached
+    }
     toast.success(t("box_check.toast.saved"));
   }
 
