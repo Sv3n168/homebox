@@ -58,6 +58,7 @@ func startEntityCtrlSpan(ctx context.Context, name string, attrs ...attribute.Ke
 //	@Param		orderBy			query		string		false	"field to order by; valid values: name, createdAt, updatedAt, assetId"
 //	@Param		orderDirection	query		string		false	"order direction; valid values: asc, desc. Defaults to desc for createdAt and updatedAt, asc otherwise"
 //	@Param		onlyLent		query		bool		false	"only entities that are currently lent out"
+//	@Param		onlyWithoutTags	query		bool		false	"only entities without any tag"
 //	@Success	200				{object}	repo.EntityListResult
 //	@Router		/v1/entities [GET]
 //	@Security	Bearer
@@ -91,6 +92,7 @@ func (ctrl *V1Controller) HandleEntitiesGetAll() errchain.HandlerFunc {
 			OnlyWithPhoto:    queryBool(params.Get("onlyWithPhoto")),
 			IncludeArchived:  queryBool(params.Get("includeArchived")),
 			OnlyLent:         queryBool(params.Get("onlyLent")),
+			OnlyWithoutTags:  queryBool(params.Get("onlyWithoutTags")),
 			Fields:           filterFieldItems(params["fields"]),
 			OrderBy:          params.Get("orderBy"),
 			OrderDirection:   params.Get("orderDirection"),
