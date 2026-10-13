@@ -88,6 +88,7 @@
   const matchAllTags = useOptionalRouteQuery("matchAllTags", false);
   const onlyWithoutPhoto = useOptionalRouteQuery("onlyWithoutPhoto", false);
   const onlyWithPhoto = useOptionalRouteQuery("onlyWithPhoto", false);
+  const onlyWithoutTags = useOptionalRouteQuery("onlyWithoutTags", false);
   const orderBy = useOptionalRouteQuery("orderBy", "name");
   const orderDirection = useOptionalRouteQuery("orderDirection", "asc");
   const qLoc = useOptionalRouteQuery("loc", []);
@@ -186,6 +187,11 @@
       return entityTypeIDs.value;
     }
 
+    // "Only items without tags" is about items; boxes rarely carry tags.
+    if (onlyWithoutTags.value) {
+      return entityTypes.value.filter(t => !t.isLocation).map(t => t.id);
+    }
+
     return entityTypes.value.map(t => t.id);
   });
 
@@ -269,6 +275,12 @@
     }
   });
 
+  watch(onlyWithoutTags, (newV, oldV) => {
+    if (newV !== oldV) {
+      search();
+    }
+  });
+
   watch(orderBy, (newV, oldV) => {
     if (newV !== oldV) {
       search();
@@ -328,6 +340,7 @@
       matchAllTags: matchAllTags.value,
       onlyWithoutPhoto: onlyWithoutPhoto.value,
       onlyWithPhoto: onlyWithPhoto.value,
+      onlyWithoutTags: onlyWithoutTags.value,
       orderBy: orderBy.value,
       orderDirection: orderDirection.value,
       page: page.value,
@@ -369,6 +382,7 @@
       matchAllTags: matchAllTags.value,
       onlyWithoutPhoto: onlyWithoutPhoto.value,
       onlyWithPhoto: onlyWithPhoto.value,
+      onlyWithoutTags: onlyWithoutTags.value,
       includeArchived: includeArchived.value,
       page: page.value,
       pageSize: pageSize.value,
@@ -545,6 +559,11 @@
               <Switch v-model="onlyWithPhoto" class="ml-auto" />
               <div class="grow" />
               <span class="text-right"> {{ $t("items.only_with_photo") }} </span>
+            </Label>
+            <Label class="flex cursor-pointer items-center">
+              <Switch v-model="onlyWithoutTags" class="ml-auto" data-testid="only-without-tags" />
+              <div class="grow" />
+              <span class="text-right"> {{ $t("tag_assistant.only_without_tags") }} </span>
             </Label>
             <Label class="flex cursor-pointer flex-col gap-2">
               <span class="text-right">

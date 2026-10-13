@@ -989,6 +989,24 @@
         "scan": "Scannen",
         "search": "Suche"
     },
+    "tag_assistant": {
+        "add": "Hinzufügen",
+        "all_done": "Alle Artikel haben mindestens einen Tag.",
+        "hint": "{count} Artikel ohne Tag",
+        "loading": "Lade…",
+        "new_tag": "Neuer Tag…",
+        "only_without_tags": "Nur Artikel ohne Tags",
+        "remaining": "Noch {count} von {total}",
+        "save_next": "Speichern & weiter",
+        "skip": "Überspringen",
+        "start": "Tags vergeben",
+        "title": "Tag-Assistent",
+        "toast": {
+            "create_failed": "Tag konnte nicht angelegt werden",
+            "load_failed": "Artikel konnten nicht geladen werden",
+            "save_failed": "Tags konnten nicht gespeichert werden"
+        }
+    },
     "tags": {
         "no_results": "Keine Tags gefunden",
         "tag_delete_confirm": "Sicher, dass Sie diesen Tag löschen wollen? Diese Aktion kann nicht rückgängig gemacht werden.",

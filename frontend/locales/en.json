@@ -1006,6 +1006,24 @@
         "scan": "Scan",
         "search": "Search"
     },
+    "tag_assistant": {
+        "add": "Add",
+        "all_done": "Every item has at least one tag.",
+        "hint": "{count} item(s) without a tag",
+        "loading": "Loading…",
+        "new_tag": "New tag…",
+        "only_without_tags": "Only items without tags",
+        "remaining": "{count} of {total} left",
+        "save_next": "Save & next",
+        "skip": "Skip",
+        "start": "Tag them",
+        "title": "Tag assistant",
+        "toast": {
+            "create_failed": "Could not create the tag",
+            "load_failed": "Could not load items",
+            "save_failed": "Could not save the tags"
+        }
+    },
     "tags": {
         "no_results": "No Tags Found",
         "tag_delete_confirm": "Are you sure you want to delete this tag? This action cannot be undone.",

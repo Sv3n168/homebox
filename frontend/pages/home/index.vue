@@ -13,6 +13,7 @@
   import TagChip from "~/components/Tag/Chip.vue";
   import Table from "~/components/Item/View/Table.vue";
   import ItemLentOverview from "~/components/Item/LentOverview.vue";
+  import ItemUntaggedHint from "~/components/Item/UntaggedHint.vue";
   import MdiChevronDown from "~icons/mdi/chevron-down";
 
   const { t } = useI18n();
@@ -60,6 +61,8 @@
           <StatCard v-for="(stat, i) in stats" :key="i" :title="stat.label" :value="stat.value" :type="stat.type" />
         </div>
       </section>
+
+      <ItemUntaggedHint />
 
       <ItemLentOverview />
 

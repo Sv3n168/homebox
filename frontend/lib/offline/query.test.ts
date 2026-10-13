@@ -80,6 +80,7 @@ describe("queryEntities", () => {
     expect(ids("tags=deko&negateTags=true")).toEqual(["bohrer"]);
     expect(ids("onlyWithPhoto=true")).toEqual(["bohrer"]);
     expect(ids("onlyLent=true")).toEqual(["bohrer"]);
+    expect(ids("onlyWithoutTags=true")).toEqual(["bohrer"]);
   });
 
   test("ordering and pagination", () => {

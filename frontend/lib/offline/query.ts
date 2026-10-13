@@ -133,6 +133,7 @@ export function queryEntities(all: EntitySummary[], params: URLSearchParams, det
     if (bool(params, "filterChildren") && e.parent) return false;
     if (!bool(params, "includeArchived") && e.archived) return false;
     if (bool(params, "onlyLent") && !(e.lentTo && e.lentTo.trim() !== "")) return false;
+    if (bool(params, "onlyWithoutTags") && (e.tags ?? []).length > 0) return false;
     if (bool(params, "onlyWithPhoto") && !e.imageId) return false;
     if (bool(params, "onlyWithoutPhoto") && e.imageId) return false;
 
