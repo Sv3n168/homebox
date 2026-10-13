@@ -192,7 +192,9 @@
             return;
           }
           try {
-            const url = new URL(text);
+            // Labels printed without HBOX_OPTIONS_HOSTNAME only carry the path
+            // ("/location/<id>"), so resolve paths against this Homebox.
+            const url = text.startsWith("/") ? new URL(text, window.location.origin) : new URL(text);
             if (!url.pathname.startsWith("/")) {
               throw new Error(t("scanner.invalid_url"));
             }
