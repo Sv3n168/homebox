@@ -57,13 +57,8 @@
 
 <script setup lang="ts">
   import { computed, ref, watch } from "vue";
-  import {
-    BarcodeFormat,
-    BrowserMultiFormatReader,
-    ChecksumException,
-    FormatException,
-    NotFoundException,
-  } from "@zxing/library";
+  import { BarcodeFormat, ChecksumException, FormatException, NotFoundException } from "@zxing/library";
+  import { TolerantReader } from "~~/lib/scanner/reader";
   import { useI18n } from "vue-i18n";
   import { DialogID } from "@/components/ui/dialog-provider/utils";
   import { Dialog, DialogHeader, DialogScrollContent, DialogTitle } from "@/components/ui/dialog";
@@ -82,7 +77,7 @@
   const selectedSource = ref<string | null>(null);
   const loading = ref(false);
   const video = ref<HTMLVideoElement>();
-  const codeReader = new BrowserMultiFormatReader();
+  const codeReader = new TolerantReader();
   const errorMessage = ref<string | null>(null);
   const detectedBarcode = ref<string>("");
   const detectedBarcodeType = ref<string>("");
@@ -234,8 +229,9 @@
           !(err instanceof ChecksumException) &&
           !(err instanceof FormatException)
         ) {
-          console.error(err);
-          handleError(err);
+          // Odd single-frame errors (glare, angle on printed labels); the
+          // reader keeps going, so only log them.
+          console.debug("Scanner frame error:", err);
         }
       });
     } catch (err) {
