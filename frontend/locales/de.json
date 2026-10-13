@@ -289,6 +289,7 @@
                 "selectable": {
                     "card": "Karte",
                     "items": "Artikel",
+                    "list": "Liste",
                     "no_items": "Keine Artikel zum anzeigen",
                     "select_all": "Alles auswählen",
                     "select_card": "Karte auswählen",
@@ -471,6 +472,7 @@
         "location": "Lagerort",
         "locations": "Lagerorte",
         "maintenance": "Wartung",
+        "more_actions": "Weitere Aktionen",
         "name": "Name",
         "navigate": "Navigieren",
         "no": "Nein",
@@ -979,6 +981,13 @@
         "switch_camera": "Kamera wechseln",
         "title": "AR-Scanner",
         "unsupported": "AR-Scannen wird von diesem Browser nicht unterstützt"
+    },
+    "tabbar": {
+        "create": "Neu",
+        "home": "Start",
+        "locations": "Orte",
+        "scan": "Scannen",
+        "search": "Suche"
     },
     "tags": {
         "no_results": "Keine Tags gefunden",

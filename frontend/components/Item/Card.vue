@@ -9,16 +9,20 @@
       />
     </div>
     <NuxtLink :to="`/${item.entityType?.isLocation ? 'location' : 'item'}/${item.id}`">
-      <div class="relative h-[200px]">
+      <div class="relative" :class="hasPhoto ? 'h-[200px]' : 'h-[110px]'">
+        <div v-if="!hasPhoto" class="absolute inset-0 flex items-center justify-center bg-muted">
+          <MdiArchiveOutline v-if="item.entityType?.isLocation" class="size-10 text-muted-foreground/60" />
+          <MdiPackageVariantClosed v-else class="size-10 text-muted-foreground/60" />
+        </div>
         <img
-          v-if="imageUrl && objectContain"
+          v-if="hasPhoto && objectContain"
           class="absolute h-[200px] w-full object-cover blur-md"
           loading="lazy"
           :src="imageUrl"
           alt=""
         />
         <img
-          v-if="imageUrl"
+          v-if="hasPhoto"
           class="absolute h-[200px] w-full shadow-md"
           :class="objectContain ? 'object-contain' : 'object-cover'"
           loading="lazy"
@@ -87,6 +91,8 @@
   import type { EntityOut, EntitySummary } from "~~/lib/api/types/data-contracts";
   import MdiShieldCheck from "~icons/mdi/shield-check";
   import MdiArchive from "~icons/mdi/archive";
+  import MdiArchiveOutline from "~icons/mdi/archive-outline";
+  import MdiPackageVariantClosed from "~icons/mdi/package-variant-closed";
   import { Badge } from "@/components/ui/badge";
   import { Card } from "@/components/ui/card";
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -135,6 +141,7 @@
     },
   });
 
+  const hasPhoto = computed(() => !!props.item.imageId);
   const lent = computed(() => isLent(props.item));
   const pending = computed(() => PENDING_FLAG in props.item);
 

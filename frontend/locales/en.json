@@ -289,6 +289,7 @@
                 "selectable": {
                     "card": "Card",
                     "items": "Items",
+                    "list": "List",
                     "no_items": "No Items to Display",
                     "select_all": "Select All",
                     "select_card": "Select Card",
@@ -472,6 +473,7 @@
         "location": "Location",
         "locations": "Locations",
         "maintenance": "Maintenance",
+        "more_actions": "More actions",
         "name": "Name",
         "navigate": "Navigate",
         "no": "No",
@@ -996,6 +998,13 @@
         "switch_camera": "Switch Camera",
         "title": "AR Scanner",
         "unsupported": "AR scanning is not supported in this browser"
+    },
+    "tabbar": {
+        "create": "New",
+        "home": "Home",
+        "locations": "Places",
+        "scan": "Scan",
+        "search": "Search"
     },
     "tags": {
         "no_results": "No Tags Found",

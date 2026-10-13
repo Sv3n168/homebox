@@ -13,6 +13,7 @@
     <ItemBarcodeModal />
     <AppQuickMenuModal :actions="quickMenuActions" />
     <AppScannerModal />
+    <AppPullToRefresh />
     <CollectionCreateModal />
     <CollectionJoinModal />
     <CollectionInviteCreateModal />
@@ -169,7 +170,7 @@
         <SidebarRail />
       </Sidebar>
       <SidebarInset class="min-h-dvh max-w-full overflow-hidden bg-background-accent">
-        <div class="relative flex h-full flex-col justify-center">
+        <div class="relative flex h-full flex-col justify-center pb-24 sm:pb-0">
           <div v-if="preferences.displayLegacyHeader">
             <AppHeaderDecor class="-mt-10 hidden lg:block" />
             <SidebarTrigger class="absolute left-2 top-2 hidden lg:flex" variant="default" />
@@ -181,14 +182,18 @@
               'lg:hidden': preferences.displayLegacyHeader,
             }"
           >
-            <div class="flex h-1/2 items-center gap-2 sm:h-auto">
+            <div class="flex h-full items-center gap-2 sm:h-auto">
               <SidebarTrigger variant="default" />
               <NuxtLink to="/home">
                 <AppHeaderText class="h-6" />
               </NuxtLink>
+              <!-- On phones search and scan live in the tab bar; status stays up here. -->
+              <div class="ml-auto sm:hidden">
+                <AppOfflineStatus />
+              </div>
             </div>
             <div class="sm:grow" />
-            <div class="flex h-1/2 grow items-center justify-end gap-2 sm:h-auto">
+            <div class="hidden h-1/2 grow items-center justify-end gap-2 sm:flex sm:h-auto">
               <Input
                 v-model:model-value="search"
                 class="h-9 grow sm:max-w-sm"
@@ -215,6 +220,10 @@
 
           <slot />
           <div class="grow" />
+          <AppTabBar
+            @scan="openScanner"
+            @create="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })"
+          />
 
           <footer v-if="status" class="bottom-0 w-full pb-4 text-center">
             <p class="text-center text-sm">
@@ -299,6 +308,8 @@
   import AppScannerModal from "~/components/App/ScannerModal.vue";
   import AppOfflineStatus from "~/components/App/OfflineStatus.vue";
   import AppOfflineBanner from "~/components/App/OfflineBanner.vue";
+  import AppTabBar from "~/components/App/TabBar.vue";
+  import AppPullToRefresh from "~/components/App/PullToRefresh.vue";
   import AppLogo from "~/components/App/Logo.vue";
   import AppHeaderDecor from "~/components/App/HeaderDecor.vue";
   import AppHeaderText from "~/components/App/HeaderText.vue";

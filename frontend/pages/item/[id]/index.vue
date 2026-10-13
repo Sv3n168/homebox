@@ -93,6 +93,7 @@
   // Through computeds: this vue-tsc version types useAsyncData's ref as
   // un-unwrapped inside the template.
   const lendTarget = computed(() => item.value);
+  const quantity = computed(() => item.value?.quantity ?? 0);
   const lentTo = computed(() => item.value?.lentTo ?? "");
   const lentOverdue = computed(() => isOverdue(item.value));
   const lentSince = computed(() => lendingDate(item.value?.lentDate));
@@ -719,6 +720,16 @@
                   {{ $t("items.updated_at") }}
                   <DateTime :date="item?.updatedAt" />
                 </div>
+              </div>
+              <div class="mt-2 flex items-center gap-2" data-testid="quantity-stepper">
+                <span class="text-sm text-muted-foreground">{{ $t("items.quantity") }}</span>
+                <Button size="icon" variant="outline" :aria-label="'-1'" @click="adjustQuantity(-1)">
+                  <MdiMinus />
+                </Button>
+                <span class="min-w-8 text-center text-xl font-semibold tabular-nums">{{ quantity }}</span>
+                <Button size="icon" variant="outline" :aria-label="'+1'" @click="adjustQuantity(1)">
+                  <MdiPlus />
+                </Button>
               </div>
             </div>
             <div class="ml-auto mt-2 flex flex-wrap items-center justify-between gap-2">

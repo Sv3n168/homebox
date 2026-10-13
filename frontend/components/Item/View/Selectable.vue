@@ -3,6 +3,7 @@
   import type { EntitySummary } from "~~/lib/api/types/data-contracts";
   import MdiCardTextOutline from "~icons/mdi/card-text-outline";
   import MdiTable from "~icons/mdi/table";
+  import MdiFormatListBulleted from "~icons/mdi/format-list-bulleted";
   import { Badge } from "@/components/ui/badge";
   import { Button, ButtonGroup } from "@/components/ui/button";
   import BaseSectionHeader from "@/components/Base/SectionHeader.vue";
@@ -73,9 +74,18 @@
       <template #description>
         <div v-if="!viewSet">
           <ButtonGroup>
+            <Button
+              size="sm"
+              :variant="itemView === 'list' ? 'default' : 'outline'"
+              :aria-label="$t('components.item.view.selectable.list')"
+              @click="setViewPreference('list')"
+            >
+              <MdiFormatListBulleted class="size-5" />
+              <span class="hidden sm:inline">{{ $t("components.item.view.selectable.list") }}</span>
+            </Button>
             <Button size="sm" :variant="itemView === 'card' ? 'default' : 'outline'" @click="setViewPreference('card')">
               <MdiCardTextOutline class="size-5" />
-              {{ $t("components.item.view.selectable.card") }}
+              <span class="hidden sm:inline">{{ $t("components.item.view.selectable.card") }}</span>
             </Button>
             <Button
               size="sm"
@@ -83,7 +93,7 @@
               @click="setViewPreference('table')"
             >
               <MdiTable class="size-5" />
-              {{ $t("components.item.view.selectable.table") }}
+              <span class="hidden sm:inline">{{ $t("components.item.view.selectable.table") }}</span>
             </Button>
           </ButtonGroup>
         </div>
