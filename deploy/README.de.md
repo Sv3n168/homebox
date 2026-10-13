@@ -5,6 +5,8 @@ Diese Version von Homebox (Fork von [sysadminsmedia/homebox](https://github.com/
 - **Offline-Modus**: Inventar durchsuchen, Boxen und Inhalte ansehen, QR-Etiketten scannen und neue Artikel samt Fotos anlegen, auch ohne Netz. Was offline angelegt wurde, wird automatisch hochgeladen, sobald wieder Netz da ist.
 - **Verliehen**: an wen, seit wann, zurück bis wann. Mit Badge auf jedem Artikel, Übersicht auf der Startseite und Markierung von Überfälligem.
 - **Verschlüsseltes Backup nach OneDrive**: jede Nacht automatisch, mit Restore per Befehl.
+- **Liquid-Glass-Design** im Stil von iOS, hell, dunkel oder automatisch passend zum iPhone. Auswahl unter **Profil → Theme**. Wer bisher Homebox genutzt hat, behält zunächst sein altes Theme und muss einmal umstellen.
+- **Schnelle Statistiken** auf der Startseite lassen sich per Tipp auf die Überschrift einklappen.
 
 ---
 
