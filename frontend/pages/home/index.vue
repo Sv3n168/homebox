@@ -13,6 +13,7 @@
   import TagChip from "~/components/Tag/Chip.vue";
   import Table from "~/components/Item/View/Table.vue";
   import ItemLentOverview from "~/components/Item/LentOverview.vue";
+  import MdiChevronDown from "~icons/mdi/chevron-down";
 
   const { t } = useI18n();
 
@@ -32,6 +33,9 @@
   const tagsStore = useTagStore();
   const tags = computed(() => tagsStore.tags);
 
+  // Remembered per device.
+  const statsCollapsed = useLocalStorage("homebox/home/quick-stats-collapsed", false);
+
   const itemTable = itemsTable(api);
   const stats = statCardData(api);
 </script>
@@ -40,8 +44,19 @@
   <div>
     <BaseContainer class="flex flex-col gap-4">
       <section>
-        <Subtitle> {{ $t("home.quick_statistics") }} </Subtitle>
-        <div class="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-6">
+        <Subtitle>
+          <button
+            type="button"
+            class="flex items-center gap-1"
+            :aria-expanded="!statsCollapsed"
+            data-testid="toggle-quick-stats"
+            @click="statsCollapsed = !statsCollapsed"
+          >
+            {{ $t("home.quick_statistics") }}
+            <MdiChevronDown class="size-5 transition-transform" :class="{ '-rotate-90': statsCollapsed }" />
+          </button>
+        </Subtitle>
+        <div v-show="!statsCollapsed" class="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-6">
           <StatCard v-for="(stat, i) in stats" :key="i" :title="stat.label" :value="stat.value" :type="stat.type" />
         </div>
       </section>

@@ -7,6 +7,7 @@
 
 <template>
   <div
+    data-button-group
     :class="
       cn(
         'inline-flex rounded-lg',
