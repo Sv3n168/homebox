@@ -159,28 +159,42 @@
     </Card>
 
     <Card v-for="g in groups" v-else :key="groupKey(g)" class="flex flex-col gap-2 p-3" data-testid="duplicate-group">
-      <p class="px-1 text-xs font-medium uppercase text-muted-foreground">{{ $t("duplicates.keep_which") }}</p>
       <div v-for="i in g" :key="i.id" class="flex items-center gap-2">
-        <button
-          type="button"
-          class="flex min-w-0 grow items-center gap-3 rounded-xl p-2 text-left"
+        <div
+          class="flex min-w-0 grow items-center gap-2 rounded-xl p-2"
           :class="[
-            keptId(g) === i.id ? 'bg-primary/10 ring-1 ring-primary' : 'hover:bg-accent',
+            keptId(g) === i.id ? 'bg-primary/10 ring-1 ring-primary' : '',
             { 'opacity-50': !isIncluded(g, i.id) },
           ]"
-          :aria-pressed="keptId(g) === i.id"
-          data-testid="duplicate-keep"
-          @click="pickKeep(g, i.id)"
         >
-          <div class="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
-            <img v-if="thumb(i)" :src="thumb(i)!" alt="" class="size-full object-cover" />
-            <MdiPackageVariantClosed v-else class="size-6 text-muted-foreground" />
-          </div>
-          <div class="min-w-0 grow">
-            <div class="truncate font-medium">{{ i.name }}</div>
-            <div class="truncate text-xs text-muted-foreground">{{ i.quantity }}× · {{ pathOf(i) }}</div>
-          </div>
-        </button>
+          <!-- Which entry stays; tapping the entry itself opens it. -->
+          <button
+            type="button"
+            role="radio"
+            class="flex shrink-0 flex-col items-center gap-1 px-1 text-[11px] text-muted-foreground"
+            :aria-checked="keptId(g) === i.id"
+            data-testid="duplicate-keep"
+            @click="pickKeep(g, i.id)"
+          >
+            <span
+              class="flex size-5 items-center justify-center rounded-full border-2"
+              :class="keptId(g) === i.id ? 'border-primary' : 'border-muted-foreground/50'"
+            >
+              <span v-if="keptId(g) === i.id" class="size-2.5 rounded-full bg-primary" />
+            </span>
+            {{ $t("duplicates.keep") }}
+          </button>
+          <NuxtLink :to="`/item/${i.id}`" class="flex min-w-0 grow items-center gap-3" data-testid="duplicate-open">
+            <div class="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
+              <img v-if="thumb(i)" :src="thumb(i)!" alt="" class="size-full object-cover" />
+              <MdiPackageVariantClosed v-else class="size-6 text-muted-foreground" />
+            </div>
+            <div class="min-w-0 grow">
+              <div class="truncate font-medium">{{ i.name }}</div>
+              <div class="truncate text-xs text-muted-foreground">{{ i.quantity }}× · {{ pathOf(i) }}</div>
+            </div>
+          </NuxtLink>
+        </div>
         <label
           v-if="keptId(g) !== i.id"
           class="flex shrink-0 cursor-pointer flex-col items-center gap-1 px-1 text-[11px] text-muted-foreground"

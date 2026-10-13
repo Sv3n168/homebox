@@ -494,6 +494,7 @@
         "exists": "Gibt es das schon?",
         "include": "dabei",
         "intro": "Einträge mit (fast) gleichem Namen. Nichts passiert von allein: Du wählst, welcher Eintrag bleibt und welche dazugehören, und bestätigst danach die Zusammenfassung.",
+        "keep": "behalten",
         "keep_which": "Behalten",
         "merge": "Zusammenführen…",
         "none": "Keine möglichen Doppelten gefunden.",
