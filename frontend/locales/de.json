@@ -1,4 +1,23 @@
 {
+    "box_picker": {
+        "favorites": "Angeheftet & zuletzt",
+        "none": "Keine Box gefunden",
+        "not_a_box": "Dieses Etikett gehört zu keiner Box",
+        "not_a_label": "Kein Homebox-Etikett",
+        "same_box": "Da liegt es schon",
+        "scan": "Box scannen",
+        "search": "Box suchen…",
+        "search_instead": "Lieber suchen",
+        "title": "Box wählen"
+    },
+    "collect": {
+        "button": "Hierher räumen",
+        "done": "Drin",
+        "here": "Hierher",
+        "hint": "Suche den Artikel, den du in diese Box räumst.",
+        "search": "Artikel suchen…",
+        "title": "In {box} räumen"
+    },
     "collection": {
         "copy_invite": "Einladungslink kopieren",
         "create_invite": "Einladung erstellen",
@@ -803,6 +822,17 @@
         "search": "Suche",
         "templates": "Vorlagen"
     },
+    "move": {
+        "button": "Verschieben",
+        "title": "„{name}“ verschieben nach…",
+        "undo": "Rückgängig",
+        "toast": {
+            "failed": "{count} Artikel konnten nicht verschoben werden",
+            "moved_many": "{count} Artikel nach {target} verschoben",
+            "moved_one": "{name} nach {target} verschoben",
+            "undone": "Verschieben rückgängig gemacht"
+        }
+    },
     "offline": {
         "available": "{count} Einträge offline verfügbar",
         "banner": "Offline – du siehst die gespeicherte Kopie",
@@ -810,10 +840,11 @@
         "discard": "Verwerfen",
         "entry": {
             "create": "Neu: {name}",
+            "move": "Verschoben: {name} → {target}",
             "photo": "Foto für {name}"
         },
         "failed": "{count} Änderung(en) vom Server abgelehnt",
-        "hint": "Offline gemachte Änderungen werden automatisch hochgeladen, sobald wieder Netz da ist. Offline kannst du stöbern, suchen, Etiketten scannen und neue Artikel anlegen.",
+        "hint": "Offline gemachte Änderungen werden automatisch hochgeladen, sobald wieder Netz da ist. Offline kannst du stöbern, suchen, Etiketten scannen, neue Artikel anlegen und Artikel verschieben.",
         "last_sync": "Zuletzt synchronisiert {time}",
         "needs_login": "Deine Sitzung ist abgelaufen – bitte neu anmelden, damit die Änderungen hochgeladen werden.",
         "never_synced": "Noch nicht offline verfügbar – wird automatisch geladen, solange du online bist.",
@@ -830,7 +861,7 @@
         "status_button": "Offline-Status",
         "sync_now": "Jetzt synchronisieren",
         "toast": {
-            "blocked": "Offline: Ohne Netz können nur neue Artikel angelegt werden.",
+            "blocked": "Offline: Ohne Netz kannst du nur Artikel anlegen und verschieben.",
             "queued": "Offline gespeichert – wird hochgeladen, sobald wieder Netz da ist.",
             "synced": "{count} Offline-Änderung(en) hochgeladen"
         }
@@ -840,6 +871,11 @@
             "no_templates": "Noch keine Vorlagen.",
             "title": "Vorlagen"
         }
+    },
+    "places": {
+        "pin": "Anheften",
+        "pinned": "Angeheftet",
+        "my_boxes": "Meine Boxen"
     },
     "profile": {
         "active": "Aktiv",
@@ -984,6 +1020,8 @@
     },
     "tabbar": {
         "create": "Neu",
+        "create_photo": "Mit Foto",
+        "create_plain": "Ohne Foto",
         "home": "Start",
         "locations": "Orte",
         "scan": "Scannen",

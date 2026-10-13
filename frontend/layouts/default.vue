@@ -14,6 +14,7 @@
     <AppQuickMenuModal :actions="quickMenuActions" />
     <AppScannerModal />
     <AppPullToRefresh />
+    <LocationPickerDialog />
     <CollectionCreateModal />
     <CollectionJoinModal />
     <CollectionInviteCreateModal />
@@ -222,7 +223,7 @@
           <div class="grow" />
           <AppTabBar
             @scan="openScanner"
-            @create="openDialog(DialogID.CreateEntity, { params: { baseType: 'item' } })"
+            @create="photo => openDialog(DialogID.CreateEntity, { params: { baseType: 'item', photoFile: photo } })"
           />
 
           <footer v-if="status" class="bottom-0 w-full pb-4 text-center">
@@ -310,6 +311,7 @@
   import AppOfflineBanner from "~/components/App/OfflineBanner.vue";
   import AppTabBar from "~/components/App/TabBar.vue";
   import AppPullToRefresh from "~/components/App/PullToRefresh.vue";
+  import LocationPickerDialog from "~/components/Location/PickerDialog.vue";
   import AppLogo from "~/components/App/Logo.vue";
   import AppHeaderDecor from "~/components/App/HeaderDecor.vue";
   import AppHeaderText from "~/components/App/HeaderText.vue";

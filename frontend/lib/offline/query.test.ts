@@ -1,6 +1,14 @@
 import { describe, expect, test } from "vitest";
 import type { EntitySummary } from "../api/types/data-contracts";
-import { entityFromCreate, entityPath, parseAssetId, PENDING_FLAG, queryAsset, queryEntities } from "./query";
+import {
+  applyMoves,
+  entityFromCreate,
+  entityPath,
+  parseAssetId,
+  PENDING_FLAG,
+  queryAsset,
+  queryEntities,
+} from "./query";
 
 const locType = { id: "t-loc", name: "Location", isLocation: true } as EntitySummary["entityType"];
 const itemType = { id: "t-item", name: "Item", isLocation: false } as EntitySummary["entityType"];
@@ -148,5 +156,29 @@ describe("entityFromCreate", () => {
       "lichter",
       "offline-1",
     ]);
+  });
+});
+
+describe("applyMoves", () => {
+  test("moved items show up in their new box and path", () => {
+    const moved = applyMoves(all, [{ entityId: "lichter", parentId: "regal" }]);
+    expect(queryEntities(moved, new URLSearchParams("parentIds=box")).items.map(i => i.id)).toEqual([]);
+    expect(queryEntities(moved, new URLSearchParams("parentIds=regal")).items.map(i => i.id)).toEqual([
+      "bohrer",
+      "lichter",
+    ]);
+    expect(entityPath(moved, "lichter")?.map(p => p.id)).toEqual(["keller", "regal", "lichter"]);
+  });
+
+  test("later moves win, unknown targets are ignored", () => {
+    const moved = applyMoves(all, [
+      { entityId: "lichter", parentId: "regal" },
+      { entityId: "lichter", parentId: "keller" },
+      { entityId: "bohrer", parentId: "nowhere" },
+    ]);
+    expect(moved.find(e => e.id === "lichter")?.parent?.id).toBe("keller");
+    expect(moved.find(e => e.id === "bohrer")?.parent?.id).toBe("regal");
+    // input untouched
+    expect(all.find(e => e.id === "lichter")?.parent?.id).toBe("box");
   });
 });

@@ -14,6 +14,7 @@
   import Table from "~/components/Item/View/Table.vue";
   import ItemLentOverview from "~/components/Item/LentOverview.vue";
   import ItemUntaggedHint from "~/components/Item/UntaggedHint.vue";
+  import LocationMyBoxes from "~/components/Location/MyBoxes.vue";
   import MdiChevronDown from "~icons/mdi/chevron-down";
 
   const { t } = useI18n();
@@ -63,6 +64,8 @@
       </section>
 
       <ItemUntaggedHint />
+
+      <LocationMyBoxes />
 
       <ItemLentOverview />
 

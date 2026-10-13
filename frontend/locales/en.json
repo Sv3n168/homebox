@@ -1,4 +1,23 @@
 {
+    "box_picker": {
+        "favorites": "Pinned & recent",
+        "none": "No box found",
+        "not_a_box": "This label doesn't belong to a box",
+        "not_a_label": "Not a Homebox label",
+        "same_box": "That's the box it is already in",
+        "scan": "Scan box",
+        "search": "Search box…",
+        "search_instead": "Search instead",
+        "title": "Choose a box"
+    },
+    "collect": {
+        "button": "Put items here",
+        "done": "Here",
+        "here": "Here",
+        "hint": "Search for the item you are putting into this box.",
+        "search": "Search item…",
+        "title": "Put into {box}"
+    },
     "collection": {
         "copy_invite": "Copy Invite Link",
         "create_invite": "Create Invite",
@@ -815,6 +834,17 @@
         "search": "Search",
         "templates": "Templates"
     },
+    "move": {
+        "button": "Move",
+        "title": "Move \"{name}\" to…",
+        "undo": "Undo",
+        "toast": {
+            "failed": "{count} item(s) could not be moved",
+            "moved_many": "{count} items moved to {target}",
+            "moved_one": "{name} moved to {target}",
+            "undone": "Move undone"
+        }
+    },
     "offline": {
         "available": "{count} entries available offline",
         "banner": "Offline – showing the saved copy",
@@ -822,10 +852,11 @@
         "discard": "Discard",
         "entry": {
             "create": "New: {name}",
+            "move": "Moved: {name} → {target}",
             "photo": "Photo for {name}"
         },
         "failed": "{count} change(s) rejected by the server",
-        "hint": "Changes made offline are uploaded automatically when the connection is back. Offline, you can browse, search, scan labels and add new items.",
+        "hint": "Changes made offline are uploaded automatically when the connection is back. Offline, you can browse, search, scan labels, add new items and move items.",
         "last_sync": "Last sync {time}",
         "needs_login": "Your session expired – please log in again to upload the changes.",
         "never_synced": "Not available offline yet – it is downloaded automatically while online.",
@@ -842,7 +873,7 @@
         "status_button": "Offline status",
         "sync_now": "Sync now",
         "toast": {
-            "blocked": "Offline: only new items can be added without a connection.",
+            "blocked": "Offline: only adding and moving items works without a connection.",
             "queued": "Saved offline – it will be uploaded once you are back online.",
             "synced": "{count} offline change(s) uploaded"
         }
@@ -852,6 +883,11 @@
             "no_templates": "No templates yet.",
             "title": "Templates"
         }
+    },
+    "places": {
+        "pin": "Pin",
+        "pinned": "Pinned",
+        "my_boxes": "My boxes"
     },
     "profile": {
         "active": "Active",
@@ -1001,6 +1037,8 @@
     },
     "tabbar": {
         "create": "New",
+        "create_photo": "With photo",
+        "create_plain": "Without photo",
         "home": "Home",
         "locations": "Places",
         "scan": "Scan",

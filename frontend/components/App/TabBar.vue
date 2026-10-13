@@ -33,10 +33,44 @@
       <span>{{ tab.label.value }}</span>
     </NuxtLink>
 
-    <button type="button" :class="[tabClass, 'opacity-75']" data-testid="tabbar-create" @click="$emit('create')">
-      <MdiPlusCircleOutline class="size-6" />
-      <span>{{ $t("tabbar.create") }}</span>
-    </button>
+    <div ref="createWrap" class="relative flex flex-1 basis-0 justify-center">
+      <button
+        type="button"
+        :class="[tabClass, createMenu ? 'text-primary opacity-100' : 'opacity-75']"
+        data-testid="tabbar-create"
+        @click="createMenu = !createMenu"
+      >
+        <MdiPlusCircleOutline class="size-6" />
+        <span>{{ $t("tabbar.create") }}</span>
+      </button>
+      <!-- "New": with a photo straight from the camera, or just the form. -->
+      <div
+        v-if="createMenu"
+        class="absolute bottom-full right-0 mb-3 flex w-52 flex-col gap-1 rounded-2xl border bg-[hsl(var(--popover))] p-2 text-popover-foreground shadow-xl"
+        data-testid="tabbar-create-menu"
+      >
+        <label class="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-accent">
+          <MdiCameraOutline class="size-5" />
+          <span>{{ $t("tabbar.create_photo") }}</span>
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            class="hidden"
+            data-testid="tabbar-create-photo"
+            @change="onPhoto"
+          />
+        </label>
+        <button
+          type="button"
+          class="flex items-center gap-3 rounded-xl px-3 py-2 text-left hover:bg-accent"
+          @click="create()"
+        >
+          <MdiPencilOutline class="size-5" />
+          <span>{{ $t("tabbar.create_plain") }}</span>
+        </button>
+      </div>
+    </div>
   </nav>
 </template>
 
@@ -47,8 +81,26 @@
   import MdiQrcodeScan from "~icons/mdi/qrcode-scan";
   import MdiFileTree from "~icons/mdi/file-tree-outline";
   import MdiPlusCircleOutline from "~icons/mdi/plus-circle-outline";
+  import MdiCameraOutline from "~icons/mdi/camera-outline";
+  import MdiPencilOutline from "~icons/mdi/pencil-outline";
 
-  defineEmits<{ scan: []; create: [] }>();
+  const emit = defineEmits<{ scan: []; create: [photo?: File] }>();
+
+  const createMenu = ref(false);
+  const createWrap = ref<HTMLElement>();
+  onClickOutside(createWrap, () => (createMenu.value = false));
+
+  function create(photo?: File) {
+    createMenu.value = false;
+    emit("create", photo);
+  }
+
+  function onPhoto(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = "";
+    if (file) create(file);
+  }
 
   const { t } = useI18n();
   const tabClass = "flex flex-1 basis-0 flex-col items-center gap-0.5 py-1 text-[0.68rem] font-medium";

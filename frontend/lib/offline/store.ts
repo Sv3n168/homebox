@@ -43,7 +43,18 @@ export type OutboxAttachment = OutboxBase & {
   primary: string | null;
 };
 
-export type OutboxEntry = OutboxCreate | OutboxAttachment;
+export type OutboxMove = OutboxBase & {
+  kind: "move";
+  entityId: string;
+  parentId: string;
+  url: string;
+  body: Record<string, unknown>;
+  /** For the pending list: "Lichterkette → Kiste 3". */
+  entityName: string;
+  targetName: string;
+};
+
+export type OutboxEntry = OutboxCreate | OutboxAttachment | OutboxMove;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -84,6 +95,8 @@ async function tx<T>(store: string, mode: IDBTransactionMode, fn: (s: IDBObjectS
   return wrap(fn(db.transaction(store, mode).objectStore(store)));
 }
 
+const ENTITY_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const responseKey = (tenant: string, url: string) => `${tenant}|${url}`;
 
 export async function getResponse<T = unknown>(tenant: string, url: string): Promise<T | undefined> {
@@ -102,7 +115,8 @@ export async function pruneEntityResponses(tenant: string, keepIds: Set<string>)
   const stale = keys.filter(k => {
     if (!k.startsWith(prefix)) return false;
     const id = k.slice(prefix.length).split(/[/?]/)[0] ?? "";
-    return id !== "" && !keepIds.has(id);
+    // Only real entity ids; /entities/tree and friends are endpoints.
+    return ENTITY_ID_RE.test(id) && !keepIds.has(id);
   });
   for (const k of stale) {
     await tx("responses", "readwrite", s => s.delete(k));

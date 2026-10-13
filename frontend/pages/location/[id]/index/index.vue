@@ -9,6 +9,10 @@
   import MdiPencil from "~icons/mdi/pencil";
   import MdiDelete from "~icons/mdi/delete";
   import MdiDotsVertical from "~icons/mdi/dots-vertical";
+  import MdiArrowDownBold from "~icons/mdi/arrow-down-bold";
+  import MdiStar from "~icons/mdi/star";
+  import MdiStarOutline from "~icons/mdi/star-outline";
+  import LocationCollectDialog from "~/components/Location/CollectDialog.vue";
   import {
     DropdownMenu,
     DropdownMenuContent,
@@ -54,6 +58,15 @@
   const api = useUserApi();
 
   const locationId = computed<string>(() => route.params.id as string);
+
+  const places = usePlaces();
+  const collectOpen = ref(false);
+  const pinned = computed(() => places.isPinned(locationId.value));
+  const togglePin = () => places.togglePin(locationId.value);
+  // Remember the box for "recently used" on the home page and in the box picker.
+  watch(locationId, id => id && places.visit(id), { immediate: true });
+
+  const collectTarget = computed(() => ({ id: locationId.value, name: location.value?.name ?? "" }));
 
   const { data: location } = useAsyncData(locationId.value, async () => {
     const { data, error } = await api.items.getLocation(locationId.value);
@@ -315,6 +328,20 @@
         <Separator v-if="location && location.description" />
         <Markdown v-if="location && location.description" class="mt-3 text-base" :source="location.description" />
       </Card>
+
+      <!-- Quick actions for the box you just scanned -->
+      <div class="mt-3 flex flex-wrap gap-2" data-testid="box-actions">
+        <Button variant="outline" data-testid="box-collect" @click="collectOpen = true">
+          <MdiArrowDownBold />
+          {{ $t("collect.button") }}
+        </Button>
+        <Button variant="outline" data-testid="box-pin" @click="togglePin">
+          <MdiStar v-if="pinned" class="text-amber-500" />
+          <MdiStarOutline v-else />
+          {{ pinned ? $t("places.pinned") : $t("places.pin") }}
+        </Button>
+      </div>
+      <LocationCollectDialog v-model:open="collectOpen" :box="collectTarget" @moved="refreshItemList" />
 
       <!-- Details (notes, custom fields) -->
       <BaseCard v-if="locationDetails.length > 0" class="mt-4">

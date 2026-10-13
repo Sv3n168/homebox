@@ -260,6 +260,7 @@
   import {
     deletePhoto,
     dataURLtoFile,
+    filesToPhotoPreviews,
     rotatePhotoPreview,
     setPrimaryPhoto,
     type PhotoPreview,
@@ -557,6 +558,12 @@
       parent.value = {};
       resolvedParent.value = null;
       form.parentId = null;
+      // A cancelled earlier dialog must not leave its photos behind.
+      form.photos = [];
+
+      if (params.baseType === "item" && params.photoFile) {
+        appendPhotos(await filesToPhotoPreviews([params.photoFile]));
+      }
 
       if (params.baseType === "item") {
         selectedEntityType.value = entityTypes.value.find(t => !t.isLocation) || null;

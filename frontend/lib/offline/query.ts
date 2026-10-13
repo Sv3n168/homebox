@@ -185,6 +185,24 @@ export function queryEntities(all: EntitySummary[], params: URLSearchParams, det
   return { page, pageSize, total, items: rows };
 }
 
+export type PendingMove = { entityId: string; parentId: string };
+
+/**
+ * Applies moves made offline to the snapshot, in order, so lists, paths and
+ * box contents already show the new place. Unknown targets are skipped.
+ */
+export function applyMoves(all: EntitySummary[], moves: PendingMove[]): EntitySummary[] {
+  if (moves.length === 0) return all;
+  const byId = new Map(all.map(e => [e.id, e]));
+  for (const m of moves) {
+    const e = byId.get(m.entityId);
+    const target = byId.get(m.parentId);
+    if (!e || !target) continue;
+    byId.set(e.id, { ...e, parent: { ...target, parent: target.parent } });
+  }
+  return all.map(e => byId.get(e.id)!);
+}
+
 /** GET /v1/assets/{id}: entities carrying that asset ID. */
 export function queryAsset(all: EntitySummary[], assetId: string): ListResult {
   const wanted = parseAssetId(assetId);

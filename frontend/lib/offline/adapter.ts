@@ -11,6 +11,7 @@
 
 import type { EntitySummary, EntityTypeSummary, TagSummary } from "../api/types/data-contracts";
 import {
+  applyMoves,
   entityFromCreate,
   entityFromSummary,
   entityPath,
@@ -18,6 +19,7 @@ import {
   queryEntities,
   type CreateBody,
   type PendingEntity,
+  type PendingMove,
 } from "./query";
 import {
   addOutbox,
@@ -28,10 +30,12 @@ import {
   offlineStorageAvailable,
   putResponse,
   type OutboxCreate,
+  type OutboxMove,
 } from "./store";
 import { offlineState } from "./state";
 
 export const OFFLINE_ID_PREFIX = "offline-";
+const RESERVED_ENTITY_PATHS = new Set(["tree", "fields", "export", "import"]);
 const API = "/api/v1";
 
 export type OfflineRequest = {
@@ -90,11 +94,22 @@ export function newTempId(): string {
   return OFFLINE_ID_PREFIX + uuid;
 }
 
-/** Everything the offline queries see: the snapshot plus queued creates. */
-async function entities(tenant: string): Promise<{ all: EntitySummary[]; pending: PendingEntity[] }> {
+/** Everything the offline queries see: the snapshot plus queued creates and moves. */
+async function entities(
+  tenant: string
+): Promise<{ all: EntitySummary[]; pending: PendingEntity[]; moved: Set<string> }> {
   const snapshot = await getSnapshot(tenant);
   const pending = await pendingEntities(tenant, snapshot?.summaries ?? []);
-  return { all: [...(snapshot?.summaries ?? []), ...pending], pending };
+  const moves = await pendingMoves(tenant);
+  const all = applyMoves([...(snapshot?.summaries ?? []), ...pending], moves);
+  return { all, pending, moved: new Set(moves.map(m => m.entityId)) };
+}
+
+async function pendingMoves(tenant: string): Promise<PendingMove[]> {
+  const outbox = await listOutbox();
+  return outbox
+    .filter((e): e is OutboxMove => e.kind === "move" && e.tenant === tenant && !e.error)
+    .map(e => ({ entityId: idMap[e.entityId] ?? e.entityId, parentId: idMap[e.parentId] ?? e.parentId }));
 }
 
 async function pendingEntities(tenant: string, all: EntitySummary[]): Promise<PendingEntity[]> {
@@ -121,14 +136,15 @@ async function answerGet(req: OfflineRequest): Promise<OfflineAnswer | null> {
   const { path, params } = pathOf(req.url);
 
   if (path === `${API}/entities`) {
-    const { all } = await entities(tenant);
+    const { all, moved } = await entities(tenant);
     if (all.length > 0) {
       const details = new Map<string, Partial<PendingEntity>>();
       // Details make search find serial numbers, notes, custom fields...
       if (params.get("q")) {
         for (const e of all) {
           const d = await getResponse<PendingEntity>(tenant, `${API}/entities/${e.id}`);
-          if (d) details.set(e.id, d);
+          // A queued move replaces any location override the cached details carry.
+          if (d) details.set(e.id, moved.has(e.id) ? { ...d, locationId: undefined } : d);
         }
       }
       return { status: 200, data: queryEntities(all, params, id => details.get(id)) };
@@ -148,14 +164,20 @@ async function answerGet(req: OfflineRequest): Promise<OfflineAnswer | null> {
     if (p) return { status: 200, data: p };
   }
 
+  // /entities/tree, /entities/fields … are endpoints, not entity ids.
   const entityMatch = path.match(new RegExp(`^${API}/entities/([^/]+)$`));
-  if (entityMatch) {
+  if (entityMatch && !RESERVED_ENTITY_PATHS.has(entityMatch[1]!)) {
     const id = entityMatch[1]!;
-    const { all, pending } = await entities(tenant);
-    const p = pending.find(e => e.id === id);
-    if (p) return { status: 200, data: p };
-    const cached = await getResponse(tenant, path);
-    if (cached) return { status: 200, data: cached };
+    const { all, pending, moved } = await entities(tenant);
+    const p = all.find(e => e.id === id && pending.some(x => x.id === id));
+    if (p) return { status: 200, data: { ...pending.find(x => x.id === id), parent: p.parent } };
+    const cached = await getResponse<PendingEntity>(tenant, path);
+    if (cached) {
+      if (!moved.has(id)) return { status: 200, data: cached };
+      const parent = all.find(e => e.id === id)?.parent ?? cached.parent;
+      const location = parent?.entityType?.isLocation ? parent : cached.location;
+      return { status: 200, data: { ...cached, parent, location, locationId: undefined } };
+    }
     const summary = all.find(e => e.id === id);
     if (summary) return { status: 200, data: entityFromSummary(summary, all) };
     return { status: 404, data: { error: "not available offline" } };
@@ -213,6 +235,37 @@ async function queueAttachment(req: OfflineRequest, entityId: string): Promise<O
   return answer && answer.status === 200 ? { status: 201, data: answer.data } : { status: 201, data: {} };
 }
 
+/** Only a change of place: { id, parentId[, locationId] }. */
+function isMoveBody(body: unknown): body is { parentId: string } {
+  if (!body || typeof body !== "object") return false;
+  const keys = Object.keys(body as object).filter(k => (body as Record<string, unknown>)[k] !== undefined);
+  const b = body as Record<string, unknown>;
+  return typeof b.parentId === "string" && keys.every(k => ["id", "parentId", "locationId"].includes(k));
+}
+
+async function queueMove(req: OfflineRequest, entityId: string, parentId: string): Promise<OfflineAnswer> {
+  const tenant = tenantOf(req.headers);
+  const { all } = await entities(tenant);
+  const entry: OutboxMove = {
+    kind: "move",
+    entityId,
+    parentId,
+    url: req.url,
+    body: req.body as Record<string, unknown>,
+    tenant,
+    headers: req.headers,
+    queuedAt: new Date().toISOString(),
+    entityName: all.find(e => e.id === entityId)?.name ?? "",
+    targetName: all.find(e => e.id === parentId)?.name ?? "",
+  };
+  entry.seq = await addOutbox(entry);
+  offlineState.outbox.push(entry);
+  offlineState.queuedAt = Date.now();
+
+  const answer = await answerGet({ ...req, method: "GET", url: `${API}/entities/${entityId}`, body: undefined });
+  return { status: 200, data: answer?.data ?? {} };
+}
+
 async function answerWrite(req: OfflineRequest): Promise<OfflineAnswer | null> {
   const { path } = pathOf(req.url);
   const isCreate =
@@ -221,6 +274,11 @@ async function answerWrite(req: OfflineRequest): Promise<OfflineAnswer | null> {
 
   if (isCreate && req.body && typeof req.body === "object") {
     return queueCreate(req, req.body as Record<string, unknown>);
+  }
+
+  const patch = path.match(new RegExp(`^${API}/entities/([^/]+)$`));
+  if (req.method === "PATCH" && patch && isMoveBody(req.body)) {
+    return queueMove(req, patch[1]!, req.body.parentId);
   }
 
   const attachment = path.match(new RegExp(`^${API}/entities/([^/]+)/attachments$`));
