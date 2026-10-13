@@ -1253,5 +1253,11 @@
             "restore_started": "Wiederherstellung gestartet — Seite aktualisieren, um die importierten Elemente zu sehen.",
             "wipe_inventory_success": "Lagerbestand erfolgreich gelöscht. { results } Artikel gelöscht."
         }
+    },
+    "version_info": {
+        "app": "App auf diesem Gerät",
+        "outdated": "Die App auf diesem Gerät ist älter als der Server. App ganz schließen (wegwischen) und neu öffnen.",
+        "server": "Server",
+        "title": "Version"
     }
 }

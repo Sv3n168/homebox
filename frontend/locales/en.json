@@ -1270,5 +1270,11 @@
             "restore_started": "Restore started — refresh shortly to see imported items.",
             "wipe_inventory_success": "Successfully wiped inventory. { results } items deleted."
         }
+    },
+    "version_info": {
+        "app": "App on this device",
+        "outdated": "The app on this device is older than the server. Close the app completely and open it again.",
+        "server": "Server",
+        "title": "Version"
     }
 }
