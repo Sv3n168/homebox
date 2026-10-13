@@ -30,6 +30,7 @@ func (Entity) Indexes() []ent.Index {
 		index.Fields("serial_number"),
 		index.Fields("archived"),
 		index.Fields("asset_id"),
+		index.Fields("lent_to"),
 	}
 }
 
@@ -94,6 +95,17 @@ func (Entity) Fields() []ent.Field {
 			Default(0),
 		field.String("sold_notes").
 			MaxLen(1000).
+			Optional(),
+
+		// ------------------------------------
+		// Lending ("Verliehen"). An entity counts as lent while lent_to is set;
+		// marking it returned clears all three.
+		field.String("lent_to").
+			MaxLen(255).
+			Optional(),
+		field.Time("lent_date").
+			Optional(),
+		field.Time("lent_return_date").
 			Optional(),
 	}
 }

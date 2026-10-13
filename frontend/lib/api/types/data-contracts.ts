@@ -1,4 +1,5 @@
 /* post-processed by ./scripts/process-types.go */
+/* post-processed by ./scripts/process-types.go */
 /* eslint-disable */
 /* tslint:disable */
 // @ts-nocheck
@@ -201,6 +202,12 @@ export interface EntEntity {
   import_ref: string;
   /** Insured holds the value of the "insured" field. */
   insured: boolean;
+  /** LentDate holds the value of the "lent_date" field. */
+  lent_date: Date | string;
+  /** LentReturnDate holds the value of the "lent_return_date" field. */
+  lent_return_date: Date | string;
+  /** LentTo holds the value of the "lent_to" field. */
+  lent_to: string;
   /** LifetimeWarranty holds the value of the "lifetime_warranty" field. */
   lifetime_warranty: boolean;
   /** Manufacturer holds the value of the "manufacturer" field. */
@@ -803,6 +810,10 @@ export interface EntityOut {
   insured: boolean;
   /** Container-specific (populated when querying locations) */
   itemCount: number;
+  lentDate: Date | string;
+  lentReturnDate: Date | string;
+  /** Lending — part of the summary so lists can badge lent entities. */
+  lentTo: string;
   /** Warranty */
   lifetimeWarranty: boolean;
   /**
@@ -870,6 +881,10 @@ export interface EntitySummary {
   insured: boolean;
   /** Container-specific (populated when querying locations) */
   itemCount: number;
+  lentDate: Date | string;
+  lentReturnDate: Date | string;
+  /** Lending — part of the summary so lists can badge lent entities. */
+  lentTo: string;
   name: string;
   /** Edges */
   parent?: EntitySummary | null;
@@ -1024,6 +1039,11 @@ export interface EntityUpdate {
   fields: EntityFieldData[];
   id: string;
   insured: boolean;
+  /** Lending */
+  lentDate: Date | string;
+  lentReturnDate: Date | string;
+  /** @maxLength 255 */
+  lentTo: string;
   /** Warranty */
   lifetimeWarranty: boolean;
   /**

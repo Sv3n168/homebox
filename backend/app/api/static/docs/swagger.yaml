@@ -214,6 +214,15 @@ definitions:
       insured:
         description: Insured holds the value of the "insured" field.
         type: boolean
+      lent_date:
+        description: LentDate holds the value of the "lent_date" field.
+        type: string
+      lent_return_date:
+        description: LentReturnDate holds the value of the "lent_return_date" field.
+        type: string
+      lent_to:
+        description: LentTo holds the value of the "lent_to" field.
+        type: string
       lifetime_warranty:
         description: LifetimeWarranty holds the value of the "lifetime_warranty" field.
         type: boolean
@@ -1216,6 +1225,13 @@ definitions:
       itemCount:
         description: Container-specific (populated when querying locations)
         type: number
+      lentDate:
+        type: string
+      lentReturnDate:
+        type: string
+      lentTo:
+        description: Lending — part of the summary so lists can badge lent entities.
+        type: string
       lifetimeWarranty:
         description: Warranty
         type: boolean
@@ -1360,6 +1376,13 @@ definitions:
       itemCount:
         description: Container-specific (populated when querying locations)
         type: number
+      lentDate:
+        type: string
+      lentReturnDate:
+        type: string
+      lentTo:
+        description: Lending — part of the summary so lists can badge lent entities.
+        type: string
       name:
         type: string
       parent:
@@ -1645,6 +1668,14 @@ definitions:
         type: string
       insured:
         type: boolean
+      lentDate:
+        description: Lending
+        type: string
+      lentReturnDate:
+        type: string
+      lentTo:
+        maxLength: 255
+        type: string
       lifetimeWarranty:
         description: Warranty
         type: boolean
@@ -2591,6 +2622,10 @@ paths:
         in: query
         name: orderDirection
         type: string
+      - description: only entities that are currently lent out
+        in: query
+        name: onlyLent
+        type: boolean
       produces:
       - application/json
       responses:

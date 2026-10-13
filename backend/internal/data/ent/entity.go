@@ -68,6 +68,12 @@ type Entity struct {
 	SoldPrice float64 `json:"sold_price,omitempty"`
 	// SoldNotes holds the value of the "sold_notes" field.
 	SoldNotes string `json:"sold_notes,omitempty"`
+	// LentTo holds the value of the "lent_to" field.
+	LentTo string `json:"lent_to,omitempty"`
+	// LentDate holds the value of the "lent_date" field.
+	LentDate time.Time `json:"lent_date,omitempty"`
+	// LentReturnDate holds the value of the "lent_return_date" field.
+	LentReturnDate time.Time `json:"lent_return_date,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EntityQuery when eager-loading is set.
 	Edges                    EntityEdges `json:"edges"`
@@ -214,9 +220,9 @@ func (*Entity) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case entity.FieldAssetID:
 			values[i] = new(sql.NullInt64)
-		case entity.FieldName, entity.FieldDescription, entity.FieldImportRef, entity.FieldNotes, entity.FieldSerialNumber, entity.FieldModelNumber, entity.FieldManufacturer, entity.FieldWarrantyDetails, entity.FieldPurchaseFrom, entity.FieldSoldTo, entity.FieldSoldNotes:
+		case entity.FieldName, entity.FieldDescription, entity.FieldImportRef, entity.FieldNotes, entity.FieldSerialNumber, entity.FieldModelNumber, entity.FieldManufacturer, entity.FieldWarrantyDetails, entity.FieldPurchaseFrom, entity.FieldSoldTo, entity.FieldSoldNotes, entity.FieldLentTo:
 			values[i] = new(sql.NullString)
-		case entity.FieldCreatedAt, entity.FieldUpdatedAt, entity.FieldWarrantyExpires, entity.FieldPurchaseDate, entity.FieldSoldDate:
+		case entity.FieldCreatedAt, entity.FieldUpdatedAt, entity.FieldWarrantyExpires, entity.FieldPurchaseDate, entity.FieldSoldDate, entity.FieldLentDate, entity.FieldLentReturnDate:
 			values[i] = new(sql.NullTime)
 		case entity.FieldID:
 			values[i] = new(uuid.UUID)
@@ -392,6 +398,24 @@ func (_m *Entity) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field sold_notes", values[i])
 			} else if value.Valid {
 				_m.SoldNotes = value.String
+			}
+		case entity.FieldLentTo:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field lent_to", values[i])
+			} else if value.Valid {
+				_m.LentTo = value.String
+			}
+		case entity.FieldLentDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field lent_date", values[i])
+			} else if value.Valid {
+				_m.LentDate = value.Time
+			}
+		case entity.FieldLentReturnDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field lent_return_date", values[i])
+			} else if value.Valid {
+				_m.LentReturnDate = value.Time
 			}
 		case entity.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -578,6 +602,15 @@ func (_m *Entity) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sold_notes=")
 	builder.WriteString(_m.SoldNotes)
+	builder.WriteString(", ")
+	builder.WriteString("lent_to=")
+	builder.WriteString(_m.LentTo)
+	builder.WriteString(", ")
+	builder.WriteString("lent_date=")
+	builder.WriteString(_m.LentDate.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("lent_return_date=")
+	builder.WriteString(_m.LentReturnDate.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

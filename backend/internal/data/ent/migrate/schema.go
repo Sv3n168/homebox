@@ -156,6 +156,9 @@ var (
 		{Name: "sold_to", Type: field.TypeString, Nullable: true},
 		{Name: "sold_price", Type: field.TypeFloat64, Default: 0},
 		{Name: "sold_notes", Type: field.TypeString, Nullable: true, Size: 1000},
+		{Name: "lent_to", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "lent_date", Type: field.TypeTime, Nullable: true},
+		{Name: "lent_return_date", Type: field.TypeTime, Nullable: true},
 		{Name: "entity_children", Type: field.TypeUUID, Nullable: true},
 		{Name: "entity_location_entities", Type: field.TypeUUID, Nullable: true},
 		{Name: "entity_type_entities", Type: field.TypeUUID},
@@ -169,25 +172,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "entities_entities_children",
-				Columns:    []*schema.Column{EntitiesColumns[25]},
+				Columns:    []*schema.Column{EntitiesColumns[28]},
 				RefColumns: []*schema.Column{EntitiesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "entities_entities_location_entities",
-				Columns:    []*schema.Column{EntitiesColumns[26]},
+				Columns:    []*schema.Column{EntitiesColumns[29]},
 				RefColumns: []*schema.Column{EntitiesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "entities_entity_types_entities",
-				Columns:    []*schema.Column{EntitiesColumns[27]},
+				Columns:    []*schema.Column{EntitiesColumns[30]},
 				RefColumns: []*schema.Column{EntityTypesColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "entities_groups_entities",
-				Columns:    []*schema.Column{EntitiesColumns[28]},
+				Columns:    []*schema.Column{EntitiesColumns[31]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -222,6 +225,11 @@ var (
 				Name:    "entity_asset_id",
 				Unique:  false,
 				Columns: []*schema.Column{EntitiesColumns[10]},
+			},
+			{
+				Name:    "entity_lent_to",
+				Unique:  false,
+				Columns: []*schema.Column{EntitiesColumns[25]},
 			},
 		},
 	}

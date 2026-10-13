@@ -2642,6 +2642,9 @@ type EntityMutation struct {
 	sold_price                  *float64
 	addsold_price               *float64
 	sold_notes                  *string
+	lent_to                     *string
+	lent_date                   *time.Time
+	lent_return_date            *time.Time
 	clearedFields               map[string]struct{}
 	group                       *uuid.UUID
 	clearedgroup                bool
@@ -3891,6 +3894,153 @@ func (m *EntityMutation) ResetSoldNotes() {
 	delete(m.clearedFields, entity.FieldSoldNotes)
 }
 
+// SetLentTo sets the "lent_to" field.
+func (m *EntityMutation) SetLentTo(s string) {
+	m.lent_to = &s
+}
+
+// LentTo returns the value of the "lent_to" field in the mutation.
+func (m *EntityMutation) LentTo() (r string, exists bool) {
+	v := m.lent_to
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLentTo returns the old "lent_to" field's value of the Entity entity.
+// If the Entity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EntityMutation) OldLentTo(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLentTo is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLentTo requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLentTo: %w", err)
+	}
+	return oldValue.LentTo, nil
+}
+
+// ClearLentTo clears the value of the "lent_to" field.
+func (m *EntityMutation) ClearLentTo() {
+	m.lent_to = nil
+	m.clearedFields[entity.FieldLentTo] = struct{}{}
+}
+
+// LentToCleared returns if the "lent_to" field was cleared in this mutation.
+func (m *EntityMutation) LentToCleared() bool {
+	_, ok := m.clearedFields[entity.FieldLentTo]
+	return ok
+}
+
+// ResetLentTo resets all changes to the "lent_to" field.
+func (m *EntityMutation) ResetLentTo() {
+	m.lent_to = nil
+	delete(m.clearedFields, entity.FieldLentTo)
+}
+
+// SetLentDate sets the "lent_date" field.
+func (m *EntityMutation) SetLentDate(t time.Time) {
+	m.lent_date = &t
+}
+
+// LentDate returns the value of the "lent_date" field in the mutation.
+func (m *EntityMutation) LentDate() (r time.Time, exists bool) {
+	v := m.lent_date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLentDate returns the old "lent_date" field's value of the Entity entity.
+// If the Entity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EntityMutation) OldLentDate(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLentDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLentDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLentDate: %w", err)
+	}
+	return oldValue.LentDate, nil
+}
+
+// ClearLentDate clears the value of the "lent_date" field.
+func (m *EntityMutation) ClearLentDate() {
+	m.lent_date = nil
+	m.clearedFields[entity.FieldLentDate] = struct{}{}
+}
+
+// LentDateCleared returns if the "lent_date" field was cleared in this mutation.
+func (m *EntityMutation) LentDateCleared() bool {
+	_, ok := m.clearedFields[entity.FieldLentDate]
+	return ok
+}
+
+// ResetLentDate resets all changes to the "lent_date" field.
+func (m *EntityMutation) ResetLentDate() {
+	m.lent_date = nil
+	delete(m.clearedFields, entity.FieldLentDate)
+}
+
+// SetLentReturnDate sets the "lent_return_date" field.
+func (m *EntityMutation) SetLentReturnDate(t time.Time) {
+	m.lent_return_date = &t
+}
+
+// LentReturnDate returns the value of the "lent_return_date" field in the mutation.
+func (m *EntityMutation) LentReturnDate() (r time.Time, exists bool) {
+	v := m.lent_return_date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLentReturnDate returns the old "lent_return_date" field's value of the Entity entity.
+// If the Entity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EntityMutation) OldLentReturnDate(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLentReturnDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLentReturnDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLentReturnDate: %w", err)
+	}
+	return oldValue.LentReturnDate, nil
+}
+
+// ClearLentReturnDate clears the value of the "lent_return_date" field.
+func (m *EntityMutation) ClearLentReturnDate() {
+	m.lent_return_date = nil
+	m.clearedFields[entity.FieldLentReturnDate] = struct{}{}
+}
+
+// LentReturnDateCleared returns if the "lent_return_date" field was cleared in this mutation.
+func (m *EntityMutation) LentReturnDateCleared() bool {
+	_, ok := m.clearedFields[entity.FieldLentReturnDate]
+	return ok
+}
+
+// ResetLentReturnDate resets all changes to the "lent_return_date" field.
+func (m *EntityMutation) ResetLentReturnDate() {
+	m.lent_return_date = nil
+	delete(m.clearedFields, entity.FieldLentReturnDate)
+}
+
 // SetGroupID sets the "group" edge to the Group entity by id.
 func (m *EntityMutation) SetGroupID(id uuid.UUID) {
 	m.group = &id
@@ -4405,7 +4555,7 @@ func (m *EntityMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EntityMutation) Fields() []string {
-	fields := make([]string, 0, 24)
+	fields := make([]string, 0, 27)
 	if m.created_at != nil {
 		fields = append(fields, entity.FieldCreatedAt)
 	}
@@ -4478,6 +4628,15 @@ func (m *EntityMutation) Fields() []string {
 	if m.sold_notes != nil {
 		fields = append(fields, entity.FieldSoldNotes)
 	}
+	if m.lent_to != nil {
+		fields = append(fields, entity.FieldLentTo)
+	}
+	if m.lent_date != nil {
+		fields = append(fields, entity.FieldLentDate)
+	}
+	if m.lent_return_date != nil {
+		fields = append(fields, entity.FieldLentReturnDate)
+	}
 	return fields
 }
 
@@ -4534,6 +4693,12 @@ func (m *EntityMutation) Field(name string) (ent.Value, bool) {
 		return m.SoldPrice()
 	case entity.FieldSoldNotes:
 		return m.SoldNotes()
+	case entity.FieldLentTo:
+		return m.LentTo()
+	case entity.FieldLentDate:
+		return m.LentDate()
+	case entity.FieldLentReturnDate:
+		return m.LentReturnDate()
 	}
 	return nil, false
 }
@@ -4591,6 +4756,12 @@ func (m *EntityMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldSoldPrice(ctx)
 	case entity.FieldSoldNotes:
 		return m.OldSoldNotes(ctx)
+	case entity.FieldLentTo:
+		return m.OldLentTo(ctx)
+	case entity.FieldLentDate:
+		return m.OldLentDate(ctx)
+	case entity.FieldLentReturnDate:
+		return m.OldLentReturnDate(ctx)
 	}
 	return nil, fmt.Errorf("unknown Entity field %s", name)
 }
@@ -4768,6 +4939,27 @@ func (m *EntityMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSoldNotes(v)
 		return nil
+	case entity.FieldLentTo:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLentTo(v)
+		return nil
+	case entity.FieldLentDate:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLentDate(v)
+		return nil
+	case entity.FieldLentReturnDate:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLentReturnDate(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Entity field %s", name)
 }
@@ -4888,6 +5080,15 @@ func (m *EntityMutation) ClearedFields() []string {
 	if m.FieldCleared(entity.FieldSoldNotes) {
 		fields = append(fields, entity.FieldSoldNotes)
 	}
+	if m.FieldCleared(entity.FieldLentTo) {
+		fields = append(fields, entity.FieldLentTo)
+	}
+	if m.FieldCleared(entity.FieldLentDate) {
+		fields = append(fields, entity.FieldLentDate)
+	}
+	if m.FieldCleared(entity.FieldLentReturnDate) {
+		fields = append(fields, entity.FieldLentReturnDate)
+	}
 	return fields
 }
 
@@ -4940,6 +5141,15 @@ func (m *EntityMutation) ClearField(name string) error {
 		return nil
 	case entity.FieldSoldNotes:
 		m.ClearSoldNotes()
+		return nil
+	case entity.FieldLentTo:
+		m.ClearLentTo()
+		return nil
+	case entity.FieldLentDate:
+		m.ClearLentDate()
+		return nil
+	case entity.FieldLentReturnDate:
+		m.ClearLentReturnDate()
 		return nil
 	}
 	return fmt.Errorf("unknown Entity nullable field %s", name)
@@ -5020,6 +5230,15 @@ func (m *EntityMutation) ResetField(name string) error {
 		return nil
 	case entity.FieldSoldNotes:
 		m.ResetSoldNotes()
+		return nil
+	case entity.FieldLentTo:
+		m.ResetLentTo()
+		return nil
+	case entity.FieldLentDate:
+		m.ResetLentDate()
+		return nil
+	case entity.FieldLentReturnDate:
+		m.ResetLentReturnDate()
 		return nil
 	}
 	return fmt.Errorf("unknown Entity field %s", name)

@@ -310,6 +310,12 @@ const docTemplate = `{
                         "description": "order direction; valid values: asc, desc. Defaults to desc for createdAt and updatedAt, asc otherwise",
                         "name": "orderDirection",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "only entities that are currently lent out",
+                        "name": "onlyLent",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3539,6 +3545,18 @@ const docTemplate = `{
                     "description": "Insured holds the value of the \"insured\" field.",
                     "type": "boolean"
                 },
+                "lent_date": {
+                    "description": "LentDate holds the value of the \"lent_date\" field.",
+                    "type": "string"
+                },
+                "lent_return_date": {
+                    "description": "LentReturnDate holds the value of the \"lent_return_date\" field.",
+                    "type": "string"
+                },
+                "lent_to": {
+                    "description": "LentTo holds the value of the \"lent_to\" field.",
+                    "type": "string"
+                },
                 "lifetime_warranty": {
                     "description": "LifetimeWarranty holds the value of the \"lifetime_warranty\" field.",
                     "type": "boolean"
@@ -4982,6 +5000,16 @@ const docTemplate = `{
                     "description": "Container-specific (populated when querying locations)",
                     "type": "number"
                 },
+                "lentDate": {
+                    "type": "string"
+                },
+                "lentReturnDate": {
+                    "type": "string"
+                },
+                "lentTo": {
+                    "description": "Lending — part of the summary so lists can badge lent entities.",
+                    "type": "string"
+                },
                 "lifetimeWarranty": {
                     "description": "Warranty",
                     "type": "boolean"
@@ -5182,6 +5210,16 @@ const docTemplate = `{
                 "itemCount": {
                     "description": "Container-specific (populated when querying locations)",
                     "type": "number"
+                },
+                "lentDate": {
+                    "type": "string"
+                },
+                "lentReturnDate": {
+                    "type": "string"
+                },
+                "lentTo": {
+                    "description": "Lending — part of the summary so lists can badge lent entities.",
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
@@ -5595,6 +5633,17 @@ const docTemplate = `{
                 },
                 "insured": {
                     "type": "boolean"
+                },
+                "lentDate": {
+                    "description": "Lending",
+                    "type": "string"
+                },
+                "lentReturnDate": {
+                    "type": "string"
+                },
+                "lentTo": {
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "lifetimeWarranty": {
                     "description": "Warranty",

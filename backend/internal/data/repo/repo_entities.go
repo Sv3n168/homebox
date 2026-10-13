@@ -75,6 +75,7 @@ type (
 		OnlyWithPhoto    bool    `json:"onlyWithPhoto"`
 		IncludeArchived  bool    `json:"includeArchived"`
 		FilterChildren   bool    `json:"filterChildren"` // when true, only return root entities (no parent)
+		OnlyLent         bool    `json:"onlyLent"`       // only entities that are currently lent out
 	}
 
 	DuplicateOptions struct {
@@ -118,9 +119,13 @@ type (
 		// Purchase
 		PurchaseDate types.Date `json:"purchaseDate"`
 		// Sold
-		SoldDate    types.Date `json:"soldDate"`
-		Name        string     `json:"name"        validate:"required,min=1,max=255"`
-		Description string     `json:"description" validate:"max=1000"`
+		SoldDate types.Date `json:"soldDate"`
+		// Lending
+		LentDate       types.Date `json:"lentDate"`
+		LentReturnDate types.Date `json:"lentReturnDate"`
+		LentTo         string     `json:"lentTo"         validate:"max=255"`
+		Name           string     `json:"name"        validate:"required,min=1,max=255"`
+		Description    string     `json:"description" validate:"max=1000"`
 		// Identifications
 		SerialNumber    string `json:"serialNumber"`
 		ModelNumber     string `json:"modelNumber"`
@@ -185,6 +190,11 @@ type (
 
 		// Sale details
 		SoldDate types.Date `json:"soldDate"`
+
+		// Lending — part of the summary so lists can badge lent entities.
+		LentTo         string     `json:"lentTo"`
+		LentDate       types.Date `json:"lentDate"`
+		LentReturnDate types.Date `json:"lentReturnDate"`
 
 		// Container-specific (populated when querying locations)
 		ItemCount float64 `json:"itemCount,omitempty"`
@@ -295,6 +305,11 @@ func mapEntitySummary(e *ent.Entity) EntitySummary {
 
 		// Sale
 		SoldDate: types.DateFromDBTime(e.SoldDate),
+
+		// Lending
+		LentTo:         e.LentTo,
+		LentDate:       types.DateFromDBTime(e.LentDate),
+		LentReturnDate: types.DateFromDBTime(e.LentReturnDate),
 	}
 }
 
@@ -835,6 +850,10 @@ func (r *EntityRepository) QueryByGroup(ctx context.Context, gid uuid.UUID, q En
 
 	if q.FilterChildren {
 		qb = qb.Where(entity.Not(entity.HasParent()))
+	}
+
+	if q.OnlyLent {
+		qb = qb.Where(entity.LentToNotNil(), entity.LentToNEQ(""))
 	}
 
 	if q.IncludeArchived {
@@ -1784,6 +1803,7 @@ func (r *EntityRepository) UpdateByGroup(ctx context.Context, gid uuid.UUID, dat
 		SetSoldTo(data.SoldTo).
 		SetSoldPrice(data.SoldPrice).
 		SetSoldNotes(data.SoldNotes).
+		SetLentTo(data.LentTo).
 		SetNotes(data.Notes).
 		SetLifetimeWarranty(data.LifetimeWarranty).
 		SetInsured(data.Insured).
@@ -1809,6 +1829,16 @@ func (r *EntityRepository) UpdateByGroup(ctx context.Context, gid uuid.UUID, dat
 		q.ClearWarrantyExpires()
 	} else {
 		q.SetWarrantyExpires(t)
+	}
+	if t := data.LentDate.Time(); t.IsZero() {
+		q.ClearLentDate()
+	} else {
+		q.SetLentDate(t)
+	}
+	if t := data.LentReturnDate.Time(); t.IsZero() {
+		q.ClearLentReturnDate()
+	} else {
+		q.SetLentReturnDate(t)
 	}
 
 	if data.EntityTypeID != uuid.Nil {

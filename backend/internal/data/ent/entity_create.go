@@ -355,6 +355,48 @@ func (_c *EntityCreate) SetNillableSoldNotes(v *string) *EntityCreate {
 	return _c
 }
 
+// SetLentTo sets the "lent_to" field.
+func (_c *EntityCreate) SetLentTo(v string) *EntityCreate {
+	_c.mutation.SetLentTo(v)
+	return _c
+}
+
+// SetNillableLentTo sets the "lent_to" field if the given value is not nil.
+func (_c *EntityCreate) SetNillableLentTo(v *string) *EntityCreate {
+	if v != nil {
+		_c.SetLentTo(*v)
+	}
+	return _c
+}
+
+// SetLentDate sets the "lent_date" field.
+func (_c *EntityCreate) SetLentDate(v time.Time) *EntityCreate {
+	_c.mutation.SetLentDate(v)
+	return _c
+}
+
+// SetNillableLentDate sets the "lent_date" field if the given value is not nil.
+func (_c *EntityCreate) SetNillableLentDate(v *time.Time) *EntityCreate {
+	if v != nil {
+		_c.SetLentDate(*v)
+	}
+	return _c
+}
+
+// SetLentReturnDate sets the "lent_return_date" field.
+func (_c *EntityCreate) SetLentReturnDate(v time.Time) *EntityCreate {
+	_c.mutation.SetLentReturnDate(v)
+	return _c
+}
+
+// SetNillableLentReturnDate sets the "lent_return_date" field if the given value is not nil.
+func (_c *EntityCreate) SetNillableLentReturnDate(v *time.Time) *EntityCreate {
+	if v != nil {
+		_c.SetLentReturnDate(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *EntityCreate) SetID(v uuid.UUID) *EntityCreate {
 	_c.mutation.SetID(v)
@@ -680,6 +722,11 @@ func (_c *EntityCreate) check() error {
 			return &ValidationError{Name: "sold_notes", err: fmt.Errorf(`ent: validator failed for field "Entity.sold_notes": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.LentTo(); ok {
+		if err := entity.LentToValidator(v); err != nil {
+			return &ValidationError{Name: "lent_to", err: fmt.Errorf(`ent: validator failed for field "Entity.lent_to": %w`, err)}
+		}
+	}
 	if len(_c.mutation.GroupIDs()) == 0 {
 		return &ValidationError{Name: "group", err: errors.New(`ent: missing required edge "Entity.group"`)}
 	}
@@ -816,6 +863,18 @@ func (_c *EntityCreate) createSpec() (*Entity, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SoldNotes(); ok {
 		_spec.SetField(entity.FieldSoldNotes, field.TypeString, value)
 		_node.SoldNotes = value
+	}
+	if value, ok := _c.mutation.LentTo(); ok {
+		_spec.SetField(entity.FieldLentTo, field.TypeString, value)
+		_node.LentTo = value
+	}
+	if value, ok := _c.mutation.LentDate(); ok {
+		_spec.SetField(entity.FieldLentDate, field.TypeTime, value)
+		_node.LentDate = value
+	}
+	if value, ok := _c.mutation.LentReturnDate(); ok {
+		_spec.SetField(entity.FieldLentReturnDate, field.TypeTime, value)
+		_node.LentReturnDate = value
 	}
 	if nodes := _c.mutation.GroupIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

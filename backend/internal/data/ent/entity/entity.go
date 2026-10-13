@@ -63,6 +63,12 @@ const (
 	FieldSoldPrice = "sold_price"
 	// FieldSoldNotes holds the string denoting the sold_notes field in the database.
 	FieldSoldNotes = "sold_notes"
+	// FieldLentTo holds the string denoting the lent_to field in the database.
+	FieldLentTo = "lent_to"
+	// FieldLentDate holds the string denoting the lent_date field in the database.
+	FieldLentDate = "lent_date"
+	// FieldLentReturnDate holds the string denoting the lent_return_date field in the database.
+	FieldLentReturnDate = "lent_return_date"
 	// EdgeGroup holds the string denoting the group edge name in mutations.
 	EdgeGroup = "group"
 	// EdgeParent holds the string denoting the parent edge name in mutations.
@@ -170,6 +176,9 @@ var Columns = []string{
 	FieldSoldTo,
 	FieldSoldPrice,
 	FieldSoldNotes,
+	FieldLentTo,
+	FieldLentDate,
+	FieldLentReturnDate,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "entities"
@@ -243,6 +252,8 @@ var (
 	DefaultSoldPrice float64
 	// SoldNotesValidator is a validator for the "sold_notes" field. It is called by the builders before save.
 	SoldNotesValidator func(string) error
+	// LentToValidator is a validator for the "lent_to" field. It is called by the builders before save.
+	LentToValidator func(string) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -373,6 +384,21 @@ func BySoldPrice(opts ...sql.OrderTermOption) OrderOption {
 // BySoldNotes orders the results by the sold_notes field.
 func BySoldNotes(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSoldNotes, opts...).ToFunc()
+}
+
+// ByLentTo orders the results by the lent_to field.
+func ByLentTo(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLentTo, opts...).ToFunc()
+}
+
+// ByLentDate orders the results by the lent_date field.
+func ByLentDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLentDate, opts...).ToFunc()
+}
+
+// ByLentReturnDate orders the results by the lent_return_date field.
+func ByLentReturnDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLentReturnDate, opts...).ToFunc()
 }
 
 // ByGroupField orders the results by group field.

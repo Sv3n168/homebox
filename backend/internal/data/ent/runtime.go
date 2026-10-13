@@ -225,6 +225,10 @@ func init() {
 	entityDescSoldNotes := entityFields[19].Descriptor()
 	// entity.SoldNotesValidator is a validator for the "sold_notes" field. It is called by the builders before save.
 	entity.SoldNotesValidator = entityDescSoldNotes.Validators[0].(func(string) error)
+	// entityDescLentTo is the schema descriptor for lent_to field.
+	entityDescLentTo := entityFields[20].Descriptor()
+	// entity.LentToValidator is a validator for the "lent_to" field. It is called by the builders before save.
+	entity.LentToValidator = entityDescLentTo.Validators[0].(func(string) error)
 	// entityDescID is the schema descriptor for id field.
 	entityDescID := entityMixinFields0[0].Descriptor()
 	// entity.DefaultID holds the default value on creation for the id field.
