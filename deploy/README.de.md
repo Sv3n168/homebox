@@ -16,7 +16,7 @@ Die Images baut GitHub für dich. Auf deiner VM musst du nichts kompilieren.
 
 1. Im Fork **github.com/Sv3n168/homebox** öffnest du **Actions** und klickst auf „I understand my workflows, go ahead and enable them“.
 2. Links den Workflow **„Custom images“** wählen, dann **Run workflow** auf `main`. Danach baut er bei jedem Push auf `main` automatisch neu.
-3. Einige von Homebox übernommene Workflows sind für das Original gedacht und schlagen im Fork fehl: **„Docker publish“**, **„Docker publish rootless“**, **„Docker publish hardened“** und **„Docker Cleanup“** (läuft jede Nacht). Öffne jeden davon und wähle **… → Disable workflow**. „Publish Release Binaries“ läuft nur bei Versions-Tags und kann bleiben.
+3. Einige von Homebox übernommene Workflows sind für das Original gedacht und schlagen im Fork fehl: **„Docker publish“**, **„Docker publish rootless“**, **„Docker publish hardened“** und **„Update Currencies“** (braucht einen API-Schlüssel des Originals). Öffne jeden davon und wähle **… → Disable workflow**. „Docker Cleanup“ führt GitHub in Forks gar nicht erst aus, und „Publish Release Binaries“ läuft nur bei Versions-Tags; beide können bleiben.
 4. Nach dem ersten Lauf erscheinen unter **Profil → Packages** die Pakete `homebox` und `homebox-backup`. Bei beiden **Package settings → Change visibility → Public** einstellen. Dann braucht Portainer keine Zugangsdaten. Der Code ist ohnehin öffentlich (AGPL).
 
 ## 2. Stack in Portainer
