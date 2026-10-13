@@ -124,8 +124,8 @@ type (
 		LentDate       types.Date `json:"lentDate"`
 		LentReturnDate types.Date `json:"lentReturnDate"`
 		LentTo         string     `json:"lentTo"         validate:"max=255"`
-		Name           string     `json:"name"        validate:"required,min=1,max=255"`
-		Description    string     `json:"description" validate:"max=1000"`
+		Name           string     `json:"name"           validate:"required,min=1,max=255"`
+		Description    string     `json:"description"    validate:"max=1000"`
 		// Identifications
 		SerialNumber    string `json:"serialNumber"`
 		ModelNumber     string `json:"modelNumber"`
