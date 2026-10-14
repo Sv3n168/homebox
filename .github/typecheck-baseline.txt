@@ -1,0 +1,196 @@
+components/Entity/CreateModal.vue: TS18048: 'form.location' is possibly 'undefined'.
+components/Entity/CreateModal.vue: TS18048: 'form.location' is possibly 'undefined'.
+components/Item/View/ItemChangeDetails.vue: TS2339: Property 'location' does not exist on type 'EntitySummary'.
+components/Item/View/ItemChangeDetails.vue: TS2339: Property 'location' does not exist on type 'EntitySummary'.
+components/Item/View/ItemChangeDetails.vue: TS2339: Property 'location' does not exist on type 'EntitySummary'.
+components/Item/View/ItemChangeDetails.vue: TS2339: Property 'location' does not exist on type 'EntitySummary'.
+components/Item/View/table/columns.ts: TS2339: Property 'location' does not exist on type 'EntitySummary'.
+components/Item/View/table/data-table-expanded-row.vue: TS2339: Property 'location' does not exist on type 'EntitySummary'.
+components/Item/View/table/data-table-expanded-row.vue: TS2339: Property 'location' does not exist on type 'EntitySummary'.
+components/Item/View/table/data-table-expanded-row.vue: TS2339: Property 'location' does not exist on type 'EntitySummary'.
+components/Maintenance/ListView.vue: TS18048: 'e' is possibly 'undefined'.
+components/Maintenance/ListView.vue: TS18048: 'e' is possibly 'undefined'.
+components/Maintenance/ListView.vue: TS18048: 'e' is possibly 'undefined'.
+components/Maintenance/ListView.vue: TS18048: 'e' is possibly 'undefined'.
+components/Maintenance/ListView.vue: TS18048: 'e' is possibly 'undefined'.
+components/Maintenance/ListView.vue: TS18048: 'e' is possibly 'undefined'.
+components/Maintenance/ListView.vue: TS18048: 'e' is possibly 'undefined'.
+components/Maintenance/ListView.vue: TS18048: 'e' is possibly 'undefined'.
+components/Maintenance/ListView.vue: TS18048: 'e' is possibly 'undefined'.
+components/Maintenance/ListView.vue: TS18048: 'e' is possibly 'undefined'.
+components/Maintenance/ListView.vue: TS18048: 'e' is possibly 'undefined'.
+components/Maintenance/ListView.vue: TS2339: Property 'completedDate' does not exist on type 'true | MaintenanceEntryWithDetails[]'.
+components/Maintenance/ListView.vue: TS2339: Property 'completedDate' does not exist on type 'true | MaintenanceEntryWithDetails[]'.
+components/Maintenance/ListView.vue: TS2339: Property 'completedDate' does not exist on type 'true | MaintenanceEntryWithDetails[]'.
+components/Maintenance/ListView.vue: TS2339: Property 'cost' does not exist on type 'true | MaintenanceEntryWithDetails[]'.
+components/Maintenance/ListView.vue: TS2339: Property 'description' does not exist on type 'true | MaintenanceEntryWithDetails[]'.
+components/Maintenance/ListView.vue: TS2339: Property 'description' does not exist on type 'true | MaintenanceEntryWithDetails[]'.
+components/Maintenance/ListView.vue: TS2339: Property 'id' does not exist on type 'true | MaintenanceEntryWithDetails[]'.
+components/Maintenance/ListView.vue: TS2339: Property 'id' does not exist on type 'true | MaintenanceEntryWithDetails[]'.
+components/Maintenance/ListView.vue: TS2339: Property 'name' does not exist on type 'true | MaintenanceEntryWithDetails[]'.
+components/Maintenance/ListView.vue: TS2339: Property 'scheduledDate' does not exist on type 'true | MaintenanceEntryWithDetails[]'.
+components/Maintenance/ListView.vue: TS2339: Property 'scheduledDate' does not exist on type 'true | MaintenanceEntryWithDetails[]'.
+components/Maintenance/ListView.vue: TS2345: Argument of type 'true | MaintenanceEntryWithDetails[] | undefined' is not assignable to parameter of type 'MaintenanceEntry'.
+components/Maintenance/ListView.vue: TS2352: Conversion of type 'boolean | MaintenanceEntryWithDetails[] | undefined' to type 'MaintenanceEntryWithDetails' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+components/Maintenance/ListView.vue: TS2352: Conversion of type 'boolean | MaintenanceEntryWithDetails[] | undefined' to type 'MaintenanceEntryWithDetails' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+components/Maintenance/ListView.vue: TS2769: No overload matches this call.
+components/Maintenance/ListView.vue: TS2769: No overload matches this call.
+components/Template/Card.vue: TS2322: Type '{ id: string; name: string; type: string; textValue: string; }[]' is not assignable to type 'TemplateField[]'.
+components/Template/CreateModal.vue: TS2345: Argument of type '{ name: string; description: string; notes: string; defaultName: string | null; defaultDescription: string | null; defaultQuantity: number; defaultInsured: boolean; defaultManufacturer: string | null; ... N more ...; fields: { ...; }[]; }' is not assignable to parameter of type 'EntityTemplateCreate'.
+components/global/LabelMaker.vue: TS2339: Property 'labelPrinting' does not exist on type 'Ref<APISummary | undefined, APISummary | undefined>'.
+composables/use-barcode-detector.ts: TS2305: Module '"~~/lib/api/types/data-contracts"' has no exported member 'ItemOut'.
+composables/use-barcode-detector.ts: TS2305: Module '"~~/lib/api/types/data-contracts"' has no exported member 'ItemSummary'.
+composables/use-barcode-detector.ts: TS2305: Module '"~~/lib/api/types/data-contracts"' has no exported member 'LocationOut'.
+composables/use-preferences.ts: TS2456: Type alias 'PreferenceChange' circularly references itself.
+layouts/default.vue: TS2322: Type 'Readonly<CookieRef<boolean>>' is not assignable to type 'boolean | undefined'.
+layouts/default.vue: TS2339: Property 'build' does not exist on type 'Ref<APISummary | undefined, APISummary | undefined>'.
+layouts/default.vue: TS2339: Property 'build' does not exist on type 'Ref<APISummary | undefined, APISummary | undefined>'.
+layouts/default.vue: TS2739: Type 'Ref<APISummary | undefined, APISummary | undefined>' is missing the following properties from type '{ build: { version: string; }; latest: { version: string; }; }': build, latest
+lib/api/__test__/factories/index.ts: TS2741: Property 'icon' is missing in type '{ name: string; description: string; color: string; }' but required in type 'TagCreate'.
+lib/api/__test__/user/items.test.ts: TS1117: An object literal cannot have multiple properties with the same name.
+lib/api/__test__/user/items.test.ts: TS1117: An object literal cannot have multiple properties with the same name.
+lib/api/__test__/user/items.test.ts: TS1117: An object literal cannot have multiple properties with the same name.
+lib/api/__test__/user/items.test.ts: TS2345: Argument of type '{ name: string; tagIds: never[]; description: string; quantity: number; parentId: string; }' is not assignable to parameter of type 'EntityCreate'.
+lib/api/__test__/user/items.test.ts: TS2345: Argument of type '{ name: string; tagIds: never[]; description: string; quantity: number; parentId: string; }' is not assignable to parameter of type 'EntityCreate'.
+lib/api/__test__/user/items.test.ts: TS2345: Argument of type '{ name: string; tagIds: never[]; description: string; quantity: number; parentId: string; }' is not assignable to parameter of type 'EntityCreate'.
+lib/api/__test__/user/items.test.ts: TS2345: Argument of type '{ name: string; tagIds: never[]; description: string; quantity: number; parentId: string; }' is not assignable to parameter of type 'EntityCreate'.
+lib/api/__test__/user/items.test.ts: TS2345: Argument of type '{ parentId: null; name: string; description: string; entityTypeId: string; }' is not assignable to parameter of type 'EntityCreate'.
+lib/api/__test__/user/items.test.ts: TS2345: Argument of type '{ parentId: string; name: string; description: string; }' is not assignable to parameter of type 'EntityCreate'.
+lib/api/__test__/user/items.test.ts: TS2345: Argument of type '{ parentId: string; name: string; tagIds: never[]; description: string; quantity: number; }' is not assignable to parameter of type 'EntityCreate'.
+lib/api/__test__/user/items.test.ts: TS2345: Argument of type '{ parentId: string; name: string; tagIds: never[]; description: string; quantity: number; }' is not assignable to parameter of type 'EntityCreate'.
+lib/api/__test__/user/items.test.ts: TS2345: Argument of type '{ parentId: string; name: string; tagIds: never[]; description: string; quantity: number; }' is not assignable to parameter of type 'EntityCreate'.
+lib/api/__test__/user/items.test.ts: TS2345: Argument of type '{ parentId: string; tagIds: never[]; syncChildEntityLocations: boolean; archived: boolean; assetId: string; attachments: ItemAttachment[]; children: EntitySummary[]; ... N more ...; warrantyExpires: Date | string; }' is not assignable to parameter of type 'EntityUpdate'.
+lib/api/__test__/user/items.test.ts: TS2352: Conversion of type '{ parentId: string | null; tagIds: string[]; fields: EntityFieldData[]; archived: boolean; assetId: string; attachments: ItemAttachment[]; ... N more ...; warrantyExpires: Date | string; }' to type 'EntityUpdate' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+lib/api/__test__/user/items.test.ts: TS2352: Conversion of type '{ parentId: string | null; tagIds: string[]; fields: EntityFieldData[]; archived: boolean; assetId: string; attachments: ItemAttachment[]; ... N more ...; warrantyExpires: Date | string; }' to type 'EntityUpdate' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+lib/api/__test__/user/items.test.ts: TS2352: Conversion of type '{ parentId: string; tagIds: never[]; archived: boolean; assetId: string; attachments: ItemAttachment[]; children: EntitySummary[]; ... N more ...; warrantyExpires: Date | string; }' to type 'EntityUpdate' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+lib/api/__test__/user/items.test.ts: TS2352: Conversion of type '{ parentId: string; tagIds: never[]; archived: boolean; assetId: string; attachments: ItemAttachment[]; children: EntitySummary[]; ... N more ...; warrantyExpires: Date | string; }' to type 'EntityUpdate' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+lib/api/__test__/user/tags.test.ts: TS2345: Argument of type '{ name: string; description: string; color: string; }' is not assignable to parameter of type 'TagCreate'.
+lib/api/__test__/user/templates.test.ts: TS2345: Argument of type 'Partial<EntityCreate> & { name: string; description: string; }' is not assignable to parameter of type 'EntityCreate'.
+lib/api/__test__/user/templates.test.ts: TS2345: Argument of type 'Partial<EntityCreate> & { name: string; description: string; }' is not assignable to parameter of type 'EntityCreate'.
+lib/api/__test__/user/templates.test.ts: TS2345: Argument of type '{ id: string; name: string; description: string; notes: string; defaultQuantity: number; defaultInsured: boolean; defaultName: string; defaultDescription: string; defaultManufacturer: string; ... N more ...; fields: { ...; }[]; }' is not assignable to parameter of type 'EntityTemplateUpdate'.
+lib/api/__test__/user/templates.test.ts: TS2739: Type '{ id: string; name: string; type: string; textValue: string; }' is missing the following properties from type 'TemplateField': booleanValue, numberValue, timeValue
+lib/api/__test__/user/templates.test.ts: TS2739: Type '{ id: string; name: string; type: string; textValue: string; }' is missing the following properties from type 'TemplateField': booleanValue, numberValue, timeValue
+lib/api/__test__/user/templates.test.ts: TS2739: Type '{ id: string; name: string; type: string; textValue: string; }' is missing the following properties from type 'TemplateField': booleanValue, numberValue, timeValue
+pages/assets/[id].vue: TS18048: 'item' is possibly 'undefined'.
+pages/assets/[id].vue: TS2322: Type 'true | EntitySummary[] | undefined' is not assignable to type 'EntityOut | EntitySummary'.
+pages/assets/[id].vue: TS2339: Property 'id' does not exist on type 'true | EntitySummary[]'.
+pages/collection/index/tools.vue: TS2345: Argument of type 'string | Date' is not assignable to parameter of type 'string'.
+pages/index.vue: TS2339: Property 'allowRegistration' does not exist on type 'Ref<APISummary | undefined, APISummary | undefined>'.
+pages/index.vue: TS2339: Property 'build' does not exist on type 'Ref<APISummary | undefined, APISummary | undefined>'.
+pages/index.vue: TS2339: Property 'build' does not exist on type 'Ref<APISummary | undefined, APISummary | undefined>'.
+pages/index.vue: TS2339: Property 'demo' does not exist on type 'Ref<APISummary | undefined, APISummary | undefined>'.
+pages/index.vue: TS2339: Property 'demo' does not exist on type '{}'.
+pages/index.vue: TS2339: Property 'oidc' does not exist on type 'Ref<APISummary | undefined, APISummary | undefined>'.
+pages/index.vue: TS2339: Property 'oidc' does not exist on type 'Ref<APISummary | undefined, APISummary | undefined>'.
+pages/index.vue: TS2339: Property 'oidc' does not exist on type 'Ref<APISummary | undefined, APISummary | undefined>'.
+pages/index.vue: TS2339: Property 'oidc' does not exist on type 'Ref<APISummary | undefined, APISummary | undefined>'.
+pages/index.vue: TS2339: Property 'oidc' does not exist on type 'Ref<APISummary | undefined, APISummary | undefined>'.
+pages/index.vue: TS2339: Property 'oidc' does not exist on type 'Ref<APISummary | undefined, APISummary | undefined>'.
+pages/index.vue: TS2339: Property 'oidc' does not exist on type 'Ref<APISummary | undefined, APISummary | undefined>'.
+pages/index.vue: TS2339: Property 'oidc' does not exist on type '{}'.
+pages/index.vue: TS2339: Property 'oidc' does not exist on type '{}'.
+pages/index.vue: TS2345: Argument of type 'Ref<APISummary | undefined, APISummary | undefined>' is not assignable to parameter of type 'WatchSource<unknown>'.
+pages/item/[id]/index.vue: TS2339: Property 'assetId' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'assetId' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'assetId' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'createdAt' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'description' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'description' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'description' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'description' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'id' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'id' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'id' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'id' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'id' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'id' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'length' does not exist on type 'Ref<EntitySummary[] | undefined, EntitySummary[] | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'name' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'name' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2339: Property 'updatedAt' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/item/[id]/index.vue: TS2345: Argument of type '{ name: string; description: string; notes: string; defaultName: string; defaultDescription: string; defaultQuantity: number; defaultInsured: boolean; defaultManufacturer: string; defaultModelNumber: string; ... N more ...; fields: { ...; }[]; }' is not assignable to parameter of type 'EntityTemplateCreate'.
+pages/item/[id]/index.vue: TS2740: Type 'Ref<EntitySummary[] | undefined, EntitySummary[] | undefined>' is missing the following properties from type 'EntitySummary[]': length, pop, push, concat, and N more.
+pages/item/[id]/index/edit.vue: TS2741: Property 'entityTypeId' is missing in type '{ parentId: any; locationId: any; tagIds: string[]; assetId: string; syncChildEntityLocations: boolean; archived: boolean; attachments: { createdAt: Date | string; id: string; mimeType: string; ... N more ...; updatedAt: Date | string; }[]; ... N more ...; warrantyExpires: Date | string; }' but required in type 'EntityUpdate'.
+pages/location/[id]/index/index.vue: TS2339: Property 'children' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'createdAt' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'description' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'description' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'description' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'description' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'id' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'id' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'id' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'id' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'id' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'id' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'length' does not exist on type 'Ref<EntitySummary[] | undefined, EntitySummary[] | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'length' does not exist on type 'Ref<EntitySummary[] | undefined, EntitySummary[] | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'length' does not exist on type 'Ref<EntitySummary[] | undefined, EntitySummary[] | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'length' does not exist on type 'Ref<EntitySummary[] | undefined, EntitySummary[] | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'name' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'name' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'name' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'name' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'name' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'parent' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'parent' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'parent' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'tags' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'tags' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'tags' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'totalPrice' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2339: Property 'totalPrice' does not exist on type 'Ref<EntityOut | undefined, EntityOut | undefined>'.
+pages/location/[id]/index/index.vue: TS2740: Type 'Ref<EntitySummary[] | undefined, EntitySummary[] | undefined>' is missing the following properties from type 'EntitySummary[]': length, pop, push, concat, and N more.
+pages/location/[id]/index/index.vue: TS2740: Type 'Ref<EntitySummary[] | undefined, EntitySummary[] | undefined>' is missing the following properties from type 'EntitySummary[]': length, pop, push, concat, and N more.
+pages/search.vue: TS2322: Type 'true | string[] | undefined' is not assignable to type 'AcceptableValue'.
+pages/search.vue: TS2322: Type 'true | string[] | undefined' is not assignable to type 'PropertyKey | undefined'.
+pages/tag/[id].vue: TS2322: Type 'Ref<TagOut | undefined, TagOut | undefined>' is not assignable to type 'TagSummary | TagOut'.
+pages/tag/[id].vue: TS2339: Property 'color' does not exist on type 'Ref<TagOut | undefined, TagOut | undefined>'.
+pages/tag/[id].vue: TS2339: Property 'color' does not exist on type 'Ref<TagOut | undefined, TagOut | undefined>'.
+pages/tag/[id].vue: TS2339: Property 'color' does not exist on type 'Ref<TagOut | undefined, TagOut | undefined>'.
+pages/tag/[id].vue: TS2339: Property 'color' does not exist on type 'Ref<TagOut | undefined, TagOut | undefined>'.
+pages/tag/[id].vue: TS2339: Property 'createdAt' does not exist on type 'Ref<TagOut | undefined, TagOut | undefined>'.
+pages/tag/[id].vue: TS2339: Property 'description' does not exist on type 'Ref<TagOut | undefined, TagOut | undefined>'.
+pages/tag/[id].vue: TS2339: Property 'description' does not exist on type 'Ref<TagOut | undefined, TagOut | undefined>'.
+pages/tag/[id].vue: TS2339: Property 'description' does not exist on type 'Ref<TagOut | undefined, TagOut | undefined>'.
+pages/tag/[id].vue: TS2339: Property 'description' does not exist on type 'Ref<TagOut | undefined, TagOut | undefined>'.
+pages/tag/[id].vue: TS2339: Property 'items' does not exist on type 'Ref<EntityListResult | { items: never[]; totalPrice: null; } | undefined, EntityListResult | { items: never[]; totalPrice: null; } | undefined>'.
+pages/tag/[id].vue: TS2339: Property 'name' does not exist on type 'Ref<TagOut | undefined, TagOut | undefined>'.
+pages/tag/[id].vue: TS2339: Property 'name' does not exist on type 'Ref<TagOut | undefined, TagOut | undefined>'.
+pages/tag/[id].vue: TS2339: Property 'parentId' does not exist on type 'Ref<TagOut | undefined, TagOut | undefined>'.
+pages/tag/[id].vue: TS2339: Property 'totalPrice' does not exist on type 'Ref<EntityListResult | { items: never[]; totalPrice: null; } | undefined, EntityListResult | { items: never[]; totalPrice: null; } | undefined>'.
+pages/tag/[id].vue: TS2339: Property 'totalPrice' does not exist on type 'Ref<EntityListResult | { items: never[]; totalPrice: null; } | undefined, EntityListResult | { items: never[]; totalPrice: null; } | undefined>'.
+pages/template/[id].vue: TS2339: Property 'createdAt' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultDescription' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultDescription' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultInsured' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultLifetimeWarranty' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultLocation' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultLocation' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultManufacturer' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultManufacturer' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultModelNumber' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultModelNumber' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultName' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultName' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultQuantity' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultTags' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultTags' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'defaultTags' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'description' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'description' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'description' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'description' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'fields' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'fields' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'name' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'name' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2339: Property 'updatedAt' does not exist on type 'Ref<EntityTemplateOut | undefined, EntityTemplateOut | undefined>'.
+pages/template/[id].vue: TS2345: Argument of type '{ defaultLocationId: string | null; id: string; name: string; description: string; notes: string; defaultName: string; defaultDescription: string; defaultQuantity: number; defaultInsured: boolean; ... N more ...; fields: { ...; }[]; }' is not assignable to parameter of type 'EntityTemplateUpdate'.
+pages/template/[id].vue: TS7006: Parameter 't' implicitly has an 'any' type.
+pages/templates.vue: TS18048: 'tpl' is possibly 'undefined'.
+pages/templates.vue: TS2322: Type 'ComputedRef<string>' is not assignable to type 'ResolvableTitle'.
+pages/templates.vue: TS2322: Type 'true | EntityTemplateSummary[] | undefined' is not assignable to type 'EntityTemplateSummary'.
+pages/templates.vue: TS2339: Property 'id' does not exist on type 'true | EntityTemplateSummary[]'.
+pages/templates.vue: TS2339: Property 'length' does not exist on type 'Ref<EntityTemplateSummary[] | undefined, EntityTemplateSummary[] | undefined>'.
+plugins/i18n.ts: TS2345: Argument of type 'INn<Record<string, any>, {}, {}, string, false>' is not assignable to parameter of type 'Plugin<unknown[], unknown[]>'.

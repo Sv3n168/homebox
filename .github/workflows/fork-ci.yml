@@ -1,0 +1,27 @@
+# Fork only: the same checks as "Pull Request CI", started by hand or by
+# "Upstream sync" for its branch. Pull requests opened by GitHub Actions do not
+# start "Pull Request CI" on their own, so without this the update PR would get
+# no backend, frontend or end-to-end tests. The results appear on the PR.
+name: Fork CI
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  backend-tests:
+    name: "Backend Server Tests"
+    uses: ./.github/workflows/partial-backend.yaml
+
+  frontend-tests:
+    name: "Frontend Tests"
+    uses: ./.github/workflows/partial-frontend.yaml
+
+  e2e-tests:
+    name: "End-to-End Playwright Tests"
+    uses: ./.github/workflows/e2e-partial.yaml

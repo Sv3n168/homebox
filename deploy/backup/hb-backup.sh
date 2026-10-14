@@ -12,6 +12,11 @@
 #   hb-backup status                 last backup and last restore test
 #   hb-backup health                 exit 1 if backups stopped or a check failed
 #                                    (used by the container health check)
+#   hb-backup snapshots              list the database copies Homebox makes itself
+#                                    right before an update migrates the database
+#   hb-backup restore-snapshot [NAME|latest] --yes
+#                                    put such a copy back (Homebox must be stopped;
+#                                    photos and attachments stay as they are)
 #
 # Everything is encrypted client-side by rclone's crypt backend (XSalsa20-
 # Poly1305, file names encrypted too) before it leaves the machine. Without
@@ -173,13 +178,13 @@ cmd_backup() {
     echo "created=${stamp}"
     echo "host=$(hostname)"
     echo "db_sha256=$(sha256sum "${work}/${DB_NAME}" | cut -d' ' -f1)"
-    echo "files=$(find "${DATA}" -type f ! -name "${DB_NAME}*" ! -name '.hb-backup-status.json*' ! -path '*/.pre-restore-*' | wc -l)"
+    echo "files=$(find "${DATA}" -type f ! -name "${DB_NAME}*" ! -name '.hb-backup-status.json*' ! -path '*/.pre-restore-*' ! -path '*/.pre-migration/*' | wc -l)"
   } > "${work}/BACKUP-INFO"
 
   tar -czf "${work}/${name}" \
     -C "${DATA}" \
     --exclude="./${DB_NAME}" --exclude="./${DB_NAME}-wal" --exclude="./${DB_NAME}-shm" \
-    --exclude='./.pre-restore-*' --exclude='./.hb-backup-status.json*' \
+    --exclude='./.pre-restore-*' --exclude='./.pre-migration' --exclude='./.hb-backup-status.json*' \
     . \
     -C "${work}" "${DB_NAME}" BACKUP-INFO || die "tar failed"
   tar -tzf "${work}/${name}" >/dev/null || die "archive is unreadable"
@@ -363,8 +368,54 @@ cmd_restore() {
   log "When everything looks right you can delete ${aside}."
 }
 
+# --- pre-update copies ---------------------------------------------------------
+# Homebox itself copies the database to /data/.pre-migration before it applies
+# new migrations (see backend/app/api/fork_premigration.go). These commands list
+# and restore those copies; the backup container is not needed for making them.
+SNAP_DIR="${DATA}/.pre-migration"
+
+cmd_snapshots() {
+  ls -1sh "${SNAP_DIR}"/${PREFIX}-*.db 2>/dev/null | sort -k2 || echo "no pre-update copies in ${SNAP_DIR}"
+}
+
+cmd_restore_snapshot() {
+  local target="latest" yes=false file stamp aside
+  for arg in "$@"; do
+    case "$arg" in
+      --yes|-y) yes=true ;;
+      *) target="$arg" ;;
+    esac
+  done
+  if [ "$target" = latest ]; then
+    file="$(ls -1 "${SNAP_DIR}"/${PREFIX}-*.db 2>/dev/null | sort | tail -n1 || true)"
+  else
+    file="${SNAP_DIR}/$(basename "${target%.db}").db"
+  fi
+  [ -n "$file" ] && [ -f "$file" ] || { log "ERROR: no copy '${target}' in ${SNAP_DIR} (see 'hb-backup snapshots')"; exit 1; }
+
+  if [ "$yes" != true ]; then
+    echo "This replaces the Homebox database with $(basename "$file") (photos and attachments stay)."
+    echo "The current database is moved aside to ${DATA}/.pre-restore-<timestamp> (not deleted)."
+    echo "Stop the Homebox container first, then run:  hb-backup restore-snapshot $(basename "$file") --yes"
+    exit 2
+  fi
+  if homebox_running; then
+    log "ERROR: Homebox is still running at ${HOMEBOX_URL} – stop the homebox container first"
+    exit 1
+  fi
+
+  stamp="$(date '+%Y%m%d-%H%M%S')"
+  aside="${DATA}/.pre-restore-${stamp}"
+  mkdir -p "$aside"
+  mv "${DATA}/${DB_NAME}" "${DATA}/${DB_NAME}-wal" "${DATA}/${DB_NAME}-shm" "$aside/" 2>/dev/null || true
+  log "current database moved to ${aside}"
+  cp "$file" "${DATA}/${DB_NAME}"
+  check_db "${DATA}/${DB_NAME}"
+  log "restored $(basename "$file"). Start the homebox container again (with the image version from before the update)."
+}
+
 cmd_help() {
-  sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 case "${1:-help}" in
@@ -372,6 +423,8 @@ case "${1:-help}" in
   list) cmd_list ;;
   verify) shift; cmd_verify "$@" ;;
   restore) shift; cmd_restore "$@" ;;
+  snapshots) cmd_snapshots ;;
+  restore-snapshot) shift; cmd_restore_snapshot "$@" ;;
   check) cmd_check ;;
   status) cmd_status ;;
   health) cmd_health ;;

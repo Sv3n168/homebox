@@ -168,10 +168,11 @@ function withLocalEdits(
   fields: { name: string; value: string }[] | undefined
 ): PendingEntity {
   let out = detail;
-  if (patch && summary) {
+  if (patch) {
     out = { ...out };
-    if (patch.quantity !== undefined) out.quantity = summary.quantity;
-    if (patch.tagIds !== undefined) out.tags = summary.tags;
+    // Not in the snapshot yet (e.g. created after the last sync): the queued value still applies.
+    if (patch.quantity !== undefined) out.quantity = summary ? summary.quantity : patch.quantity;
+    if (patch.tagIds !== undefined && summary) out.tags = summary.tags;
   }
   if (fields?.length) {
     const current = ((out as { fields?: { name: string }[] }).fields ?? []).filter(

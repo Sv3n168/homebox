@@ -148,12 +148,20 @@ Die bisherigen Daten werden nicht gelöscht. Sie landen in `/data/.pre-restore-<
 
 Die eigenen Änderungen liegen in deinem Fork. Neue Versionen des Originals kommen geprüft als Pull Request, damit nichts Ungetestetes auf deinem Server landet:
 
-1. Wenn du ein Update möchtest: **Actions → Upstream sync → Run workflow**. Der Workflow läuft nur, wenn du ihn startest. Er führt sie im Zweig `upstream-sync` mit deinen Änderungen zusammen, erzeugt den Datenbank-Code neu und prüft Backend (Build, Tests) und Frontend (Lint, Tests der eigenen Funktionen, Build).
-2. Klappt alles, öffnet er einen Pull Request **„Update vom Original (…)“**. Gibt es Konflikte, legt er stattdessen ein Issue mit den betroffenen Dateien an. Dann Claude bitten, den Merge zu machen.
-3. Vor dem Mergen des Pull Requests `hb-backup backup` ausführen. Dann mergen: „Custom images“ baut neu, und Portainer zieht die Images per **Pull and redeploy** (oder automatisch mit GitOps).
+1. Wenn du ein Update möchtest: **Actions → Upstream sync → Run workflow**. Der Workflow läuft nur, wenn du ihn startest. Er führt das Original im Zweig `upstream-sync` mit deinen Änderungen zusammen, erzeugt den Datenbank-Code neu und prüft Backend (Build, Tests) und Frontend (Lint, Tests der eigenen Funktionen, Build).
+2. Klappt alles, öffnet er einen Pull Request **„Update vom Original (…)“** und startet darauf **Fork CI**. Das sind alle Tests, auch die Klicktests deiner eigenen Funktionen (Verleihen, Box prüfen, Verschieben, Lagerorte, Offline, Logo). Gibt es Konflikte, legt er stattdessen ein Issue mit den betroffenen Dateien an. Dann Claude bitten, den Merge zu machen.
+3. Erst mergen, wenn Fork CI grün ist. Dann baut „Custom images“ neu, und Portainer zieht die Images per **Pull and redeploy** (oder automatisch mit GitOps).
 
 **Bitte nicht** auf GitHub **Sync fork → Update branch** klicken: Das schreibt das Original ungeprüft direkt auf `main`, und mit GitOps läuft es kurz danach auf deinem Server.
 
-**Zurück zur vorigen Version:** Jedes Image gibt es zusätzlich mit festem Tag `sha-<7 Zeichen des Commits>` (Profil → Packages → homebox). In den Stack-Variablen `HOMEBOX_IMAGE=ghcr.io/sv3n168/homebox:sha-xxxxxxx` setzen und neu deployen. Hat das Update die Datenbank schon umgebaut, vorher wie in Abschnitt 5 das Backup von vor dem Update zurückspielen.
+**Sicherung vor jedem Update (automatisch):** Bringt eine neue Version Änderungen an der Datenbank mit, legt Homebox selbst direkt davor eine Kopie der Datenbank an: `/data/.pre-migration/homebox-<Zeitpunkt in UTC>.db`, die letzten 3 bleiben. Dafür ist kein anderer Container nötig. Klappt die Kopie nicht, steht eine Warnung im Log, und Homebox startet trotzdem normal. Fotos und Anhänge ändert ein Update nicht, sie stecken im normalen Backup. Die Kopien landen nicht im OneDrive-Backup.
+
+**Zurück zur vorigen Version:**
+1. Jedes Image gibt es zusätzlich mit festem Tag `sha-<7 Zeichen des Commits>` (Profil → Packages → homebox). Den Stand von vor dem Update heraussuchen.
+2. Container `homebox` stoppen. In `homebox-backup` die Konsole öffnen und `hb-backup snapshots` ausführen. Die Kopie mit der Uhrzeit des Updates ist die richtige.
+3. `hb-backup restore-snapshot <Name> --yes` (oder `latest`). Die aktuelle Datenbank wird nicht gelöscht, sondern nach `/data/.pre-restore-<Zeitpunkt>` verschoben.
+4. In den Stack-Variablen `HOMEBOX_IMAGE=ghcr.io/sv3n168/homebox:sha-xxxxxxx` setzen und neu deployen. Später für Updates wieder entfernen.
+
+Reicht das nicht (etwa wenn auch Fotos betroffen sind), wie in Abschnitt 5 ein ganzes Backup zurückspielen.
 
 **Hinweis für eigene Datenbankänderungen:** Homebox spielt auch Migrationen des Originals ein, deren Datum vor einer eigenen Migration liegt (sonst würde der Start nach einem Update abbrechen).

@@ -4,7 +4,8 @@
 #   no new upstream commits  → nothing happens
 #   merge has conflicts      → an issue lists the files; merge by hand (or ask Claude)
 #   merge is clean           → ent code is regenerated, backend + frontend checks run,
-#                              and a PR "Update vom Original" is opened/updated
+#                              a PR "Update vom Original" is opened/updated, and
+#                              "Fork CI" (all tests incl. end-to-end) runs on it
 #
 # Merging that PR into main triggers "Custom images" as usual.
 # Needs: Settings → Actions → General → "Allow GitHub Actions to create and
@@ -19,6 +20,7 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  actions: write # start "Fork CI" for the update branch
 
 concurrency:
   group: upstream-sync
@@ -139,9 +141,9 @@ jobs:
           {
             echo "${{ steps.fetch.outputs.new }} neue Commits aus sysadminsmedia/homebox."
             echo
-            echo "Automatisch geprüft: Merge ohne Konflikte, Backend-Build und -Tests, Frontend-Lint, Unit-Tests der eigenen Funktionen, Frontend-Build."
+            echo "Vorab geprüft: Merge ohne Konflikte, Backend-Build und -Tests, Frontend-Lint, Unit-Tests der eigenen Funktionen, Frontend-Build."
             echo
-            echo "Vor dem Mergen: \`hb-backup backup\` ausführen (siehe deploy/README.de.md)."
+            echo "Danach läuft **Fork CI** mit allen Tests, auch den Klicktests der eigenen Funktionen (Verleihen, Box prüfen, Verschieben, Offline …). Erst mergen, wenn Fork CI grün ist."
           } > "$RUNNER_TEMP/body.md"
           existing=$(gh pr list --head "$SYNC_BRANCH" --state open --json number --jq '.[0].number')
           if [ -n "$existing" ]; then
@@ -149,3 +151,5 @@ jobs:
           else
             gh pr create --base main --head "$SYNC_BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md"
           fi
+          # PRs opened by GitHub Actions do not start "Pull Request CI"; run the same checks here.
+          gh workflow run fork-ci.yml --ref "$SYNC_BRANCH"
