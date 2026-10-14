@@ -92,7 +92,9 @@ func runMigrations(c *ent.Client, driver string) error {
 		log.Error().Str("driver", driver).Msg("unsupported database driver")
 		return fmt.Errorf("unsupported database driver: %s", driver)
 	}
-	if err := goose.Up(c.Sql(), driver); err != nil {
+	// Fork: allow missing (out-of-order) migrations. This fork ships its own
+	// migrations; an upstream migration with an older timestamp must still apply.
+	if err := goose.Up(c.Sql(), driver, goose.WithAllowMissing()); err != nil {
 		log.Error().Err(err).Msg("failed to migrate database")
 		return err
 	}
