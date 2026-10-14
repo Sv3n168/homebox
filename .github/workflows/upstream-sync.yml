@@ -1,0 +1,152 @@
+# Fork only: brings updates from the original Homebox (sysadminsmedia/homebox)
+# in as a tested pull request instead of merging them straight into main.
+#
+#   no new upstream commits  → nothing happens
+#   merge has conflicts      → an issue lists the files; merge by hand (or ask Claude)
+#   merge is clean           → ent code is regenerated, backend + frontend checks run,
+#                              and a PR "Update vom Original" is opened/updated
+#
+# Merging that PR into main triggers "Custom images" as usual.
+# Needs: Settings → Actions → General → "Allow GitHub Actions to create and
+# approve pull requests".
+name: Upstream sync
+
+on:
+  schedule:
+    - cron: "17 4 * * 1" # Mondays 04:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_REPO: https://github.com/sysadminsmedia/homebox.git
+  UPSTREAM_BRANCH: main
+  SYNC_BRANCH: upstream-sync
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Fetch upstream
+        id: fetch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream "$UPSTREAM_REPO"
+          git fetch upstream "$UPSTREAM_BRANCH"
+          new=$(git rev-list --count HEAD..upstream/$UPSTREAM_BRANCH)
+          echo "new=$new" >> "$GITHUB_OUTPUT"
+          echo "upstream_sha=$(git rev-parse --short upstream/$UPSTREAM_BRANCH)" >> "$GITHUB_OUTPUT"
+          echo "$new new upstream commit(s)"
+
+      - name: Merge upstream
+        id: merge
+        if: steps.fetch.outputs.new != '0'
+        run: |
+          git checkout -B "$SYNC_BRANCH"
+          if git merge --no-edit "upstream/$UPSTREAM_BRANCH"; then
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            git diff --name-only --diff-filter=U > "$RUNNER_TEMP/conflicts.txt"
+            git merge --abort
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report conflicts
+        if: steps.merge.outputs.conflict == 'true'
+        run: |
+          title="Update vom Original: Merge-Konflikt"
+          {
+            echo "Das Original (\`${{ steps.fetch.outputs.upstream_sha }}\`) lässt sich nicht automatisch mit \`main\` zusammenführen."
+            echo
+            echo "Konflikte in:"
+            sed 's/^/- `/; s/$/`/' "$RUNNER_TEMP/conflicts.txt"
+            echo
+            echo "Merge von Hand (oder Claude bitten). Konflikte in \`backend/internal/data/ent/\` nicht von Hand lösen:"
+            echo "Version des Originals nehmen und danach \`task db:generate\` ausführen."
+          } > "$RUNNER_TEMP/body.md"
+          existing=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh issue create --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          fi
+          exit 1
+
+      - uses: actions/setup-go@v5
+        if: steps.merge.outputs.conflict == 'false'
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Regenerate ent code
+        if: steps.merge.outputs.conflict == 'false'
+        working-directory: backend/internal
+        run: |
+          CGO_ENABLED=0 go generate ./...
+          # go generate may also touch go.sum (tool downloads); only commit generated code.
+          if [ -n "$(git status --porcelain -- .)" ]; then
+            git add -A .
+            git commit -m "chore: regenerate ent code after upstream merge"
+          fi
+
+      - name: Backend build and tests
+        if: steps.merge.outputs.conflict == 'false'
+        working-directory: backend
+        run: |
+          go build ./...
+          go test ./...
+
+      - uses: pnpm/action-setup@v4
+        if: steps.merge.outputs.conflict == 'false'
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        if: steps.merge.outputs.conflict == 'false'
+        with:
+          node-version: lts/*
+
+      # Typecheck is left out: it already fails on the original (not caused by the fork).
+      - name: Frontend lint, unit tests and build
+        if: steps.merge.outputs.conflict == 'false'
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run lint
+          pnpm exec vitest run lib/offline lib/cleanup lib/scanner lib/lending lib/places
+          pnpm run build
+
+      - name: Open pull request
+        if: steps.merge.outputs.conflict == 'false'
+        run: |
+          git checkout -- . # drop stray changes (e.g. go.sum) not meant for the PR
+          git push --force origin "$SYNC_BRANCH"
+          title="Update vom Original (${{ steps.fetch.outputs.upstream_sha }})"
+          {
+            echo "${{ steps.fetch.outputs.new }} neue Commits aus sysadminsmedia/homebox."
+            echo
+            echo "Automatisch geprüft: Merge ohne Konflikte, Backend-Build und -Tests, Frontend-Lint, Unit-Tests der eigenen Funktionen, Frontend-Build."
+            echo
+            echo "Vor dem Mergen: \`hb-backup backup\` ausführen (siehe deploy/README.de.md)."
+          } > "$RUNNER_TEMP/body.md"
+          existing=$(gh pr list --head "$SYNC_BRANCH" --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh pr edit "$existing" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh pr create --base main --head "$SYNC_BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          fi

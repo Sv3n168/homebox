@@ -113,7 +113,7 @@ func generateResetLinkOffline(cfg *config.Config, email string) (string, error) 
 	if err := goose.SetDialect(driver); err != nil {
 		return "", fmt.Errorf("set dialect: %w", err)
 	}
-	if err := goose.Up(c.Sql(), driver); err != nil {
+	if err := goose.Up(c.Sql(), driver, goose.WithAllowMissing()); err != nil { // fork: see runMigrations
 		return "", fmt.Errorf("apply migrations: %w", err)
 	}
 

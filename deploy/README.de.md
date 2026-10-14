@@ -23,7 +23,8 @@ Die Images baut GitHub für dich. Auf deiner VM musst du nichts kompilieren.
 
 1. Im Fork **github.com/Sv3n168/homebox** öffnest du **Actions** und klickst auf „I understand my workflows, go ahead and enable them“.
 2. Links den Workflow **„Custom images“** wählen, dann **Run workflow** auf `main`. Danach baut er bei jedem Push auf `main` automatisch neu.
-3. Einige von Homebox übernommene Workflows sind für das Original gedacht und schlagen im Fork fehl: **„Docker publish“**, **„Docker publish rootless“**, **„Docker publish hardened“** und **„Update Currencies“** (braucht einen API-Schlüssel des Originals). Öffne jeden davon und wähle **… → Disable workflow**. „Docker Cleanup“ führt GitHub in Forks gar nicht erst aus, und „Publish Release Binaries“ läuft nur bei Versions-Tags; beide können bleiben.
+3. Einige von Homebox übernommene Workflows sind für das Original gedacht und schlagen im Fork fehl: **„Docker publish“**, **„Docker publish rootless“**, **„Docker publish hardened“** und **„Update Currencies“** (braucht einen API-Schlüssel des Originals). Dasselbe gilt für **„Docker Cleanup“** (läuft jede Nacht und schlägt fehl). Öffne jeden davon und wähle **… → Disable workflow**. „Publish Release Binaries“ läuft nur bei Versions-Tags und kann bleiben.
+   Für automatische Updates (Abschnitt 6) zusätzlich unter **Settings → Actions → General** ganz unten **„Allow GitHub Actions to create and approve pull requests“** anhaken.
 4. Nach dem ersten Lauf erscheinen unter **Profil → Packages** die Pakete `homebox` und `homebox-backup`. Bei beiden **Package settings → Change visibility → Public** einstellen. Dann braucht Portainer keine Zugangsdaten. Der Code ist ohnehin öffentlich (AGPL).
 
 ## 2. Stack in Portainer
@@ -145,9 +146,14 @@ Die bisherigen Daten werden nicht gelöscht. Sie landen in `/data/.pre-restore-<
 
 ## 6. Updates vom Original übernehmen
 
-Die eigenen Änderungen liegen in deinem Fork. Neue Versionen des Originals holst du so:
+Die eigenen Änderungen liegen in deinem Fork. Neue Versionen des Originals kommen geprüft als Pull Request, damit nichts Ungetestetes auf deinem Server landet:
 
-- Auf GitHub im Fork: **Sync fork → Update branch**. Bei Konflikten meldet GitHub das, dann am besten Claude bitten, den Merge zu machen.
-- Danach baut „Custom images“ automatisch neue Images, und Portainer zieht sie per **Pull and redeploy** (oder automatisch mit GitOps).
+1. Der Workflow **„Upstream sync“** schaut jeden Montag nach Neuerungen im Original (oder sofort per **Actions → Upstream sync → Run workflow**). Er führt sie im Zweig `upstream-sync` mit deinen Änderungen zusammen, erzeugt den Datenbank-Code neu und prüft Backend (Build, Tests) und Frontend (Lint, Tests der eigenen Funktionen, Build).
+2. Klappt alles, öffnet er einen Pull Request **„Update vom Original (…)“**. Gibt es Konflikte, legt er stattdessen ein Issue mit den betroffenen Dateien an. Dann Claude bitten, den Merge zu machen.
+3. Vor dem Mergen des Pull Requests `hb-backup backup` ausführen. Dann mergen: „Custom images“ baut neu, und Portainer zieht die Images per **Pull and redeploy** (oder automatisch mit GitOps).
 
-Vor größeren Updates: einmal `hb-backup backup` ausführen.
+**Bitte nicht** auf GitHub **Sync fork → Update branch** klicken: Das schreibt das Original ungeprüft direkt auf `main`, und mit GitOps läuft es kurz danach auf deinem Server.
+
+**Zurück zur vorigen Version:** Jedes Image gibt es zusätzlich mit festem Tag `sha-<7 Zeichen des Commits>` (Profil → Packages → homebox). In den Stack-Variablen `HOMEBOX_IMAGE=ghcr.io/sv3n168/homebox:sha-xxxxxxx` setzen und neu deployen. Hat das Update die Datenbank schon umgebaut, vorher wie in Abschnitt 5 das Backup von vor dem Update zurückspielen.
+
+**Hinweis für eigene Datenbankänderungen:** Homebox spielt auch Migrationen des Originals ein, deren Datum vor einer eigenen Migration liegt (sonst würde der Start nach einem Update abbrechen).
