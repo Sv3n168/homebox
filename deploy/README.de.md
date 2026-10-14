@@ -24,7 +24,7 @@ Die Images baut GitHub für dich. Auf deiner VM musst du nichts kompilieren.
 1. Im Fork **github.com/Sv3n168/homebox** öffnest du **Actions** und klickst auf „I understand my workflows, go ahead and enable them“.
 2. Links den Workflow **„Custom images“** wählen, dann **Run workflow** auf `main`. Danach baut er bei jedem Push auf `main` automatisch neu.
 3. Einige von Homebox übernommene Workflows sind für das Original gedacht und schlagen im Fork fehl: **„Docker publish“**, **„Docker publish rootless“**, **„Docker publish hardened“** und **„Update Currencies“** (braucht einen API-Schlüssel des Originals). Dasselbe gilt für **„Docker Cleanup“** (läuft jede Nacht und schlägt fehl). Öffne jeden davon und wähle **… → Disable workflow**. „Publish Release Binaries“ läuft nur bei Versions-Tags und kann bleiben.
-   Für automatische Updates (Abschnitt 6) zusätzlich unter **Settings → Actions → General** ganz unten **„Allow GitHub Actions to create and approve pull requests“** anhaken.
+   Für Updates per Workflow (Abschnitt 6) zusätzlich unter **Settings → Actions → General** ganz unten **„Allow GitHub Actions to create and approve pull requests“** anhaken.
 4. Nach dem ersten Lauf erscheinen unter **Profil → Packages** die Pakete `homebox` und `homebox-backup`. Bei beiden **Package settings → Change visibility → Public** einstellen. Dann braucht Portainer keine Zugangsdaten. Der Code ist ohnehin öffentlich (AGPL).
 
 ## 2. Stack in Portainer
@@ -148,7 +148,7 @@ Die bisherigen Daten werden nicht gelöscht. Sie landen in `/data/.pre-restore-<
 
 Die eigenen Änderungen liegen in deinem Fork. Neue Versionen des Originals kommen geprüft als Pull Request, damit nichts Ungetestetes auf deinem Server landet:
 
-1. Der Workflow **„Upstream sync“** schaut jeden Montag nach Neuerungen im Original (oder sofort per **Actions → Upstream sync → Run workflow**). Er führt sie im Zweig `upstream-sync` mit deinen Änderungen zusammen, erzeugt den Datenbank-Code neu und prüft Backend (Build, Tests) und Frontend (Lint, Tests der eigenen Funktionen, Build).
+1. Wenn du ein Update möchtest: **Actions → Upstream sync → Run workflow**. Der Workflow läuft nur, wenn du ihn startest. Er führt sie im Zweig `upstream-sync` mit deinen Änderungen zusammen, erzeugt den Datenbank-Code neu und prüft Backend (Build, Tests) und Frontend (Lint, Tests der eigenen Funktionen, Build).
 2. Klappt alles, öffnet er einen Pull Request **„Update vom Original (…)“**. Gibt es Konflikte, legt er stattdessen ein Issue mit den betroffenen Dateien an. Dann Claude bitten, den Merge zu machen.
 3. Vor dem Mergen des Pull Requests `hb-backup backup` ausführen. Dann mergen: „Custom images“ baut neu, und Portainer zieht die Images per **Pull and redeploy** (oder automatisch mit GitOps).
 
