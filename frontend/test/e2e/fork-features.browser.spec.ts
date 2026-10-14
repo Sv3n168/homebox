@@ -50,12 +50,25 @@ async function api(request: APIRequestContext): Promise<Api> {
   };
 }
 
-async function login(page: Page) {
+/**
+ * Logs in through the API and hands the session to the browser as host-only
+ * cookies. The login page sets them with Domain=localhost, which WebKit does
+ * not keep, so the session would be gone after the next page load. (Real
+ * installations use a real host name; the login form itself is covered by the
+ * upstream login tests.)
+ */
+async function login(page: Page, request: APIRequestContext) {
+  const res = await request.post("/api/v1/users/login", { data: { username: EMAIL, password: PASSWORD } });
+  expect(res.ok()).toBeTruthy();
+  const { token, attachmentToken } = await res.json();
+  const url = test.info().project.use.baseURL ?? "http://localhost:3000";
+  await page.context().addCookies([
+    { name: "hb.auth.token", value: String(token).replace(/^Bearer /, ""), url, httpOnly: true, sameSite: "Lax" },
+    { name: "hb.auth.remember", value: "false", url, httpOnly: true, sameSite: "Lax" },
+    { name: "hb.auth.session", value: "true", url, sameSite: "Lax" },
+    { name: "hb.auth.attachment_token", value: attachmentToken ?? "", url, sameSite: "Lax" },
+  ]);
   await page.goto("/home");
-  await expect(page).toHaveURL("/");
-  await page.fill("input[type='text']", EMAIL);
-  await page.fill("input[type='password']", PASSWORD);
-  await page.click("button[type='submit']");
   await expect(page).toHaveURL("/home");
 }
 
@@ -94,7 +107,7 @@ test.describe("Fork features", () => {
     const a = await api(request);
     const item = await a.create({ name: `Lend ${uid()}`, entityTypeId: a.itemType });
 
-    await login(page);
+    await login(page, request);
     await page.goto(`/item/${item.id}`);
     await page.getByRole("button", { name: "Lend", exact: true }).click();
     const dialog = page.getByRole("dialog");
@@ -116,7 +129,7 @@ test.describe("Fork features", () => {
     await a.create({ name: `Here ${id}`, entityTypeId: a.itemType, parentId: box.id });
     const gone = await a.create({ name: `Gone ${id}`, entityTypeId: a.itemType, parentId: box.id });
 
-    await login(page);
+    await login(page, request);
     await page.goto(`/location/${box.id}/check`);
     const rows = page.getByTestId("box-check-row");
     await expect(rows).toHaveCount(2);
@@ -142,7 +155,7 @@ test.describe("Fork features", () => {
     const one = await a.create({ name: `One ${id}`, entityTypeId: a.itemType, parentId: from.id });
     const two = await a.create({ name: `Two ${id}`, entityTypeId: a.itemType, parentId: from.id });
 
-    await login(page);
+    await login(page, request);
     await page.goto(`/location/${from.id}`);
     await page.getByRole("checkbox", { name: "Select All" }).click();
     await expect(page.getByTestId("selection-bar")).toContainText("2");
@@ -166,7 +179,7 @@ test.describe("Fork features", () => {
     const flat = await a.create({ name: `Flat ${id}`, entityTypeId: a.locationType });
     await a.create({ name: `Room ${id}`, entityTypeId: a.locationType, parentId: flat.id });
 
-    await login(page);
+    await login(page, request);
     await page.goto(`/location/${place.id}`);
     await expect(page.getByText(`Shelf ${id}`)).toBeVisible();
     await expect(page.getByText(`Ladder ${id}`)).toHaveCount(0);
@@ -184,7 +197,7 @@ test.describe("Fork features", () => {
     const a = await api(request);
     const item = await a.create({ name: `Offline ${uid()}`, entityTypeId: a.itemType });
 
-    await login(page);
+    await login(page, request);
     await page.goto(`/item/${item.id}`);
     const stepper = page.getByTestId("quantity-stepper");
     await expect(stepper).toContainText("1");
