@@ -60,6 +60,29 @@ async function login(page: Page) {
 }
 
 test.describe("Fork features", () => {
+  // On failure, print what the page showed: CI keeps traces only as artifacts.
+  const consoleLines: string[] = [];
+  test.beforeEach(({ page }) => {
+    consoleLines.length = 0;
+    page.on("console", m => consoleLines.push(`${m.type()}: ${m.text()}`));
+    page.on("pageerror", e => consoleLines.push(`pageerror: ${e.message}`));
+    page.on("requestfailed", r =>
+      consoleLines.push(`requestfailed: ${r.method()} ${r.url()} ${r.failure()?.errorText}`)
+    );
+    page.on("response", r => {
+      if (r.status() >= 400) consoleLines.push(`http ${r.status()}: ${r.request().method()} ${r.url()}`);
+    });
+  });
+  test.afterEach(async ({ page }, info) => {
+    if (info.status === info.expectedStatus) return;
+    const body = await page
+      .locator("body")
+      .innerText()
+      .catch(() => "");
+    console.log(`--- [${info.project.name}] ${info.title} @ ${page.url()}\n${body.slice(0, 1500)}`);
+    console.log(consoleLines.slice(-40).join("\n"));
+  });
+
   test("shows the custom logo", async ({ page }) => {
     await page.goto("/");
     const logo = page.locator("img[src='/logo.png']").first();
