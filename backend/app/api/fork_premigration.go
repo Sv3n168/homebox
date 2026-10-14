@@ -98,7 +98,7 @@ func pendingMigrations(db *sql.DB, migrationsFs fs.FS, dir string) (int, error) 
 	}
 	pending := 0
 	for _, e := range entries {
-		if e.IsDir() || !(strings.HasSuffix(e.Name(), ".sql") || strings.HasSuffix(e.Name(), ".go")) {
+		if e.IsDir() || (!strings.HasSuffix(e.Name(), ".sql") && !strings.HasSuffix(e.Name(), ".go")) {
 			continue
 		}
 		prefix, _, found := strings.Cut(e.Name(), "_")
