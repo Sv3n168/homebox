@@ -436,17 +436,31 @@
            sub-locations, folded away; nothing at all when there are none. -->
       <section v-if="location && hasChildren && items && items.length > 0" id="direct-items" class="mt-6">
         <button
+          v-if="!directItemsOpen"
           type="button"
           class="flex items-center gap-1 text-lg font-semibold"
-          :aria-expanded="directItemsOpen"
+          :aria-expanded="false"
           data-testid="toggle-direct-items"
-          @click="directItemsOpen = !directItemsOpen"
+          @click="directItemsOpen = true"
         >
           {{ $t("locations.direct_items", { name: location.name }) }}
           <Badge variant="secondary">{{ items.length }}</Badge>
-          <MdiChevronDown class="size-5 transition-transform" :class="{ '-rotate-90': !directItemsOpen }" />
+          <MdiChevronDown class="size-5 -rotate-90" />
         </button>
-        <ItemViewSelectable v-if="directItemsOpen" :items="items" @refresh="refreshItemList" />
+        <template v-else>
+          <!-- Open: the list brings its own "Artikel" header; this only folds it away again. -->
+          <button
+            type="button"
+            class="flex items-center gap-1 text-sm text-muted-foreground underline-offset-4 hover:underline"
+            :aria-expanded="true"
+            data-testid="toggle-direct-items"
+            @click="directItemsOpen = false"
+          >
+            <MdiChevronDown class="size-4 rotate-180" />
+            {{ $t("global.show_less") }}
+          </button>
+          <ItemViewSelectable :items="items" @refresh="refreshItemList" />
+        </template>
       </section>
     </div>
   </div>
