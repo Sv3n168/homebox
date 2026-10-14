@@ -84,7 +84,7 @@
   import { Button } from "@/components/ui/button";
   import { Progress } from "@/components/ui/progress";
   import { toast } from "@/components/ui/sonner";
-  import { offlineState, pendingCount, failedEntries } from "~~/lib/offline/state";
+  import { offlineState, offlineToasts, pendingCount, failedEntries } from "~~/lib/offline/state";
   import { discardOutboxEntry } from "~~/lib/offline/sync";
   import type { OutboxEntry } from "~~/lib/offline/store";
 
@@ -145,22 +145,24 @@
     if (entry.seq !== undefined) await discardOutboxEntry(entry.seq);
   }
 
-  // One toast per burst: creating an item with photos queues several entries.
-  let lastQueuedToast = 0;
+  // The layout mounts this button twice (phone and desktop header); offlineToasts keeps
+  // it to one toast per event. One "queued" toast per burst: creating an item with
+  // photos queues several entries.
   watch(
     () => offlineState.queuedAt,
     at => {
-      if (at - lastQueuedToast < 5000) return;
-      lastQueuedToast = at;
+      if (at - offlineToasts.lastQueued < 5000) return;
+      offlineToasts.lastQueued = at;
       toast.info(t("offline.toast.queued"));
     }
   );
   watch(
     () => offlineState.blockedAt,
-    () => toast.warning(t("offline.toast.blocked"))
+    at => offlineToasts.once("blocked", at) && toast.warning(t("offline.toast.blocked"))
   );
   watch(
     () => offlineState.syncedAt,
-    () => toast.success(t("offline.toast.synced", { count: offlineState.syncedCount }))
+    at =>
+      offlineToasts.once("synced", at) && toast.success(t("offline.toast.synced", { count: offlineState.syncedCount }))
   );
 </script>

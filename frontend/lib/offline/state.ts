@@ -33,3 +33,17 @@ export function pendingCount(): number {
 export function failedEntries(): OutboxEntry[] {
   return offlineState.outbox.filter(e => !!e.error);
 }
+
+/**
+ * The offline button is mounted twice (phone and desktop header). Its toast
+ * watchers use this shared record so each event shows a single toast.
+ */
+const shownToasts: Record<string, unknown> = {};
+export const offlineToasts = {
+  lastQueued: 0,
+  once(key: string, value: unknown): boolean {
+    if (shownToasts[key] === value) return false;
+    shownToasts[key] = value;
+    return true;
+  },
+};
