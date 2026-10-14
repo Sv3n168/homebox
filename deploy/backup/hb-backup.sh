@@ -12,6 +12,13 @@
 #   hb-backup status                 last backup and last restore test
 #   hb-backup health                 exit 1 if backups stopped or a check failed
 #                                    (used by the container health check)
+#   hb-backup snapshot               local copy of the database, taken before every
+#                                    (re)start of Homebox, i.e. before an update
+#                                    migrates the database; never fails
+#   hb-backup snapshots              list those copies
+#   hb-backup restore-snapshot [NAME|latest] --yes
+#                                    put a pre-update copy of the database back
+#                                    (Homebox must be stopped; photos stay as they are)
 #
 # Everything is encrypted client-side by rclone's crypt backend (XSalsa20-
 # Poly1305, file names encrypted too) before it leaves the machine. Without
@@ -363,8 +370,81 @@ cmd_restore() {
   log "When everything looks right you can delete ${aside}."
 }
 
+# --- pre-update snapshots ----------------------------------------------------
+# The stack runs "snapshot" in a one-shot container that Homebox waits for, so
+# a copy of the database exists from right before every (re)start — before an
+# updated image migrates the database. Local only (no OneDrive), fast, and it
+# never fails: a problem here must not keep Homebox from starting.
+SNAP_DIR="${LOCAL}/pre-update"
+
+cmd_snapshot() {
+  local keep="${PRE_UPDATE_KEEP:-5}" stamp file
+  if [ ! -f "${DATA}/${DB_NAME}" ]; then
+    log "snapshot: no database at ${DATA}/${DB_NAME} yet – nothing to save"
+    return 0
+  fi
+  mkdir -p "${SNAP_DIR}" || { log "snapshot: cannot create ${SNAP_DIR} – skipped"; return 0; }
+  stamp="$(date -u '+%Y%m%d-%H%M%S')"
+  file="${SNAP_DIR}/${PREFIX}-${stamp}.db"
+  if ! sqlite3 "${DATA}/${DB_NAME}" ".timeout 30000" ".backup '${file}'" 2>/dev/null; then
+    rm -f "${file}"
+    log "snapshot: WARNING – could not copy the database, Homebox starts without a pre-update copy"
+    return 0
+  fi
+  if [ "$(sqlite3 "${file}" "PRAGMA integrity_check;" 2>&1 | head -n1)" != "ok" ]; then
+    rm -f "${file}"
+    log "snapshot: WARNING – copy failed the integrity check, removed"
+    return 0
+  fi
+  gzip -f "${file}" || true
+  ls -1 "${SNAP_DIR}"/${PREFIX}-*.db.gz 2>/dev/null | sort | head -n "-${keep}" | xargs -r rm -f
+  log "snapshot: saved $(basename "${file}").gz ($(du -h "${file}.gz" 2>/dev/null | cut -f1)), keeping the last ${keep}"
+  return 0
+}
+
+cmd_snapshots() {
+  ls -1sh "${SNAP_DIR}"/${PREFIX}-*.db.gz 2>/dev/null | sort -k2 || echo "no pre-update snapshots in ${SNAP_DIR}"
+}
+
+cmd_restore_snapshot() {
+  local target="latest" yes=false file stamp aside
+  for arg in "$@"; do
+    case "$arg" in
+      --yes|-y) yes=true ;;
+      *) target="$arg" ;;
+    esac
+  done
+  if [ "$target" = latest ]; then
+    file="$(ls -1 "${SNAP_DIR}"/${PREFIX}-*.db.gz 2>/dev/null | sort | tail -n1)"
+  else
+    file="${SNAP_DIR}/${target%.gz}.gz"
+    [ -f "$file" ] || file="${SNAP_DIR}/${target}"
+  fi
+  [ -n "$file" ] && [ -f "$file" ] || { log "ERROR: no snapshot '${target}' in ${SNAP_DIR} (see 'hb-backup snapshots')"; exit 1; }
+
+  if [ "$yes" != true ]; then
+    echo "This replaces the Homebox database with $(basename "$file") (photos and attachments stay)."
+    echo "The current database is moved aside to ${DATA}/.pre-restore-<timestamp> (not deleted)."
+    echo "Stop the Homebox container first, then run:  hb-backup restore-snapshot $(basename "$file") --yes"
+    exit 2
+  fi
+  if homebox_running; then
+    log "ERROR: Homebox is still running at ${HOMEBOX_URL} – stop the homebox container first"
+    exit 1
+  fi
+
+  stamp="$(date '+%Y%m%d-%H%M%S')"
+  aside="${DATA}/.pre-restore-${stamp}"
+  mkdir -p "$aside"
+  mv "${DATA}/${DB_NAME}" "${DATA}/${DB_NAME}-wal" "${DATA}/${DB_NAME}-shm" "$aside/" 2>/dev/null || true
+  log "current database moved to ${aside}"
+  gunzip -c "$file" > "${DATA}/${DB_NAME}"
+  check_db "${DATA}/${DB_NAME}"
+  log "restored $(basename "$file"). Start the homebox container again (with the image version from before the update)."
+}
+
 cmd_help() {
-  sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 case "${1:-help}" in
@@ -372,6 +452,9 @@ case "${1:-help}" in
   list) cmd_list ;;
   verify) shift; cmd_verify "$@" ;;
   restore) shift; cmd_restore "$@" ;;
+  snapshot) cmd_snapshot ;;
+  snapshots) cmd_snapshots ;;
+  restore-snapshot) shift; cmd_restore_snapshot "$@" ;;
   check) cmd_check ;;
   status) cmd_status ;;
   health) cmd_health ;;
