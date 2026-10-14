@@ -43,6 +43,9 @@ type TrashRepository struct {
 	attachments *AttachmentRepo
 	ensureOnce  sync.Once
 	ensureErr   error
+	// Trash operations run one at a time: on SQLite two concurrent
+	// read-then-write transactions would fail with SQLITE_BUSY.
+	mu sync.Mutex
 }
 
 func NewTrashRepository(db *ent.Client, bus *eventbus.EventBus, attachments *AttachmentRepo) *TrashRepository {
@@ -101,15 +104,32 @@ func (r *TrashRepository) ensureTable(ctx context.Context) error {
 	return r.ensureErr
 }
 
+// beginWrite starts a transaction that holds the write lock from its first
+// statement, so SQLite waits for other writers (busy_timeout) instead of
+// failing when this transaction later upgrades from reading to writing.
+func (r *TrashRepository) beginWrite(ctx context.Context) (*sql.Tx, error) {
+	tx, err := r.db.Sql().BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := tx.ExecContext(ctx, "UPDATE trash_entries SET name = name WHERE 1 = 0"); err != nil {
+		_ = tx.Rollback()
+		return nil, err
+	}
+	return tx, nil
+}
+
 // MoveToTrash deletes the entity and everything below it, keeping a copy that
 // Restore can bring back.
 func (r *TrashRepository) MoveToTrash(ctx context.Context, gid, id uuid.UUID) (TrashEntry, error) {
 	if err := r.ensureTable(ctx); err != nil {
 		return TrashEntry{}, err
 	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.purgeExpired(ctx, gid)
 
-	tx, err := r.db.Sql().BeginTx(ctx, nil)
+	tx, err := r.beginWrite(ctx)
 	if err != nil {
 		return TrashEntry{}, err
 	}
@@ -221,7 +241,9 @@ func (r *TrashRepository) List(ctx context.Context, gid uuid.UUID) ([]TrashEntry
 	if err := r.ensureTable(ctx); err != nil {
 		return nil, err
 	}
+	r.mu.Lock()
 	r.purgeExpired(ctx, gid)
+	r.mu.Unlock()
 	rows, err := r.db.Sql().QueryContext(ctx,
 		`SELECT id, root_id, name, is_location, entity_count, deleted_at, payload
 		 FROM trash_entries WHERE group_id = $1 ORDER BY deleted_at DESC`, gid.String())
@@ -268,7 +290,9 @@ func (r *TrashRepository) Restore(ctx context.Context, gid, trashID uuid.UUID) (
 	if err := r.ensureTable(ctx); err != nil {
 		return uuid.Nil, err
 	}
-	tx, err := r.db.Sql().BeginTx(ctx, nil)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	tx, err := r.beginWrite(ctx)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -363,6 +387,12 @@ func (r *TrashRepository) Purge(ctx context.Context, gid, trashID uuid.UUID) err
 	if err := r.ensureTable(ctx); err != nil {
 		return err
 	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.purge(ctx, gid, trashID)
+}
+
+func (r *TrashRepository) purge(ctx context.Context, gid, trashID uuid.UUID) error {
 	_, p, err := r.load(ctx, r.db.Sql(), gid, trashID)
 	if err != nil {
 		return err
@@ -418,7 +448,7 @@ func (r *TrashRepository) purgeExpired(ctx context.Context, gid uuid.UUID) {
 		return
 	}
 	for _, id := range expired {
-		if err := r.Purge(ctx, gid, id); err != nil {
+		if err := r.purge(ctx, gid, id); err != nil {
 			log.Warn().Err(err).Str("trash_id", id.String()).Msg("trash: could not purge expired entry")
 		}
 	}
