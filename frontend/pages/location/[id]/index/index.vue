@@ -6,6 +6,7 @@
   import type { ItemAttachment } from "~~/lib/api/types/data-contracts";
   import MdiPackageVariant from "~icons/mdi/package-variant";
   import MdiChevronDown from "~icons/mdi/chevron-down";
+  import MdiArrowDown from "~icons/mdi/arrow-down";
   import MdiPlus from "~icons/mdi/plus";
   import MdiPencil from "~icons/mdi/pencil";
   import MdiDelete from "~icons/mdi/delete";
@@ -222,6 +223,12 @@
   // Remembered per device; folded by default.
   const directItemsOpen = useLocalStorage("homebox/location/direct-items-open", false);
 
+  async function showDirectItems() {
+    directItemsOpen.value = true;
+    await nextTick();
+    document.getElementById("direct-items")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   const { data: items, refresh: refreshItemList } = useAsyncData(
     () => locationId.value + "_item_list",
     async () => {
@@ -367,6 +374,18 @@
       </div>
       <LocationCollectDialog v-model:open="collectOpen" :box="collectTarget" @moved="refreshItemList" />
 
+      <!-- Fork: the folded direct items sit below a long sub-location list; point to them. -->
+      <button
+        v-if="hasChildren && items && items.length > 0"
+        type="button"
+        class="mt-3 flex items-center gap-1 text-sm text-muted-foreground underline-offset-4 hover:underline"
+        data-testid="jump-direct-items"
+        @click="showDirectItems"
+      >
+        {{ $t("locations.direct_items_hint", { count: items.length }) }}
+        <MdiArrowDown class="size-4" />
+      </button>
+
       <!-- Details (notes, custom fields) -->
       <BaseCard v-if="locationDetails.length > 0" class="mt-4">
         <template #title> {{ $t("global.details") }} </template>
@@ -415,7 +434,7 @@
 
       <!-- Fork: places with sub-locations (Keller, Wohnung) list their own items below the
            sub-locations, folded away; nothing at all when there are none. -->
-      <section v-if="location && hasChildren && items && items.length > 0" class="mt-6">
+      <section v-if="location && hasChildren && items && items.length > 0" id="direct-items" class="mt-6">
         <button
           type="button"
           class="flex items-center gap-1 text-lg font-semibold"
