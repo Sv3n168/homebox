@@ -3,7 +3,8 @@
 Diese Version von Homebox (Fork von [sysadminsmedia/homebox](https://github.com/sysadminsmedia/homebox)) bringt zusätzlich mit:
 
 - **Offline-Modus**: Inventar durchsuchen, Boxen und Inhalte ansehen, QR-Etiketten scannen und neue Artikel samt Fotos anlegen, auch ohne Netz. Was offline angelegt wurde, wird automatisch hochgeladen, sobald wieder Netz da ist.
-- **Verliehen**: an wen, seit wann, zurück bis wann. Mit Badge auf jedem Artikel, Übersicht auf der Startseite und Markierung von Überfälligem.
+- **Verliehen**: an wen, seit wann, zurück bis wann. Mit Badge auf jedem Artikel, Übersicht auf der Startseite und Markierung von Überfälligem. In der Seitenleiste unter **Verleihen** alles auf einen Blick: nach Person filtern, ändern, zurückgeben oder etwas Neues verleihen.
+- **Papierkorb**: Gelöschte Artikel und Lagerorte (samt Inhalt, Fotos, Wartung, Tags) bleiben 30 Tage im **Papierkorb** in der Seitenleiste und lassen sich wiederherstellen. Danach löscht Homebox sie endgültig.
 - **Verschlüsseltes Backup nach OneDrive**: automatisch, mit Restore per Befehl und monatlicher **Probe-Wiederherstellung**. Status, Häufigkeit und Aufbewahrung unter **Sammlung → Werkzeuge**.
 - **Liquid-Glass-Design** im Stil von iOS, hell, dunkel oder automatisch passend zum iPhone. Auswahl unter **Profil → Theme**. Wer bisher Homebox genutzt hat, behält zunächst sein altes Theme und muss einmal umstellen.
 - **Schnelle Statistiken** und **Verliehen** auf der Startseite lassen sich per Tipp auf die Überschrift einklappen.

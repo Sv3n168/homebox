@@ -214,6 +214,11 @@ func (a *app) mountRoutes(r *chi.Mux, chain *errchain.ErrChain, repos *repo.AllR
 		r.Put("/entities/{id}", chain.ToHandlerFunc(v1Ctrl.HandleEntityUpdate(), userMW...))
 		r.Patch("/entities/{id}", chain.ToHandlerFunc(v1Ctrl.HandleEntityPatch(), userMW...))
 		r.Delete("/entities/{id}", chain.ToHandlerFunc(v1Ctrl.HandleEntityDelete(), userMW...))
+		// Fork: recycle bin
+		r.Get("/trash", chain.ToHandlerFunc(v1Ctrl.HandleTrashList(), userMW...))
+		r.Delete("/trash", chain.ToHandlerFunc(v1Ctrl.HandleTrashEmpty(), userMW...))
+		r.Post("/trash/{id}/restore", chain.ToHandlerFunc(v1Ctrl.HandleTrashRestore(), userMW...))
+		r.Delete("/trash/{id}", chain.ToHandlerFunc(v1Ctrl.HandleTrashPurge(), userMW...))
 		r.Post("/entities/{id}/duplicate", chain.ToHandlerFunc(v1Ctrl.HandleEntityDuplicate(), userMW...))
 
 		// Entity attachment endpoints

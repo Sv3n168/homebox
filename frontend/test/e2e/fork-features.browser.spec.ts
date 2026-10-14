@@ -13,6 +13,8 @@ type Entity = { quantity: number; lentTo?: string; tags?: unknown[]; parent?: { 
 type Api = {
   create: (body: Record<string, unknown>) => Promise<{ id: string; name: string }>;
   get: (id: string) => Promise<Entity>;
+  exists: (id: string) => Promise<boolean>;
+  remove: (id: string) => Promise<void>;
   itemType: string;
   locationType: string;
 };
@@ -46,6 +48,12 @@ async function api(request: APIRequestContext): Promise<Api> {
       const res = await request.get(`/api/v1/entities/${id}`, { headers });
       expect(res.ok()).toBeTruthy();
       return res.json();
+    },
+    async exists(id) {
+      return (await request.get(`/api/v1/entities/${id}`, { headers })).ok();
+    },
+    async remove(id) {
+      expect((await request.delete(`/api/v1/entities/${id}`, { headers })).ok()).toBeTruthy();
     },
   };
 }
@@ -213,5 +221,61 @@ test.describe("Fork features", () => {
     await page.evaluate(() => window.dispatchEvent(new Event("online")));
     await expect.poll(async () => (await a.get(item.id)).quantity, { timeout: 20_000 }).toBe(2);
     await expect(page.getByTestId("offline-pending-count")).toHaveCount(0, { timeout: 20_000 });
+  });
+
+  test("deleting a location moves it with its contents to the trash, and restores it", async ({ page, request }) => {
+    const a = await api(request);
+    const id = uid();
+    const shelf = await a.create({ name: `Shelf ${id}`, entityTypeId: a.locationType });
+    const box = await a.create({ name: `Box ${id}`, entityTypeId: a.locationType, parentId: shelf.id });
+    const saw = await a.create({ name: `Saw ${id}`, entityTypeId: a.itemType, parentId: box.id });
+    await a.remove(shelf.id);
+    expect(await a.exists(saw.id)).toBe(false);
+
+    await login(page, request);
+    await page.goto("/trash");
+    const entry = page.getByTestId("trash-entry").filter({ hasText: `Shelf ${id}` });
+    await expect(entry).toContainText("2 entries inside");
+    await entry.getByTestId("trash-restore").click();
+    await expect(entry).toHaveCount(0);
+
+    await expect.poll(() => a.exists(saw.id)).toBe(true);
+    expect((await a.get(saw.id)).parent?.id).toBe(box.id);
+    expect((await a.get(box.id)).parent?.id).toBe(shelf.id);
+  });
+
+  test("deletes a trash entry for good", async ({ page, request }) => {
+    const a = await api(request);
+    const item = await a.create({ name: `Old ${uid()}`, entityTypeId: a.itemType });
+    await a.remove(item.id);
+
+    await login(page, request);
+    await page.goto("/trash");
+    const entry = page.getByTestId("trash-entry").filter({ hasText: item.name });
+    await entry.getByTestId("trash-purge").click();
+    await page.getByRole("button", { name: "Confirm" }).click();
+    await expect(entry).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByTestId("trash-entry").filter({ hasText: item.name })).toHaveCount(0);
+    expect(await a.exists(item.id)).toBe(false);
+  });
+
+  test("lends from the lending page and takes it back", async ({ page, request }) => {
+    const a = await api(request);
+    const item = await a.create({ name: `Drill ${uid()}`, entityTypeId: a.itemType });
+
+    await login(page, request);
+    await page.goto("/lending");
+    await page.getByTestId("lend-search").fill(item.name);
+    await page.getByTestId("lend-search-result").filter({ hasText: item.name }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.locator("input").first().fill("Ben");
+    await dialog.getByRole("button", { name: "Lend", exact: true }).click();
+
+    const row = page.getByTestId("lending-row").filter({ hasText: item.name });
+    await expect(row).toContainText("Lent to Ben");
+    await row.getByTestId("lending-return").click();
+    await expect(row).toHaveCount(0);
+    await expect.poll(async () => (await a.get(item.id)).lentTo ?? "").toBe("");
   });
 });
