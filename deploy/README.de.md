@@ -154,11 +154,11 @@ Die eigenen Änderungen liegen in deinem Fork. Neue Versionen des Originals komm
 
 **Bitte nicht** auf GitHub **Sync fork → Update branch** klicken: Das schreibt das Original ungeprüft direkt auf `main`, und mit GitOps läuft es kurz danach auf deinem Server.
 
-**Sicherung vor jedem Update (automatisch):** Bei jedem Deploy läuft vor dem Start von Homebox kurz der Container `homebox-pre-update`. Er legt eine Kopie der Datenbank im Backup-Volume ab (`/backups/pre-update`, die letzten 5). Das passiert also immer, bevor eine neue Version die Datenbank umbauen kann. Fotos und Anhänge ändert ein Update nicht, sie stecken im normalen Backup. Klappt die Kopie nicht, startet Homebox trotzdem; im Log von `homebox-pre-update` steht dann eine Warnung.
+**Sicherung vor jedem Update (automatisch):** Bringt eine neue Version Änderungen an der Datenbank mit, legt Homebox selbst direkt davor eine Kopie der Datenbank an: `/data/.pre-migration/homebox-<Zeitpunkt in UTC>.db`, die letzten 3 bleiben. Dafür ist kein anderer Container nötig. Klappt die Kopie nicht, steht eine Warnung im Log, und Homebox startet trotzdem normal. Fotos und Anhänge ändert ein Update nicht, sie stecken im normalen Backup. Die Kopien landen nicht im OneDrive-Backup.
 
 **Zurück zur vorigen Version:**
-1. Jedes Image gibt es zusätzlich mit festem Tag `sha-<7 Zeichen des Commits>` (Profil → Packages → homebox). Den Stand von vor dem Update notieren.
-2. Container `homebox` stoppen. In `homebox-backup` die Konsole öffnen und `hb-backup snapshots` ausführen. Die Kopie von direkt vor dem Update ist die mit der Uhrzeit des Deploys (UTC).
+1. Jedes Image gibt es zusätzlich mit festem Tag `sha-<7 Zeichen des Commits>` (Profil → Packages → homebox). Den Stand von vor dem Update heraussuchen.
+2. Container `homebox` stoppen. In `homebox-backup` die Konsole öffnen und `hb-backup snapshots` ausführen. Die Kopie mit der Uhrzeit des Updates ist die richtige.
 3. `hb-backup restore-snapshot <Name> --yes` (oder `latest`). Die aktuelle Datenbank wird nicht gelöscht, sondern nach `/data/.pre-restore-<Zeitpunkt>` verschoben.
 4. In den Stack-Variablen `HOMEBOX_IMAGE=ghcr.io/sv3n168/homebox:sha-xxxxxxx` setzen und neu deployen. Später für Updates wieder entfernen.
 

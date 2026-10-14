@@ -21,31 +21,11 @@ services:
       - HBOX_WEB_MAX_UPLOAD_SIZE=${HBOX_MAX_UPLOAD_MB:-20}
     volumes:
       - homebox-data:/data
-    # A copy of the database is taken right before Homebox (re)starts, i.e.
-    # before an updated image migrates it. See "Updates" in the README.
-    depends_on:
-      homebox-pre-update:
-        condition: service_completed_successfully
     # cloudflared reaches Homebox here (tunnel service: http://<VM-IP>:3100).
     # If cloudflared shares a Docker network with this stack instead, remove
     # the port and use http://homebox:7745 — see "cloudflared" in the README.
     ports:
       - "${HOMEBOX_PORT:-3100}:7745"
-
-  # Runs once per deploy (Pull and redeploy, GitOps update) before Homebox
-  # starts: local copy of the database into the backup volume, last 5 kept.
-  # Never fails, so it can't keep Homebox from starting.
-  homebox-pre-update:
-    image: ${HOMEBOX_BACKUP_IMAGE:-ghcr.io/sv3n168/homebox-backup:latest}
-    container_name: homebox-pre-update
-    restart: "no"
-    command: ["sh", "-c", "/usr/local/bin/hb-backup snapshot || true"]
-    environment:
-      - TZ=${TZ:-Europe/Berlin}
-      - PRE_UPDATE_KEEP=${PRE_UPDATE_KEEP:-5}
-    volumes:
-      - homebox-data:/data
-      - homebox-backup-local:/backups
 
   homebox-backup:
     image: ${HOMEBOX_BACKUP_IMAGE:-ghcr.io/sv3n168/homebox-backup:latest}

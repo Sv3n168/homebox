@@ -6,7 +6,7 @@ set -euo pipefail
 
 if [ "${1:-schedule}" != "schedule" ]; then
   case "$1" in
-    backup|list|verify|restore|check|status|health|help|snapshot|snapshots|restore-snapshot) exec /usr/local/bin/hb-backup "$@" ;;
+    backup|list|verify|restore|check|status|health|help|snapshots|restore-snapshot) exec /usr/local/bin/hb-backup "$@" ;;
     *) exec "$@" ;;
   esac
 fi
