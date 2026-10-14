@@ -263,6 +263,8 @@
   import MdiAccount from "~icons/mdi/account";
   import MdiCog from "~icons/mdi/cog";
   import MdiWrench from "~icons/mdi/wrench";
+  import MdiHandExtended from "~icons/mdi/hand-extended";
+  import MdiDeleteOutline from "~icons/mdi/delete-outline";
   import MdiPlus from "~icons/mdi/plus";
   import MdiLogout from "~icons/mdi/logout";
   import MdiFileDocumentMultiple from "~icons/mdi/file-document-multiple";
@@ -461,6 +463,22 @@
       active: computed(() => route.path === "/maintenance"),
       name: computed(() => t("menu.maintenance")),
       to: "/maintenance",
+    },
+    // Fork: lending overview
+    {
+      icon: MdiHandExtended,
+      id: 51,
+      active: computed(() => route.path === "/lending"),
+      name: computed(() => t("menu.lending")),
+      to: "/lending",
+    },
+    // Fork: recycle bin
+    {
+      icon: MdiDeleteOutline,
+      id: 8,
+      active: computed(() => route.path === "/trash"),
+      name: computed(() => t("menu.trash")),
+      to: "/trash",
     },
     {
       icon: MdiAccount,

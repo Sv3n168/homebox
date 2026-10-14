@@ -354,7 +354,7 @@
                         "create_maintenance_item": "Wartungsposten für Artikel erstellen",
                         "create_maintenance_selected": "Wartungsposten für ausgewählte Artikel erstellen",
                         "create_maintenance_success": "Wartungseinträge erstellt",
-                        "delete_confirmation": "Möchten Sie die ausgewählten Artikel wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+                        "delete_confirmation": "Die ausgewählten Artikel in den Papierkorb verschieben? Du kannst sie 30 Tage lang wiederherstellen.",
                         "delete_item": "Artikel löschen",
                         "delete_selected": "Ausgewählte Artikel löschen",
                         "download_csv": "Tabelle als CSV herunterladen",
@@ -640,7 +640,7 @@
         "created_at": "Erstellt um",
         "custom_fields": "Benutzerdefinierte Felder",
         "delete_attachment_confirm": "Sind Sie sicher, dass Sie diesen Anhang löschen möchten?",
-        "delete_item_confirm": "Sind Sie sicher, dass Sie diesen Artikel löschen möchten?",
+        "delete_item_confirm": "Diesen Artikel in den Papierkorb verschieben? Du kannst ihn 30 Tage lang wiederherstellen.",
         "description": "Beschreibung",
         "details": "Details",
         "drag_and_drop": "Ziehen Sie Dateien hierher und legen Sie sie dort ab oder klicken Sie, um Dateien auszuwählen",
@@ -678,18 +678,27 @@
         "invalid_asset_id": "Ungültige Asset-ID",
         "last": "Letzte",
         "lending": {
+            "all_people": "Alle",
             "badge": "Verliehen",
             "badge_to": "Verliehen an {name}",
+            "by_person": "Nach Person",
             "due": "zurück bis {date}",
+            "edit": "Ändern",
             "lend": "Verleihen",
+            "lend_something": "Etwas verleihen",
             "lend_title": "„{name}“ verleihen",
             "lent_date": "Verliehen am",
             "lent_to": "Verliehen an",
             "mark_returned": "Zurückgegeben",
+            "no_results": "Kein passender Artikel, der nicht schon verliehen ist.",
+            "none": "Gerade ist nichts verliehen.",
             "overdue": "Überfällig",
             "overdue_count": "{count} überfällig",
             "overview_title": "Verliehen",
+            "page_intro": "Was gerade verliehen ist, an wen und bis wann.",
+            "page_title": "Verleihen",
             "return_date": "Zurück bis",
+            "search_item": "Artikel suchen …",
             "since": "seit {date}",
             "title": "Verliehen",
             "toast": {
@@ -766,7 +775,7 @@
             "failed_search_items": "Das Suchen der Artikel ist fehlgeschlagen",
             "failed_update_attachment": "Aktualisieren des Anhangs ist fehlgeschlagen",
             "failed_upload_attachment": "Hochladen des Anhangs ist fehlgeschlagen",
-            "item_deleted": "Artikel gelöscht",
+            "item_deleted": "In den Papierkorb verschoben",
             "item_saved": "Artikel gespeichert",
             "quantity_cannot_negative": "Die Anzahl darf nicht negativ sein",
             "sync_child_location": "Das ausgewählte übergeordnete Element synchronisiert die Lagerorte seiner untergeordneten Elemente mit seinen eigenen. Der Lagerort wurde aktualisiert."
@@ -824,14 +833,14 @@
         "collapse_tree": "Baum einklappen",
         "expand_tree": "Baum ausklappen",
         "hide_items": "Einträge ausblenden",
-        "location_items_delete_confirm": "Möchten Sie diesen Lagerort und alle darin enthaltenen Artikel wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "location_items_delete_confirm": "Diesen Lagerort samt allem, was darin liegt, in den Papierkorb verschieben? Du kannst alles 30 Tage lang wiederherstellen.",
         "no_results": "Keine Lagerorte gefunden",
         "show_items": "Einträge einblenden",
         "toast": {
             "failed_delete_location": "Lagerort konnte nicht gelöscht werden",
             "failed_load_location": "Lagerort konnte nicht geladen werden",
             "failed_update_location": "Lagerort konnte nicht aktualisiert werden",
-            "location_deleted": "Lagerort gelöscht",
+            "location_deleted": "In den Papierkorb verschoben",
             "location_updated": "Lagerort aktualisiert"
         },
         "update_location": "Lagerort aktualisieren"
@@ -877,12 +886,14 @@
         "create_location": "Lagerort",
         "create_tag": "Tag",
         "home": "Home",
+        "lending": "Verleihen",
         "locations": "Lagerorte",
         "maintenance": "Wartung",
         "profile": "Profil",
         "scanner": "Der Scanner",
         "search": "Suche",
-        "templates": "Vorlagen"
+        "templates": "Vorlagen",
+        "trash": "Papierkorb"
     },
     "move": {
         "button": "Verschieben",
@@ -1254,6 +1265,28 @@
             "restore_requires_empty": "Für die Wiederherstellung ist eine Sammlung ohne Elemente erforderlich. Wechseln Sie zu einer neu registrierten Sammlung (Standard-Lagerorte und -Tags sind in Ordnung) und versuchen Sie es erneut.",
             "restore_started": "Wiederherstellung gestartet — Seite aktualisieren, um die importierten Elemente zu sehen.",
             "wipe_inventory_success": "Lagerbestand erfolgreich gelöscht. { results } Artikel gelöscht."
+        }
+    },
+    "trash": {
+        "confirm_empty": "Alle Einträge im Papierkorb endgültig löschen? Das lässt sich nicht rückgängig machen.",
+        "confirm_purge": "„{name}“ endgültig löschen? Das lässt sich nicht rückgängig machen.",
+        "contains": "mit {count} Einträgen darin",
+        "deleted_at": "gelöscht {when}",
+        "empty": "Der Papierkorb ist leer.",
+        "empty_all": "Papierkorb leeren",
+        "from": "aus {name}",
+        "intro": "Gelöschte Artikel und Lagerorte bleiben 30 Tage hier und lassen sich wiederherstellen. Danach werden sie endgültig gelöscht.",
+        "purge": "Endgültig löschen",
+        "purge_at": "wird am {date} endgültig gelöscht",
+        "restore": "Wiederherstellen",
+        "title": "Papierkorb",
+        "toast": {
+            "emptied": "Papierkorb geleert",
+            "failed": "Das hat nicht geklappt",
+            "open": "Öffnen",
+            "purged": "Endgültig gelöscht",
+            "restored": "„{name}“ wiederhergestellt",
+            "type_missing": "Wiederherstellen nicht möglich: Der Objekttyp wurde inzwischen gelöscht."
         }
     },
     "version_info": {

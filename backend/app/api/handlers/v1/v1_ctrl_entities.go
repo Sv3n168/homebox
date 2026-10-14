@@ -291,7 +291,9 @@ func (ctrl *V1Controller) HandleEntityDelete() errchain.HandlerFunc {
 
 		auth := services.NewContext(spanCtx)
 		span.SetAttributes(attribute.String("group.id", auth.GID.String()))
-		err := ctrl.repo.Entities.DeleteByGroup(auth, auth.GID, ID)
+		// Fork: deleting moves the entity and its contents to the recycle bin (fork_trash.go).
+		_, err := ctrl.repo.Trash.MoveToTrash(auth, auth.GID, ID)
+		err = trashError(err)
 		if err != nil {
 			recordCtrlSpanError(span, err)
 		}
