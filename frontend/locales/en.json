@@ -831,6 +831,7 @@
     "languages.sr-RS": "Serbian (Serbia)",
     "locations": {
         "child_locations": "Child Locations",
+        "direct_items": "Items directly in {name}",
         "collapse_tree": "Collapse Tree",
         "expand_tree": "Expand Tree",
         "hide_items": "Hide Items",

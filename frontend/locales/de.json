@@ -819,6 +819,7 @@
     "languages.sr-RS": "Serbisch (Serbien)",
     "locations": {
         "child_locations": "Unter-Lagerorte",
+        "direct_items": "Artikel direkt in {name}",
         "collapse_tree": "Baum einklappen",
         "expand_tree": "Baum ausklappen",
         "hide_items": "Einträge ausblenden",

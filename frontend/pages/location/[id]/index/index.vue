@@ -5,6 +5,7 @@
   import { filterZeroValues } from "~~/components/global/DetailsSection/types";
   import type { ItemAttachment } from "~~/lib/api/types/data-contracts";
   import MdiPackageVariant from "~icons/mdi/package-variant";
+  import MdiChevronDown from "~icons/mdi/chevron-down";
   import MdiPlus from "~icons/mdi/plus";
   import MdiPencil from "~icons/mdi/pencil";
   import MdiDelete from "~icons/mdi/delete";
@@ -217,6 +218,10 @@
     return filterZeroValues(ret);
   });
 
+  const hasChildren = computed(() => (location.value?.children?.length ?? 0) > 0);
+  // Remembered per device; folded by default.
+  const directItemsOpen = useLocalStorage("homebox/location/direct-items-open", false);
+
   const { data: items, refresh: refreshItemList } = useAsyncData(
     () => locationId.value + "_item_list",
     async () => {
@@ -395,17 +400,34 @@
         </div>
       </BaseCard>
 
-      <!-- Items in this location -->
-      <section v-if="location && items">
+      <!-- Items in this location (plain boxes: as before) -->
+      <section v-if="location && items && !hasChildren">
         <ItemViewSelectable :items="items" @refresh="refreshItemList" />
       </section>
 
       <!-- Child locations -->
-      <section v-if="location && location.children && location.children.length > 0" class="mt-6">
+      <section v-if="location && hasChildren" class="mt-6">
         <BaseSectionHeader class="mb-5"> {{ $t("locations.child_locations") }} </BaseSectionHeader>
         <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <LocationCard v-for="child in location.children" :key="child.id" :location="child" />
         </div>
+      </section>
+
+      <!-- Fork: places with sub-locations (Keller, Wohnung) list their own items below the
+           sub-locations, folded away; nothing at all when there are none. -->
+      <section v-if="location && hasChildren && items && items.length > 0" class="mt-6">
+        <button
+          type="button"
+          class="flex items-center gap-1 text-lg font-semibold"
+          :aria-expanded="directItemsOpen"
+          data-testid="toggle-direct-items"
+          @click="directItemsOpen = !directItemsOpen"
+        >
+          {{ $t("locations.direct_items", { name: location.name }) }}
+          <Badge variant="secondary">{{ items.length }}</Badge>
+          <MdiChevronDown class="size-5 transition-transform" :class="{ '-rotate-90': !directItemsOpen }" />
+        </button>
+        <ItemViewSelectable v-if="directItemsOpen" :items="items" @refresh="refreshItemList" />
       </section>
     </div>
   </div>
