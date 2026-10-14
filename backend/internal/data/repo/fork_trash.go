@@ -391,14 +391,14 @@ func (r *TrashRepository) PurgeAll(ctx context.Context, gid uuid.UUID) (int, err
 	return n, nil
 }
 
-func (r *TrashRepository) purgeExpired(ctx context.Context, gid uuid.UUID) {
+func (r *TrashRepository) expiredIDs(ctx context.Context, gid uuid.UUID) ([]uuid.UUID, error) {
 	rows, err := r.db.Sql().QueryContext(ctx,
 		"SELECT id FROM trash_entries WHERE group_id = $1 AND deleted_at < $2",
 		gid.String(), time.Now().UTC().Add(-TrashRetention))
 	if err != nil {
-		log.Warn().Err(err).Msg("trash: could not look for expired entries")
-		return
+		return nil, err
 	}
+	defer func() { _ = rows.Close() }()
 	var expired []uuid.UUID
 	for rows.Next() {
 		var id string
@@ -408,7 +408,15 @@ func (r *TrashRepository) purgeExpired(ctx context.Context, gid uuid.UUID) {
 			}
 		}
 	}
-	_ = rows.Close()
+	return expired, rows.Err()
+}
+
+func (r *TrashRepository) purgeExpired(ctx context.Context, gid uuid.UUID) {
+	expired, err := r.expiredIDs(ctx, gid)
+	if err != nil {
+		log.Warn().Err(err).Msg("trash: could not look for expired entries")
+		return
+	}
 	for _, id := range expired {
 		if err := r.Purge(ctx, gid, id); err != nil {
 			log.Warn().Err(err).Str("trash_id", id.String()).Msg("trash: could not purge expired entry")
@@ -544,12 +552,7 @@ func insertRows(ctx context.Context, q sqlQuerier, table string, rows []map[stri
 	if len(rows) == 0 {
 		return nil
 	}
-	probe, err := q.QueryContext(ctx, "SELECT * FROM "+quoteIdent(table)+" WHERE 1 = 0")
-	if err != nil {
-		return err
-	}
-	cols, err := probe.Columns()
-	_ = probe.Close()
+	cols, err := tableColumns(ctx, q, table)
 	if err != nil {
 		return err
 	}
@@ -569,6 +572,15 @@ func insertRows(ctx context.Context, q sqlQuerier, table string, rows []map[stri
 		}
 	}
 	return nil
+}
+
+func tableColumns(ctx context.Context, q sqlQuerier, table string) ([]string, error) {
+	probe, err := q.QueryContext(ctx, "SELECT * FROM "+quoteIdent(table)+" WHERE 1 = 0")
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = probe.Close() }()
+	return probe.Columns()
 }
 
 func orderByIDs(rows []map[string]any, ids []any) []map[string]any {
