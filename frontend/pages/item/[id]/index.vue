@@ -50,6 +50,8 @@
   import MdiKeyboardReturn from "~icons/mdi/keyboard-return";
   import MdiFolderMoveOutline from "~icons/mdi/folder-move-outline";
   import { isLent, isOverdue, lendingDate } from "~/lib/lending";
+  import MdiHelpCircleOutline from "~icons/mdi/help-circle-outline";
+  import ItemFoundActions from "~/components/Item/FoundActions.vue";
 
   const { t } = useI18n();
 
@@ -99,6 +101,9 @@
   const lentOverdue = computed(() => isOverdue(item.value));
   const lentSince = computed(() => lendingDate(item.value?.lentDate));
   const lentDue = computed(() => lendingDate(item.value?.lentReturnDate));
+
+  // Fork: flagged by a box check (tag "Vermisst").
+  const isMissing = computed(() => (item.value?.tags ?? []).some(isMissingTag));
 
   const { pick } = useBoxPicker();
   const { move } = useMove();
@@ -807,6 +812,21 @@
         <div v-if="item.description" class="prose max-w-full p-1">
           <Markdown class="text-base" :source="item.description" />
         </div>
+      </Card>
+
+      <Card
+        v-if="isMissing && lendTarget"
+        data-testid="missing-banner"
+        class="mt-3 flex flex-wrap items-center gap-3 border-2 border-destructive bg-destructive/10 p-3"
+      >
+        <div class="flex min-w-0 grow basis-full items-center gap-3 sm:basis-auto">
+          <MdiHelpCircleOutline class="size-7 shrink-0 text-destructive" />
+          <div class="min-w-0">
+            <div class="font-semibold">{{ $t("box_check.missing_banner") }}</div>
+            <div class="text-sm text-muted-foreground">{{ $t("box_check.missing_banner_hint") }}</div>
+          </div>
+        </div>
+        <ItemFoundActions :item="lendTarget" @done="refresh" />
       </Card>
 
       <Card

@@ -12,7 +12,7 @@
     </NuxtLink>
     <NuxtLink
       v-if="missing && missingCount > 0"
-      :to="`/tag/${missing.id}`"
+      to="/missing"
       class="flex items-center gap-2 rounded-xl border bg-card px-3 py-2 text-sm shadow-sm"
       data-testid="missing-hint"
     >
