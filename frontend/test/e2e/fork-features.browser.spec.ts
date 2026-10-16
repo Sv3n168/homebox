@@ -145,14 +145,65 @@ test.describe("Fork features", () => {
       .filter({ hasText: `Here ${id}` })
       .getByTestId("box-check-present")
       .click();
+    await expect(page.getByTestId("box-check-progress")).toContainText("1 of 2");
+
+    // Leaving the page keeps the answers given so far.
+    await page.reload();
+    await expect(page.getByTestId("box-check-restored")).toBeVisible();
+    await expect(page.getByTestId("box-check-progress")).toContainText("1 of 2");
+
     await rows
       .filter({ hasText: `Gone ${id}` })
       .getByTestId("box-check-missing")
       .click();
     await page.getByTestId("box-check-finish").click();
 
-    await expect(page.getByTestId("box-check-done")).toContainText("1 missing");
+    const done = page.getByTestId("box-check-done");
+    await expect(done).toContainText("1 missing");
+    await expect(page.getByTestId("box-check-summary-missing")).toContainText(`Gone ${id}`);
     await expect.poll(async () => ((await a.get(gone.id)).tags ?? []).length).toBe(1);
+
+    // Finished: the next check starts fresh.
+    await page.goto(`/location/${box.id}/check`);
+    await expect(rows).toHaveCount(2);
+    await expect(page.getByTestId("box-check-restored")).toHaveCount(0);
+  });
+
+  test("marks a missing item as found again", async ({ page, request }) => {
+    const a = await api(request);
+    const id = uid();
+    const box = await a.create({ name: `Lost ${id}`, entityTypeId: a.locationType });
+    const other = await a.create({ name: `Found box ${id}`, entityTypeId: a.locationType });
+    const one = await a.create({ name: `Key ${id}`, entityTypeId: a.itemType, parentId: box.id });
+    const two = await a.create({ name: `Torch ${id}`, entityTypeId: a.itemType, parentId: box.id });
+
+    await login(page, request);
+    await page.goto(`/location/${box.id}/check`);
+    const rows = page.getByTestId("box-check-row");
+    await expect(rows).toHaveCount(2);
+    for (let i = 0; i < 2; i++) await rows.nth(i).getByTestId("box-check-missing").click();
+    await page.getByTestId("box-check-finish").click();
+    await expect(page.getByTestId("box-check-done")).toContainText("2 missing");
+
+    // From the list of missing items: found where it belongs.
+    await page.goto("/missing");
+    const row = page.getByTestId("missing-row").filter({ hasText: `Key ${id}` });
+    await row.getByTestId("found").click();
+    await expect(row).toHaveCount(0);
+    await expect.poll(async () => ((await a.get(one.id)).tags ?? []).length).toBe(0);
+
+    // From the item page: found in another box.
+    await page.goto(`/item/${two.id}`);
+    await expect(page.getByTestId("missing-banner")).toBeVisible();
+    await page.getByTestId("missing-banner").getByTestId("found-in").click();
+    await page.getByTestId("box-picker-search").fill(`Found box ${id}`);
+    await page
+      .getByTestId("box-picker-option")
+      .filter({ hasText: `Found box ${id}` })
+      .click();
+    await expect(page.getByTestId("missing-banner")).toHaveCount(0);
+    await expect.poll(async () => (await a.get(two.id)).parent?.id).toBe(other.id);
+    expect((await a.get(two.id)).tags ?? []).toHaveLength(0);
   });
 
   test("moves several items into another box at once", async ({ page, request }) => {
