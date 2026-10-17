@@ -329,4 +329,30 @@ test.describe("Fork features", () => {
     await expect(row).toHaveCount(0);
     await expect.poll(async () => (await a.get(item.id)).lentTo ?? "").toBe("");
   });
+
+  test("puts a used-up consumable on the shopping list and ticks it off", async ({ page, request }) => {
+    const a = await api(request);
+    const id = uid();
+    const shelf = await a.create({ name: `Shelf ${id}`, entityTypeId: a.locationType });
+    const oil = await a.create({ name: `Wood oil ${id}`, entityTypeId: a.itemType, parentId: shelf.id });
+
+    await login(page, request);
+    await page.goto(`/item/${oil.id}`);
+    // Using the last one offers the list.
+    await page.getByTestId("quantity-stepper").getByRole("button", { name: "-1" }).click();
+    await page.getByRole("button", { name: "Restock" }).last().click();
+    await expect(page.getByTestId("restock-banner")).toBeVisible();
+    await expect.poll(async () => ((await a.get(oil.id)).tags ?? []).length).toBe(1);
+
+    await page.goto("/home");
+    await expect(page.getByTestId("restock-hint")).toBeVisible();
+    await page.getByTestId("restock-hint").click();
+    await expect(page).toHaveURL(/\/shopping$/);
+    const row = page.getByTestId("restock-row").filter({ hasText: oil.name });
+    await expect(row).toContainText(`Shelf ${id}`);
+    await row.getByTestId("restock-bought").click();
+    await expect(row).toHaveCount(0);
+    await expect.poll(async () => ((await a.get(oil.id)).tags ?? []).length).toBe(0);
+    expect((await a.get(oil.id)).quantity).toBe(1);
+  });
 });

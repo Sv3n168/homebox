@@ -265,6 +265,7 @@
   import MdiWrench from "~icons/mdi/wrench";
   import MdiHandExtended from "~icons/mdi/hand-extended";
   import MdiDeleteOutline from "~icons/mdi/delete-outline";
+  import MdiCartOutline from "~icons/mdi/cart-outline";
   import MdiPlus from "~icons/mdi/plus";
   import MdiLogout from "~icons/mdi/logout";
   import MdiFileDocumentMultiple from "~icons/mdi/file-document-multiple";
@@ -471,6 +472,14 @@
       active: computed(() => route.path === "/lending"),
       name: computed(() => t("menu.lending")),
       to: "/lending",
+    },
+    // Fork: shopping list for consumables
+    {
+      icon: MdiCartOutline,
+      id: 52,
+      active: computed(() => route.path === "/shopping"),
+      name: computed(() => t("menu.shopping")),
+      to: "/shopping",
     },
     // Fork: recycle bin
     {

@@ -52,6 +52,9 @@
   import { isLent, isOverdue, lendingDate } from "~/lib/lending";
   import MdiHelpCircleOutline from "~icons/mdi/help-circle-outline";
   import ItemFoundActions from "~/components/Item/FoundActions.vue";
+  import MdiCartPlus from "~icons/mdi/cart-plus";
+  import MdiCartOutline from "~icons/mdi/cart-outline";
+  import MdiCartCheck from "~icons/mdi/cart-check";
 
   const { t } = useI18n();
 
@@ -105,6 +108,13 @@
   // Fork: flagged by a box check (tag "Vermisst").
   const isMissing = computed(() => (item.value?.tags ?? []).some(isMissingTag));
 
+  // Fork: shopping list (tag "Nachkaufen").
+  const restock = useRestock();
+  const onRestockList = computed(() => !!item.value && restock.onList(item.value));
+  async function restockAction(fn: typeof restock.add) {
+    if (item.value && (await fn(item.value))) refresh();
+  }
+
   const { pick } = useBoxPicker();
   const { move } = useMove();
 
@@ -156,6 +166,13 @@
 
     if (resp.data) {
       item.value = resp.data;
+      // Fork: the last one used up: offer the shopping list.
+      if (newQuantity === 0 && !restock.onList(resp.data)) {
+        const it = resp.data;
+        toast(t("restock.toast.empty", { name: it.name }), {
+          action: { label: t("restock.add_short"), onClick: () => restockAction(() => restock.add(it)) },
+        });
+      }
     }
   }
 
@@ -768,6 +785,18 @@
                 <span class="hidden md:inline">{{ $t("move.button") }}</span>
               </Button>
               <Button
+                v-if="!onRestockList"
+                variant="outline"
+                class="w-9 md:w-auto"
+                :aria-label="$t('restock.add')"
+                :title="$t('restock.add')"
+                data-testid="restock-add"
+                @click="restockAction(restock.add)"
+              >
+                <MdiCartPlus />
+                <span class="hidden md:inline">{{ $t("restock.add_short") }}</span>
+              </Button>
+              <Button
                 v-if="!lent"
                 variant="outline"
                 class="w-9 md:w-auto"
@@ -827,6 +856,31 @@
           </div>
         </div>
         <ItemFoundActions :item="lendTarget" @done="refresh" />
+      </Card>
+
+      <Card
+        v-if="onRestockList"
+        data-testid="restock-banner"
+        class="mt-3 flex flex-wrap items-center gap-3 border-2 border-amber-500 bg-amber-500/10 p-3"
+      >
+        <div class="flex min-w-0 grow basis-full items-center gap-3 sm:basis-auto">
+          <MdiCartOutline class="size-7 shrink-0 text-amber-600" />
+          <div class="min-w-0">
+            <div class="font-semibold">{{ $t("restock.banner") }}</div>
+            <NuxtLink to="/shopping" class="text-sm text-muted-foreground hover:underline">
+              {{ $t("restock.banner_hint") }}
+            </NuxtLink>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <Button variant="outline" size="sm" data-testid="restock-remove" @click="restockAction(restock.remove)">
+            {{ $t("restock.remove") }}
+          </Button>
+          <Button size="sm" data-testid="restock-bought" @click="restockAction(restock.bought)">
+            <MdiCartCheck class="mr-1" />
+            {{ $t("restock.bought") }}
+          </Button>
+        </div>
       </Card>
 
       <Card

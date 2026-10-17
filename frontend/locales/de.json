@@ -908,6 +908,7 @@
         "profile": "Profil",
         "scanner": "Der Scanner",
         "search": "Suche",
+        "shopping": "Einkaufsliste",
         "templates": "Vorlagen",
         "trash": "Papierkorb"
     },
@@ -1112,6 +1113,32 @@
             "toast": {
                 "page_too_small_card": "Die Seitengröße ist zu klein für die Kartengröße"
             }
+        }
+    },
+    "restock": {
+        "add": "Aufgebraucht – auf die Einkaufsliste",
+        "add_short": "Nachkaufen",
+        "add_something": "Etwas auf die Liste setzen",
+        "banner": "Steht auf der Einkaufsliste",
+        "banner_hint": "Zur Einkaufsliste",
+        "belongs_in": "Gehört in",
+        "bought": "Gekauft",
+        "hint": "{count, plural, =1 {1 Sache nachkaufen} other {{count} Sachen nachkaufen}}",
+        "intro": "Aufgebrauchtes Verbrauchsmaterial. Beim Einkaufen abhaken – „Gekauft“ nimmt es von der Liste.",
+        "no_results": "Nichts gefunden (oder steht schon auf der Liste).",
+        "none": "Nichts nachzukaufen.",
+        "none_hint": "Auf der Seite eines Artikels setzt „Nachkaufen“ ihn hier drauf.",
+        "remove": "Doch nicht",
+        "search_item": "Artikel suchen…",
+        "share": "Teilen",
+        "title": "Einkaufsliste",
+        "toast": {
+            "added": "{name} steht auf der Einkaufsliste",
+            "bought": "{name} gekauft",
+            "copied": "Liste kopiert",
+            "empty": "{name} ist aufgebraucht.",
+            "failed": "Konnte nicht gespeichert werden",
+            "removed": "{name} von der Einkaufsliste genommen"
         }
     },
     "scanner": {
