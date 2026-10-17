@@ -20,6 +20,16 @@
       <span class="grow">{{ $t("box_check.missing_hint", { count: missingCount }) }}</span>
       <span class="font-medium text-primary">{{ $t("box_check.show") }}</span>
     </NuxtLink>
+    <NuxtLink
+      v-if="restockCount > 0"
+      to="/shopping"
+      class="flex items-center gap-2 rounded-xl border bg-card px-3 py-2 text-sm shadow-sm"
+      data-testid="restock-hint"
+    >
+      <MdiCartOutline class="size-5 shrink-0 text-amber-600" />
+      <span class="grow">{{ $t("restock.hint", { count: restockCount }) }}</span>
+      <span class="font-medium text-primary">{{ $t("box_check.show") }}</span>
+    </NuxtLink>
     <HomeCheckReminder />
     <!-- One row on the phone, so the shortcuts never take two lines. -->
     <div class="grid grid-cols-3 gap-2 sm:flex">
@@ -39,10 +49,12 @@
 <script setup lang="ts">
   import MdiInboxArrowDown from "~icons/mdi/inbox-arrow-down";
   import MdiHelpCircleOutline from "~icons/mdi/help-circle-outline";
+  import MdiCartOutline from "~icons/mdi/cart-outline";
   import { useTagStore } from "~/stores/tags";
   import HomeCheckReminder from "~/components/Home/CheckReminder.vue";
 
   // Home shortcuts for keeping things in order: unsorted items, missing items,
+  // the shopping list,
   // duplicates and untagged items.
 
   const links = [
@@ -54,6 +66,7 @@
   const api = useUserApi();
   const { inbox } = useInbox();
   const { tag: missing } = useMissingTag();
+  const { tag: restockTag } = useRestock();
   useTagStore().ensureAllTagsFetched();
 
   async function count(q: Parameters<typeof api.items.getAll>[0]) {
@@ -75,6 +88,14 @@
       watch: [() => missing.value?.id],
     }
   );
+  const { data: restockData } = useAsyncData(
+    "restock-count",
+    () => (restockTag.value ? count({ tags: [restockTag.value.id] }) : Promise.resolve(0)),
+    {
+      watch: [() => restockTag.value?.id],
+    }
+  );
+  const restockCount = computed(() => restockData.value ?? 0);
   const inboxCount = computed(() => inboxData.value ?? 0);
   const missingCount = computed(() => missingData.value ?? 0);
 </script>

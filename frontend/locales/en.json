@@ -920,6 +920,7 @@
         "profile": "Profile",
         "scanner": "Scanner",
         "search": "Search",
+        "shopping": "Shopping list",
         "templates": "Templates",
         "trash": "Trash"
     },
@@ -1125,6 +1126,32 @@
             "toast": {
                 "page_too_small_card": "Page size is too small for the card size"
             }
+        }
+    },
+    "restock": {
+        "add": "Used up – add to shopping list",
+        "add_short": "Restock",
+        "add_something": "Put something on the list",
+        "banner": "On the shopping list",
+        "banner_hint": "Open shopping list",
+        "belongs_in": "Belongs in",
+        "bought": "Bought",
+        "hint": "{count, plural, =1 {1 thing to restock} other {{count} things to restock}}",
+        "intro": "Used-up consumables. Tick them off while shopping – \"Bought\" takes them off the list.",
+        "no_results": "Nothing found (or already on the list).",
+        "none": "Nothing to restock.",
+        "none_hint": "\"Restock\" on an item page puts it here.",
+        "remove": "Not needed",
+        "search_item": "Search items…",
+        "share": "Share",
+        "title": "Shopping list",
+        "toast": {
+            "added": "{name} is on the shopping list",
+            "bought": "{name} bought",
+            "copied": "List copied",
+            "empty": "{name} is used up.",
+            "failed": "Could not be saved",
+            "removed": "{name} taken off the shopping list"
         }
     },
     "scanner": {
