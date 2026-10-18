@@ -229,6 +229,26 @@ test.describe("Fork features", () => {
     await expect.poll(async () => (await a.get(two.id)).parent?.id).toBe(to.id);
   });
 
+  test("undoing a move puts an item without a box back", async ({ page, request }) => {
+    const a = await api(request);
+    const id = uid();
+    const box = await a.create({ name: `Shelf box ${id}`, entityTypeId: a.locationType });
+    const lamp = await a.create({ name: `Lamp ${id}`, entityTypeId: a.itemType });
+
+    await login(page, request);
+    await page.goto(`/item/${lamp.id}`);
+    await page.getByTestId("item-move").click();
+    await page.getByTestId("box-picker-search").fill(`Shelf box ${id}`);
+    await page
+      .getByTestId("box-picker-option")
+      .filter({ hasText: `Shelf box ${id}` })
+      .click();
+    await expect.poll(async () => (await a.get(lamp.id)).parent?.id).toBe(box.id);
+
+    await page.getByRole("button", { name: "Undo", exact: true }).click();
+    await expect.poll(async () => (await a.get(lamp.id)).parent?.id ?? null).toBeNull();
+  });
+
   test("places with sub-locations list them first and fold their own items", async ({ page, request }) => {
     const a = await api(request);
     const id = uid();

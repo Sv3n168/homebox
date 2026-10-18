@@ -1,5 +1,6 @@
 import { useI18n } from "vue-i18n";
 import { toast } from "@/components/ui/sonner";
+import { entityToUpdate } from "~/lib/cleanup/duplicates";
 
 export type Movable = {
   id: string;
@@ -25,7 +26,12 @@ export function useMove() {
 
   async function move(items: Movable[], target: MoveTarget): Promise<number> {
     const todo = items.filter(i => i.id !== target.id && i.parent?.id !== target.id);
-    const previous = todo.map(i => ({ id: i.id, parentId: i.parent?.id ?? null }));
+    const previous = todo.map(i => ({
+      id: i.id,
+      parentId: i.parent?.id ?? null,
+      // Only set when the move takes the "Vermisst" tag off.
+      tagIds: (i.tags ?? []).some(isMissingTag) ? (i.tags ?? []).map(tg => tg.id) : null,
+    }));
     let moved = 0;
     for (const item of todo) {
       if (!(await setParent(item.id, target.id))) continue;
@@ -51,7 +57,14 @@ export function useMove() {
           label: t("move.undo"),
           onClick: async () => {
             for (const p of previous) {
-              if (p.parentId) await setParent(p.id, p.parentId);
+              if (p.parentId) {
+                await setParent(p.id, p.parentId);
+              } else {
+                // Was not in any box: a patch cannot clear the parent, an update can.
+                const { data } = await api.items.get(p.id);
+                if (data) await api.items.update(p.id, { ...entityToUpdate(data), parentId: null });
+              }
+              if (p.tagIds) await api.items.patch(p.id, { id: p.id, tagIds: p.tagIds });
             }
             toast.info(t("move.toast.undone"));
             refreshNuxtData();

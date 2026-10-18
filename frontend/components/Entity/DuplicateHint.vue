@@ -62,12 +62,15 @@
   }
 
   async function plusOne(m: EntitySummary) {
-    const { error } = await api.items.patch(m.id, { id: m.id, quantity: m.quantity + 1 });
+    // The match may come from the on-device copy: count up from the current quantity.
+    const { data: current } = await api.items.get(m.id);
+    const quantity = (current?.quantity ?? m.quantity) + 1;
+    const { error } = await api.items.patch(m.id, { id: m.id, quantity });
     if (error) {
       toast.error(t("duplicates.toast.plus_one_failed"));
       return;
     }
-    toast.success(t("duplicates.toast.plus_one", { name: m.name, count: m.quantity + 1 }));
+    toast.success(t("duplicates.toast.plus_one", { name: m.name, count: quantity }));
     emit("increased", m.id);
   }
 </script>

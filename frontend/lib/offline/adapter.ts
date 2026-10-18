@@ -27,6 +27,7 @@ import {
 import {
   addOutbox,
   getIdMap,
+  getEntityDetails,
   getResponse,
   getSnapshot,
   listOutbox,
@@ -225,8 +226,9 @@ async function answerGet(req: OfflineRequest): Promise<OfflineAnswer | null> {
       const details = new Map<string, Partial<PendingEntity>>();
       // Details make search find serial numbers, notes, custom fields...
       if (params.get("q")) {
+        const cached = await getEntityDetails<PendingEntity>(tenant);
         for (const e of all) {
-          const d = await getResponse<PendingEntity>(tenant, `${API}/entities/${e.id}`);
+          const d = cached.get(e.id);
           // A queued move replaces any location override the cached details carry.
           if (d) details.set(e.id, moved.has(e.id) ? { ...d, locationId: undefined } : d);
         }

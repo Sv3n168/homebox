@@ -134,6 +134,20 @@ export function putResponse(tenant: string, url: string, data: unknown): Promise
   return tx("responses", "readwrite", s => s.put({ key: responseKey(tenant, url), data, savedAt: Date.now() }));
 }
 
+/** All cached entity details of a tenant in one read (offline search). */
+export async function getEntityDetails<T = unknown>(tenant: string): Promise<Map<string, T>> {
+  const prefix = responseKey(tenant, "/api/v1/entities/");
+  const rows = await tx<CachedResponse[]>("responses", "readonly", s =>
+    s.getAll(IDBKeyRange.bound(prefix, prefix + "\uffff"))
+  );
+  const out = new Map<string, T>();
+  for (const row of rows) {
+    const id = String(row.key).slice(prefix.length);
+    if (ENTITY_ID_RE.test(id)) out.set(id, row.data as T);
+  }
+  return out;
+}
+
 /** Drops cached detail responses for entities that no longer exist. */
 export async function pruneEntityResponses(tenant: string, keepIds: Set<string>): Promise<void> {
   const prefix = responseKey(tenant, "/api/v1/entities/");
