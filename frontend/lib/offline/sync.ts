@@ -399,8 +399,18 @@ export async function loadSnapshotInfo(tenant: string): Promise<void> {
 let running: Promise<void> | null = null;
 
 /** Replays the outbox, then refreshes the snapshot. Never runs twice at once. */
+let queuedSnapshot: Promise<void> | null = null;
+
 export function syncAll(ctx: SyncContext, opts: { snapshot: boolean } = { snapshot: true }): Promise<void> {
-  if (running) return running;
+  if (running) {
+    if (!opts.snapshot) return running;
+    // A snapshot was asked for while a sync runs: do one more right after.
+    queuedSnapshot ??= running.then(() => {
+      queuedSnapshot = null;
+      return syncAll(ctx, opts);
+    });
+    return queuedSnapshot;
+  }
   running = (async () => {
     offlineState.syncing = true;
     try {

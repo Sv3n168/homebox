@@ -113,18 +113,42 @@
       const target = await full(targetId);
       const others = await Promise.all(away.map(i => full(i.id)));
 
+      // Archive the others first and undo that if anything fails, so a retry
+      // never adds the same quantities twice.
+      const archived: EntityOut[] = [];
+      const unarchive = () =>
+        Promise.all(archived.map(o => api.items.update(o.id, { ...entityToUpdate(o), archived: false })));
+      for (const o of others) {
+        const { error: archiveError } = await api.items.update(o.id, { ...entityToUpdate(o), archived: true });
+        if (archiveError) {
+          await unarchive();
+          throw new Error("archive");
+        }
+        archived.push(o);
+      }
       const { error } = await api.items.update(targetId, mergeInto(target, others));
-      if (error) throw new Error("update");
+      if (error) {
+        await unarchive();
+        throw new Error("update");
+      }
 
-      // Photos come along; documents stay on the archived entry.
+      // Photos come along (best effort); documents stay on the archived entry.
       for (const o of others) {
         for (const a of o.attachments.filter(a => a.type === "photo")) {
-          const r = await fetch(api.authURL(`/entities/${o.id}/attachments/${a.id}`));
-          if (r.ok)
-            await api.items.attachments.add(targetId, await r.blob(), a.title || "photo.jpg", "photo" as never, false);
+          try {
+            const r = await fetch(api.authURL(`/entities/${o.id}/attachments/${a.id}`));
+            if (r.ok)
+              await api.items.attachments.add(
+                targetId,
+                await r.blob(),
+                a.title || "photo.jpg",
+                "photo" as never,
+                false
+              );
+          } catch (e) {
+            console.warn("photo not copied", e);
+          }
         }
-        const { error: archiveError } = await api.items.update(o.id, { ...entityToUpdate(o), archived: true });
-        if (archiveError) throw new Error("archive");
       }
 
       items.value = items.value.filter(i => !others.some(o => o.id === i.id));

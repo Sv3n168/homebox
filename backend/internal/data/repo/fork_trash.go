@@ -41,8 +41,8 @@ type TrashRepository struct {
 	db          *ent.Client
 	bus         *eventbus.EventBus
 	attachments *AttachmentRepo
-	ensureOnce  sync.Once
-	ensureErr   error
+	ensureMu    sync.Mutex
+	ensured     bool
 	// Trash operations run one at a time: on SQLite two concurrent
 	// read-then-write transactions would fail with SQLITE_BUSY.
 	mu sync.Mutex
@@ -73,7 +73,9 @@ type trashPayload struct {
 	ParentName    string                      `json:"parentName"`
 	Tables        map[string][]map[string]any `json:"tables"`
 	LocationLinks []trashLocationLink         `json:"locationLinks"`
-	Extra         map[string]json.RawMessage  `json:"extra,omitempty"`
+	// Templates whose default location is in the subtree (set to NULL on delete).
+	TemplateLinks []trashLocationLink        `json:"templateLinks,omitempty"`
+	Extra         map[string]json.RawMessage `json:"extra,omitempty"`
 }
 
 // Tables copied with the entity subtree, with the column that points at the entity.
@@ -84,9 +86,15 @@ var trashChildTables = []struct{ table, column string }{
 	{"tag_entities", "entity_id"},
 }
 
+// ensureTable creates the table on first use. A failed attempt (busy
+// database, cancelled request) is tried again on the next call.
 func (r *TrashRepository) ensureTable(ctx context.Context) error {
-	r.ensureOnce.Do(func() {
-		_, r.ensureErr = r.db.Sql().ExecContext(ctx, `CREATE TABLE IF NOT EXISTS trash_entries (
+	r.ensureMu.Lock()
+	defer r.ensureMu.Unlock()
+	if r.ensured {
+		return nil
+	}
+	_, err := r.db.Sql().ExecContext(ctx, `CREATE TABLE IF NOT EXISTS trash_entries (
 			id TEXT PRIMARY KEY,
 			group_id TEXT NOT NULL,
 			root_id TEXT NOT NULL,
@@ -96,12 +104,12 @@ func (r *TrashRepository) ensureTable(ctx context.Context) error {
 			deleted_at TIMESTAMP NOT NULL,
 			payload TEXT NOT NULL
 		)`)
-		if r.ensureErr == nil {
-			_, r.ensureErr = r.db.Sql().ExecContext(ctx,
-				`CREATE INDEX IF NOT EXISTS trash_entries_group_deleted ON trash_entries (group_id, deleted_at)`)
-		}
-	})
-	return r.ensureErr
+	if err == nil {
+		_, err = r.db.Sql().ExecContext(ctx,
+			`CREATE INDEX IF NOT EXISTS trash_entries_group_deleted ON trash_entries (group_id, deleted_at)`)
+	}
+	r.ensured = err == nil
+	return err
 }
 
 // beginWrite starts a transaction that holds the write lock from its first
@@ -181,6 +189,14 @@ func (r *TrashRepository) MoveToTrash(ctx context.Context, gid, id uuid.UUID) (T
 		if !inTree[fmt.Sprint(l["id"])] {
 			p.LocationLinks = append(p.LocationLinks, trashLocationLink{ID: fmt.Sprint(l["id"]), Target: fmt.Sprint(l["entity_location_entities"])})
 		}
+	}
+
+	templates, err := selectRows(ctx, tx, "entity_templates", "entity_template_location", ids)
+	if err != nil {
+		return TrashEntry{}, err
+	}
+	for _, t := range templates {
+		p.TemplateLinks = append(p.TemplateLinks, trashLocationLink{ID: fmt.Sprint(t["id"]), Target: fmt.Sprint(t["entity_template_location"])})
 	}
 
 	root := p.Tables["entities"][0]
@@ -328,6 +344,9 @@ func (r *TrashRepository) Restore(ctx context.Context, gid, trashID uuid.UUID) (
 		}
 		e["group_entities"] = gid.String()
 	}
+	if err := freeAssetIDs(ctx, tx, gid, entities); err != nil {
+		return uuid.Nil, err
+	}
 	if err := insertRows(ctx, tx, "entities", entities); err != nil {
 		return uuid.Nil, err
 	}
@@ -365,12 +384,8 @@ func (r *TrashRepository) Restore(ctx context.Context, gid, trashID uuid.UUID) (
 	if err := insertRows(ctx, tx, "tag_entities", tagLinks); err != nil {
 		return uuid.Nil, err
 	}
-	for _, l := range p.LocationLinks {
-		if _, err := tx.ExecContext(ctx,
-			"UPDATE entities SET entity_location_entities = $1 WHERE id = $2 AND entity_location_entities IS NULL",
-			l.Target, l.ID); err != nil {
-			return uuid.Nil, err
-		}
+	if err := restoreLinks(ctx, tx, p); err != nil {
+		return uuid.Nil, err
 	}
 	if _, err := tx.ExecContext(ctx, "DELETE FROM trash_entries WHERE id = $1", trashID.String()); err != nil {
 		return uuid.Nil, err
@@ -470,8 +485,15 @@ func (r *TrashRepository) deleteUnusedFiles(ctx context.Context, p trashPayload)
 		if path == "" || isExternalLink(mime) {
 			continue
 		}
+		// Duplicated items share files: keep the file while a live attachment
+		// or another trash entry still refers to it.
 		var n int
 		if err := r.db.Sql().QueryRowContext(ctx, "SELECT COUNT(*) FROM attachments WHERE path = $1", path).Scan(&n); err != nil || n > 0 {
+			continue
+		}
+		quoted, _ := json.Marshal(path)
+		if err := r.db.Sql().QueryRowContext(ctx, "SELECT COUNT(*) FROM trash_entries WHERE payload LIKE $1",
+			"%"+string(quoted)+"%").Scan(&n); err != nil || n > 0 {
 			continue
 		}
 		if bucket == nil {
@@ -486,6 +508,61 @@ func (r *TrashRepository) deleteUnusedFiles(ctx context.Context, p trashPayload)
 			log.Warn().Err(err).Str("path", path).Msg("trash: could not delete file")
 		}
 	}
+}
+
+// restoreLinks points location overrides and template default locations
+// outside the subtree back at it, unless they were set to something else meanwhile.
+func restoreLinks(ctx context.Context, tx *sql.Tx, p trashPayload) error {
+	for _, l := range p.LocationLinks {
+		if _, err := tx.ExecContext(ctx,
+			"UPDATE entities SET entity_location_entities = $1 WHERE id = $2 AND entity_location_entities IS NULL",
+			l.Target, l.ID); err != nil {
+			return err
+		}
+	}
+	for _, l := range p.TemplateLinks {
+		if _, err := tx.ExecContext(ctx,
+			"UPDATE entity_templates SET entity_template_location = $1 WHERE id = $2 AND entity_template_location IS NULL",
+			l.Target, l.ID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// freeAssetIDs gives restored entities a new asset ID when theirs was handed
+// out to another entity while they were in the trash (IDs are highest+1).
+func freeAssetIDs(ctx context.Context, tx *sql.Tx, gid uuid.UUID, entities []map[string]any) error {
+	var highest int64 = -1
+	for _, e := range entities {
+		id, ok := e["asset_id"].(int64)
+		if !ok || id <= 0 {
+			continue
+		}
+		var one int
+		err := tx.QueryRowContext(ctx, "SELECT 1 FROM entities WHERE group_entities = $1 AND asset_id = $2 LIMIT 1",
+			gid.String(), id).Scan(&one)
+		if errors.Is(err, sql.ErrNoRows) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		if highest < 0 {
+			if err := tx.QueryRowContext(ctx, "SELECT COALESCE(MAX(asset_id), 0) FROM entities WHERE group_entities = $1",
+				gid.String()).Scan(&highest); err != nil {
+				return err
+			}
+			for _, o := range entities {
+				if v, ok := o["asset_id"].(int64); ok && v > highest {
+					highest = v
+				}
+			}
+		}
+		highest++
+		e["asset_id"] = highest
+	}
+	return nil
 }
 
 func (r *TrashRepository) publish(gid uuid.UUID) {

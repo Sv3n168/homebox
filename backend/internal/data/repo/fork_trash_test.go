@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"testing"
 	"time"
@@ -143,5 +144,75 @@ func TestTrash_ExpiredEntriesArePurged(t *testing.T) {
 	require.NoError(t, err)
 	for _, e := range list {
 		assert.NotEqual(t, entry.ID, e.ID)
+	}
+}
+
+func TestTrash_SharedFilesAssetIDsAndTemplates(t *testing.T) {
+	ctx := context.Background()
+	locET := useContainerEntityType(t)
+	itemET := useItemEntityType(t)
+
+	// A duplicate shares the photo file with its original.
+	orig, err := tRepos.Entities.Create(ctx, tGroup.ID, EntityCreate{Name: "Akku " + fk.Str(5), EntityTypeID: itemET.ID})
+	require.NoError(t, err)
+	photo, err := tRepos.Attachments.Create(ctx, orig.ID,
+		ItemCreateAttachment{Title: "Foto", Content: strings.NewReader("jpeg")}, attachment.TypePhoto, true)
+	require.NoError(t, err)
+	dup, err := tRepos.Entities.Duplicate(ctx, tGroup.ID, orig.ID, DuplicateOptions{CopyAttachments: true})
+	require.NoError(t, err)
+
+	fileExists := func() bool {
+		b, err := blob.OpenBucket(ctx, tRepos.Attachments.GetConnString())
+		require.NoError(t, err)
+		defer func() { _ = b.Close() }()
+		ok, err := b.Exists(ctx, tRepos.Attachments.fullPath(photo.Path))
+		require.NoError(t, err)
+		return ok
+	}
+
+	eOrig, err := tRepos.Trash.MoveToTrash(ctx, tGroup.ID, orig.ID)
+	require.NoError(t, err)
+	eDup, err := tRepos.Trash.MoveToTrash(ctx, tGroup.ID, dup.ID)
+	require.NoError(t, err)
+	require.NoError(t, tRepos.Trash.Purge(ctx, tGroup.ID, eOrig.ID))
+	assert.True(t, fileExists(), "the duplicate in the trash still needs the file")
+	require.NoError(t, tRepos.Trash.Purge(ctx, tGroup.ID, eDup.ID))
+	assert.False(t, fileExists())
+
+	// An asset ID handed out again while its owner was in the trash.
+	var highest int64
+	require.NoError(t, tClient.Sql().QueryRowContext(ctx,
+		"SELECT COALESCE(MAX(asset_id), 0) FROM entities WHERE group_entities = $1", tGroup.ID.String()).Scan(&highest))
+	old, err := tRepos.Entities.Create(ctx, tGroup.ID, EntityCreate{Name: "Alt", EntityTypeID: itemET.ID, AssetID: AssetID(highest + 1)})
+	require.NoError(t, err)
+	eOld, err := tRepos.Trash.MoveToTrash(ctx, tGroup.ID, old.ID)
+	require.NoError(t, err)
+	newer, err := tRepos.Entities.Create(ctx, tGroup.ID, EntityCreate{Name: "Neu", EntityTypeID: itemET.ID, AssetID: AssetID(highest + 1)})
+	require.NoError(t, err)
+	_, err = tRepos.Trash.Restore(ctx, tGroup.ID, eOld.ID)
+	require.NoError(t, err)
+	oldOut, err := tRepos.Entities.GetOneByGroup(ctx, tGroup.ID, old.ID)
+	require.NoError(t, err)
+	newOut, err := tRepos.Entities.GetOneByGroup(ctx, tGroup.ID, newer.ID)
+	require.NoError(t, err)
+	assert.Equal(t, AssetID(highest+1), newOut.AssetID)
+	assert.NotEqual(t, newOut.AssetID, oldOut.AssetID)
+
+	// A template's default location comes back with the location.
+	shop, err := tRepos.Entities.Create(ctx, tGroup.ID, EntityCreate{Name: "Werkstatt " + fk.Str(5), EntityTypeID: locET.ID})
+	require.NoError(t, err)
+	tpl, err := tRepos.EntityTemplates.Create(ctx, tGroup.ID, EntityTemplateCreate{Name: "Werkzeug " + fk.Str(5), DefaultLocationID: shop.ID})
+	require.NoError(t, err)
+	eShop, err := tRepos.Trash.MoveToTrash(ctx, tGroup.ID, shop.ID)
+	require.NoError(t, err)
+	_, err = tRepos.Trash.Restore(ctx, tGroup.ID, eShop.ID)
+	require.NoError(t, err)
+	var loc sql.NullString
+	require.NoError(t, tClient.Sql().QueryRowContext(ctx,
+		"SELECT entity_template_location FROM entity_templates WHERE id = $1", tpl.ID.String()).Scan(&loc))
+	assert.Equal(t, shop.ID.String(), loc.String)
+
+	for _, id := range []uuid.UUID{old.ID, newer.ID, shop.ID} {
+		_ = tRepos.Entities.Delete(ctx, id)
 	}
 }
