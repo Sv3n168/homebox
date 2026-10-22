@@ -64,6 +64,23 @@ networks:
 
 Im Tunnel ist das Ziel dann `http://homebox:7745`.
 
+### Sicherheit der Anmeldeseite
+
+Schon eingebaut:
+
+- **Login-Bremse:** Nach 5 falschen Passwörtern in einer Minute muss man warten, erst 10 Sekunden, dann jeweils doppelt so lange, bis 5 Minuten. Solange weiter probiert wird, bleibt es bei 5 Minuten pro Versuch. Die Anmeldeseite zeigt dann „Zu viele Fehlversuche …“. Bereits angemeldete Geräte sind nicht betroffen.
+- **Pro Besucher:** Die Bremse gilt für die Adresse des Besuchers (Cloudflare liefert sie in `CF-Connecting-IP`). Ein Angreifer sperrt also nicht euch aus. Läuft Homebox ohne Cloudflare-Tunnel, in den Stack-Variablen `HBOX_CLIENT_IP_HEADER=` (leer) setzen.
+- **HTTPS:** Über den Tunnel bekommen die Anmelde-Cookies das Merkmal `Secure` und der Browser die Anweisung (HSTS), die Seite nur noch per HTTPS zu öffnen.
+- Registrierung ist aus (`HBOX_ALLOW_REGISTRATION=false`), neue Konten nur per Einladung.
+
+Empfohlen, in Cloudflare (kostenlos):
+
+1. **Gute Passwörter** für alle Konten. Die Bremse macht Raten langsam, ein starkes Passwort macht es aussichtslos.
+2. **Security → WAF → Rate limiting rules:** eine Regel für `URI Path` *equals* `/api/v1/users/login`, z. B. 10 Anfragen pro Minute pro IP, Aktion *Block* für 10 Minuten. Dann kommen Angriffe gar nicht erst bis zu Homebox.
+3. **SSL/TLS → Edge Certificates:** „Always Use HTTPS“ einschalten.
+4. Noch strenger: **Cloudflare Access** (Zero Trust → Access → Application) vor die Adresse setzen, mit Einmal-Code per E-Mail nur für eure Adressen. Dann sieht niemand sonst überhaupt die Anmeldeseite. Nachteil: Die Access-Anmeldung läuft nach der eingestellten Sitzungsdauer ab (z. B. 1 Monat). Danach muss man sie in Safari einmal erneuern, bevor die App wieder synchronisiert.
+5. Port `3100` ist im Heimnetz ohne HTTPS erreichbar. Wenn du ihn nicht brauchst, cloudflared wie oben direkt ins Docker-Netzwerk hängen und den Port entfernen.
+
 ## 3. Auf dem iPhone einrichten (Offline-Modus)
 
 1. Homebox in **Safari** über die Tunnel-Adresse (https://…) öffnen.

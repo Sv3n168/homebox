@@ -38,6 +38,7 @@ func new(conf *config.Config) *app {
 		From:     s.conf.Mailer.From,
 	}
 
+	setClientIPHeader(s.conf.Options.ClientIPHeader) // Fork: see fork_security.go
 	s.authLimiter = newAuthRateLimiter(s.conf.Auth.RateLimit)
 	s.notifierTestLimiter = newSimpleRateLimiter(10, time.Minute, s.conf.Options.TrustProxy) // 10 requests per minute
 	// Registration succeeds with a fresh email each time, so the failure-based

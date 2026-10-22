@@ -643,6 +643,7 @@
             "oidc_token_expired": "OIDC token has expired",
             "oidc_token_invalid": "OIDC token signature is invalid",
             "problem_registering": "Problem registering user",
+            "too_many_attempts": "Too many failed attempts. Please try again in {minutes} min.",
             "user_registered": "User registered"
         }
     },

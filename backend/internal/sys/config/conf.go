@@ -133,6 +133,8 @@ type Options struct {
 	AllowAnalytics       bool   `yaml:"allow_analytics"         conf:"default:false"`
 	AllowLocalLogin      bool   `yaml:"allow_local_login"       conf:"default:true"`
 	TrustProxy           bool   `yaml:"trust_proxy"             conf:"default:false"`
+	// Fork: read the client IP only from this header (e.g. CF-Connecting-IP behind a Cloudflare tunnel).
+	ClientIPHeader string `yaml:"client_ip_header"`
 }
 
 type Thumbnail struct {
