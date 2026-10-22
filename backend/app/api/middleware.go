@@ -459,6 +459,30 @@ type authAttempt struct {
 	lockedUntil time.Time
 }
 
+// idleSince is the time since the last attempt or, while one runs, since
+// the end of the lockout. Fork: counting from the last attempt alone reset
+// the counter after any lockout longer than the window (max_backoff 5m vs
+// window 1m), so the backoff never grew past one cycle.
+func (a *authAttempt) idleSince(now time.Time) time.Duration {
+	last := a.lastAttempt
+	if a.lockedUntil.After(last) {
+		last = a.lockedUntil
+	}
+	return now.Sub(last)
+}
+
+// forgotten reports whether a client's failures no longer count. A few
+// typos are forgotten after the window. Fork: once a client was locked out,
+// only after max_backoff of quiet; with the window (1m) alone an attacker
+// could wait out each short lockout and start over with fresh tries.
+func (l *authRateLimiter) forgotten(a *authAttempt, now time.Time) bool {
+	quiet := l.cfg.Window
+	if !a.lockedUntil.IsZero() && l.cfg.MaxBackoff > quiet {
+		quiet = l.cfg.MaxBackoff
+	}
+	return a.idleSince(now) > quiet
+}
+
 // newAuthRateLimiter creates a new authRateLimiter instance.
 func newAuthRateLimiter(cfg config.AuthRateLimit) *authRateLimiter {
 	// Sanity defaults to avoid zero values creating odd behavior.
@@ -519,7 +543,7 @@ func (l *authRateLimiter) cleanup() {
 		// Remove entries that are:
 		// 1. Outside the window AND
 		// 2. No longer locked (or lock has expired)
-		if now.Sub(attempt.lastAttempt) > l.cfg.Window && now.After(attempt.lockedUntil) {
+		if l.forgotten(attempt, now) {
 			delete(l.state, key)
 		}
 	}
@@ -592,7 +616,7 @@ func (l *authRateLimiter) shouldAllow(key string, now time.Time) (time.Duration,
 		return 0, true
 	}
 
-	if now.Sub(attempt.lastAttempt) > l.cfg.Window {
+	if l.forgotten(attempt, now) {
 		delete(l.state, key)
 		return 0, true
 	}
@@ -620,7 +644,7 @@ func (l *authRateLimiter) record(key string, now time.Time, success bool) {
 		return
 	}
 
-	if now.Sub(attempt.lastAttempt) > l.cfg.Window {
+	if l.forgotten(attempt, now) {
 		attempt.attempts = 0
 		attempt.lockedUntil = time.Time{}
 	}
@@ -648,6 +672,9 @@ func (l *authRateLimiter) record(key string, now time.Time, success bool) {
 // extractClientIP extracts the client IP from the request.
 // It only uses proxy headers (X-Real-IP, X-Forwarded-For) if trustProxy is enabled.
 func extractClientIP(r *http.Request, trustProxy bool) string {
+	if ip := clientIPFromHeader(r); ip != "" { // Fork: see fork_security.go
+		return ip
+	}
 	if trustProxy {
 		if ip := r.Header.Get("X-Real-IP"); ip != "" {
 			return ip

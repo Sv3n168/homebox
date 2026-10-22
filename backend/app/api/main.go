@@ -226,6 +226,7 @@ func run(cfg *config.Config) error {
 		// when the operator has enabled trustProxy.
 		mid.Logger(logger),
 		mid.SecurityHeaders(),
+		mwHTTPSHardening, // Fork: HSTS and Secure cookies over HTTPS (fork_security.go)
 		// Restrict the max body size to the upload limit + 1MB (for overhead).
 		// Collection-import uploads carry the full inventory zip and have
 		// their own much larger cap; everything else falls through to the

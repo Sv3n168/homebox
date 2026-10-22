@@ -19,6 +19,10 @@ services:
       # Keep the value you used before — API keys are hashed with it.
       - HBOX_AUTH_API_KEY_PEPPER=${HBOX_AUTH_API_KEY_PEPPER:?set HBOX_AUTH_API_KEY_PEPPER}
       - HBOX_WEB_MAX_UPLOAD_SIZE=${HBOX_MAX_UPLOAD_MB:-20}
+      # Login brake per visitor: behind the Cloudflare tunnel the visitor's
+      # address is in CF-Connecting-IP (cloudflared itself is always the same
+      # address). Without a tunnel set HBOX_CLIENT_IP_HEADER to an empty value.
+      - HBOX_OPTIONS_CLIENT_IP_HEADER=${HBOX_CLIENT_IP_HEADER-CF-Connecting-IP}
     volumes:
       - homebox-data:/data
     # cloudflared reaches Homebox here (tunnel service: http://<VM-IP>:3100).

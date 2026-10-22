@@ -641,6 +641,7 @@
             "oidc_token_expired": "OIDC-Token ist abgelaufen",
             "oidc_token_invalid": "OIDC-Token-Signatur ist ungültig",
             "problem_registering": "Problem bei der Benutzerregistrierung",
+            "too_many_attempts": "Zu viele Fehlversuche. Bitte in {minutes} Min. erneut versuchen.",
             "user_registered": "Benutzer registriert"
         }
     },

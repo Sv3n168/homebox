@@ -194,7 +194,15 @@
 
   async function login() {
     loading.value = true;
-    const { error } = await ctx.login(api, email.value, loginPassword.value, remember.value);
+    const { error, status, response } = await ctx.login(api, email.value, loginPassword.value, remember.value);
+
+    // Fork: the login brake (too many failed attempts) is not a wrong password.
+    if (status === 429) {
+      const seconds = Number(response?.headers.get("Retry-After")) || 60;
+      toast.error(t("index.toast.too_many_attempts", { minutes: Math.max(1, Math.ceil(seconds / 60)) }));
+      loading.value = false;
+      return;
+    }
 
     if (error) {
       toast.error(t("index.toast.invalid_email_password"), {
