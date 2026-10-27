@@ -39,7 +39,7 @@ import {
   type OutboxPatch,
   type OutboxTag,
 } from "./store";
-import { offlineState } from "./state";
+import { offlineState, rememberOnline } from "./state";
 
 export const OFFLINE_ID_PREFIX = "offline-";
 const RESERVED_ENTITY_PATHS = new Set(["tree", "fields", "export", "import"]);
@@ -89,6 +89,11 @@ function pathOf(url: string): { path: string; params: URLSearchParams } {
   const u = new URL(url, "http://local");
   return { path: u.pathname, params: u.searchParams };
 }
+
+const PROBE_INTERVAL_MS = 15_000;
+const PROBE_TIMEOUT_MS = 5_000;
+let lastProbe = 0;
+let probing = false;
 
 export function newTempId(): string {
   const uuid =
@@ -483,8 +488,38 @@ export const offlineHooks = {
   /** Skip the network entirely: known offline, or the request needs ids the server doesn't have yet. */
   skipNetwork(req: OfflineRequest): boolean {
     if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+    // Writes while known offline are queued right away (sent once back online).
+    if (req.method !== "GET" && offlineState.online === false) {
+      offlineHooks.probe();
+      return true;
+    }
     const body = req.body !== undefined ? JSON.stringify(req.body) : "";
     return hasUnsyncedId(req.url) || hasUnsyncedId(body);
+  },
+
+  /** The last request did not reach the server. */
+  knownOffline(): boolean {
+    return offlineState.online === false;
+  },
+
+  /** Checks in the background (at most every PROBE_INTERVAL_MS) whether the server is back. */
+  probe(): void {
+    const now = Date.now();
+    if (probing || now - lastProbe < PROBE_INTERVAL_MS) return;
+    lastProbe = now;
+    probing = true;
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : undefined;
+    const timer = setTimeout(() => controller?.abort(), PROBE_TIMEOUT_MS);
+    fetch(`${API}/status`, { signal: controller?.signal, cache: "no-store" })
+      .then(r => {
+        // Back online: the offline plugin syncs queued writes and the copy.
+        if (r.ok) offlineState.online = true;
+      })
+      .catch(() => {})
+      .finally(() => {
+        clearTimeout(timer);
+        probing = false;
+      });
   },
 
   rewrite(req: OfflineRequest): OfflineRequest {
@@ -496,6 +531,7 @@ export const offlineHooks = {
     if (!offlineStorageAvailable()) return null;
     if (!hasUnsyncedId(req.url)) {
       offlineState.online = false;
+      rememberOnline(false);
     }
     try {
       return req.method === "GET" ? await answerGet(req) : await answerWrite(req);

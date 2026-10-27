@@ -30,6 +30,15 @@ const UNREACHABLE_STATUSES = new Set([502, 503, 504, 521, 522, 523, 530]);
 /** A GET that hangs this long (weak signal in the basement) is answered offline. */
 const GET_TIMEOUT_MS = 10_000;
 
+/**
+ * With a copy on the device, a GET slower than this is answered from the copy
+ * right away; the request keeps going in the background and refreshes it.
+ * Weak signal often means requests that neither succeed nor fail for a while.
+ */
+const FAST_FALLBACK_MS = 2_500;
+
+const NO_ANSWER_YET = Symbol("no answer yet");
+
 function jsonResponse(status: number, data: unknown): Response {
   return new Response(JSON.stringify(data ?? {}), {
     status,
@@ -121,9 +130,36 @@ export class Requests {
       return (await answerOffline()) ?? this.unreachable<T>();
     }
 
+    // Known to be offline: answer from the device and check the connection
+    // in the background instead of waiting for every request to time out.
+    if (method === Method.GET && this.offline.knownOffline()) {
+      const cached = await answerOffline();
+      if (cached) {
+        this.offline.probe();
+        return cached;
+      }
+    }
+
     let result: TResponse<T>;
     try {
-      result = await this.send<T>(method, args, method === Method.GET ? GET_TIMEOUT_MS : 0);
+      const sending = this.send<T>(method, args, method === Method.GET ? GET_TIMEOUT_MS : 0);
+      const first =
+        method === Method.GET
+          ? await Promise.race([
+              sending,
+              new Promise<typeof NO_ANSWER_YET>(resolve => setTimeout(() => resolve(NO_ANSWER_YET), FAST_FALLBACK_MS)),
+            ])
+          : await sending;
+      if (first === NO_ANSWER_YET) {
+        const cached = await answerOffline(true);
+        if (cached) {
+          sending.then(r => this.recordResult(req, r)).catch(() => {});
+          return cached;
+        }
+        result = await sending;
+      } else {
+        result = first;
+      }
     } catch (e) {
       // Network failure or timeout: the server never answered.
       const offline = await answerOffline(true);
@@ -135,11 +171,14 @@ export class Requests {
       return (await answerOffline()) ?? result;
     }
 
-    if (!result.error) {
-      const isJSON = result.response.headers.get("Content-Type")?.startsWith("application/json");
-      this.offline.record(req, isJSON ? result.data : undefined);
-    }
+    this.recordResult(req, result);
     return result;
+  }
+
+  private recordResult<T>(req: OfflineRequest, result: TResponse<T>) {
+    if (!this.offline || result.error) return;
+    const isJSON = result.response.headers.get("Content-Type")?.startsWith("application/json");
+    this.offline.record(req, isJSON ? result.data : undefined);
   }
 
   private unreachable<T>(): TResponse<T> {

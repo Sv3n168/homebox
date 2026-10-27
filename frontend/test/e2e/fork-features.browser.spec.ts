@@ -294,6 +294,25 @@ test.describe("Fork features", () => {
     await expect(page.getByTestId("offline-pending-count")).toHaveCount(0, { timeout: 20_000 });
   });
 
+  test("opens quickly from the device copy when the server does not answer", async ({ page, context, request }) => {
+    const a = await api(request);
+    const item = await a.create({ name: `Cellar jar ${uid()}`, entityTypeId: a.itemType });
+
+    await login(page, request);
+    await page.goto(`/item/${item.id}`);
+    await expect(page.getByRole("heading", { name: item.name })).toBeVisible();
+    await page.waitForLoadState("networkidle");
+
+    // Weak signal: the phone thinks it is online, but API requests never answer.
+    await context.route("**/api/v1/**", () => {});
+    const started = Date.now();
+    await page.reload();
+    await expect(page.getByRole("heading", { name: item.name })).toBeVisible({ timeout: 15_000 });
+    // Before: every request waited 10 s for its timeout, one after the other.
+    expect(Date.now() - started).toBeLessThan(8_000);
+    await context.unroute("**/api/v1/**");
+  });
+
   test("deleting a location moves it with its contents to the trash, and restores it", async ({ page, request }) => {
     const a = await api(request);
     const id = uid();
