@@ -90,6 +90,9 @@ function pathOf(url: string): { path: string; params: URLSearchParams } {
   return { path: u.pathname, params: u.searchParams };
 }
 
+const REACHABLE_TIMEOUT_MS = 2_000;
+const REACHABLE_REUSE_MS = 5_000;
+let reachableCheck: { at: number; result: Promise<boolean> } | null = null;
 const PROBE_INTERVAL_MS = 15_000;
 const PROBE_TIMEOUT_MS = 5_000;
 let lastProbe = 0;
@@ -500,6 +503,22 @@ export const offlineHooks = {
   /** The last request did not reach the server. */
   knownOffline(): boolean {
     return offlineState.online === false;
+  },
+
+  /**
+   * Whether the server answers its tiny status endpoint within
+   * REACHABLE_TIMEOUT_MS. One check at a time; the result is reused briefly.
+   */
+  reachable(): Promise<boolean> {
+    if (reachableCheck && Date.now() - reachableCheck.at < REACHABLE_REUSE_MS) return reachableCheck.result;
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : undefined;
+    const timer = setTimeout(() => controller?.abort(), REACHABLE_TIMEOUT_MS);
+    const result = fetch(`${API}/status`, { signal: controller?.signal, cache: "no-store" })
+      .then(r => r.ok)
+      .catch(() => false)
+      .finally(() => clearTimeout(timer));
+    reachableCheck = { at: Date.now(), result };
+    return result;
   },
 
   /** Checks in the background (at most every PROBE_INTERVAL_MS) whether the server is back. */

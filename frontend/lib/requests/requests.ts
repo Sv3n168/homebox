@@ -32,7 +32,8 @@ const GET_TIMEOUT_MS = 10_000;
 
 /**
  * With a copy on the device, a GET slower than this is answered from the copy
- * right away; the request keeps going in the background and refreshes it.
+ * unless a quick check shows the server is reachable (then it is only slow);
+ * the request keeps going in the background and refreshes the copy.
  * Weak signal often means requests that neither succeed nor fail for a while.
  */
 const FAST_FALLBACK_MS = 2_500;
@@ -151,7 +152,8 @@ export class Requests {
             ])
           : await sending;
       if (first === NO_ANSWER_YET) {
-        const cached = await answerOffline(true);
+        // Slow server or no signal? A slow answer is still worth waiting for.
+        const cached = (await this.offline.reachable()) ? null : await answerOffline(true);
         if (cached) {
           sending.then(r => this.recordResult(req, r)).catch(() => {});
           return cached;

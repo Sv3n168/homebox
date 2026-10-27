@@ -15,6 +15,7 @@ type Api = {
   get: (id: string) => Promise<Entity>;
   exists: (id: string) => Promise<boolean>;
   remove: (id: string) => Promise<void>;
+  update: (id: string, patch: Record<string, unknown>) => Promise<void>;
   itemType: string;
   locationType: string;
 };
@@ -51,6 +52,10 @@ async function api(request: APIRequestContext): Promise<Api> {
     },
     async exists(id) {
       return (await request.get(`/api/v1/entities/${id}`, { headers })).ok();
+    },
+    async update(id, patch) {
+      const res = await request.patch(`/api/v1/entities/${id}`, { headers, data: { id, ...patch } });
+      expect(res.ok(), await res.text()).toBeTruthy();
     },
     async remove(id) {
       expect((await request.delete(`/api/v1/entities/${id}`, { headers })).ok()).toBeTruthy();
@@ -303,14 +308,45 @@ test.describe("Fork features", () => {
     await expect(page.getByRole("heading", { name: item.name })).toBeVisible();
     await page.waitForLoadState("networkidle");
 
-    // Weak signal: the phone thinks it is online, but API requests never answer.
-    await context.route("**/api/v1/**", () => {});
-    const started = Date.now();
-    await page.reload();
-    await expect(page.getByRole("heading", { name: item.name })).toBeVisible({ timeout: 15_000 });
-    // Before: every request waited 10 s for its timeout, one after the other.
-    expect(Date.now() - started).toBeLessThan(8_000);
-    await context.unroute("**/api/v1/**");
+    // Weak signal: the phone thinks it is online, but API requests do not
+    // answer (they are dropped after 20 s so the browser can close cleanly).
+    await context.route("**/api/v1/**", route => {
+      setTimeout(() => route.abort().catch(() => {}), 20_000);
+    });
+    try {
+      const started = Date.now();
+      await page.reload();
+      await expect(page.getByRole("heading", { name: item.name })).toBeVisible({ timeout: 15_000 });
+      // Before: every request waited 10 s for its timeout, one after the other.
+      expect(Date.now() - started).toBeLessThan(9_000);
+    } finally {
+      await context.unrouteAll({ behavior: "ignoreErrors" });
+    }
+  });
+
+  test("waits for a slow server instead of showing the old copy", async ({ page, context, request }) => {
+    const a = await api(request);
+    const item = await a.create({ name: `Slow jar ${uid()}`, entityTypeId: a.itemType });
+
+    await login(page, request);
+    await page.goto(`/item/${item.id}`);
+    const stepper = page.getByTestId("quantity-stepper");
+    await expect(stepper).toContainText("1");
+    await page.waitForLoadState("networkidle");
+
+    // Changed elsewhere; the server now takes 4 s per item request but is reachable.
+    await a.update(item.id, { quantity: 7 });
+    await context.route(`**/api/v1/entities/${item.id}*`, async route => {
+      await new Promise(resolve => setTimeout(resolve, 4_000));
+      await route.continue().catch(() => {});
+    });
+    try {
+      await page.reload();
+      await expect(stepper).toContainText("7", { timeout: 15_000 });
+      await expect(page.getByTestId("offline-banner")).toHaveCount(0);
+    } finally {
+      await context.unrouteAll({ behavior: "ignoreErrors" });
+    }
   });
 
   test("deleting a location moves it with its contents to the trash, and restores it", async ({ page, request }) => {
