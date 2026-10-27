@@ -125,12 +125,13 @@ function withMappedIds<T>(value: T, map: Record<string, string>): T {
   return JSON.parse(text) as T;
 }
 
-type FlushResult = { synced: number; stoppedBy?: "network" | "auth" };
+type FlushResult = { synced: number; stoppedBy?: "network" | "auth"; contacted?: boolean };
 
 export async function flushOutbox(): Promise<FlushResult> {
   const entries = await listOutbox();
   let synced = 0;
-  if (entries.length === 0) return { synced };
+  // Nothing to send: the server was not contacted, so this says nothing about the connection.
+  if (entries.length === 0) return { synced, contacted: false };
 
   progress("upload", entries.length);
   const failedTempIds = new Set(
@@ -423,8 +424,10 @@ export function syncAll(ctx: SyncContext, opts: { snapshot: boolean } = { snapsh
         offlineState.online = false;
         return;
       }
-      offlineState.needsLogin = false;
-      offlineState.online = true;
+      if (flushed.contacted !== false || opts.snapshot) {
+        offlineState.needsLogin = false;
+        offlineState.online = true;
+      }
       if (flushed.synced > 0) {
         offlineState.syncedCount = flushed.synced;
         offlineState.syncedAt = Date.now();

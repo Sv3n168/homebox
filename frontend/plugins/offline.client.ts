@@ -1,6 +1,6 @@
 import { watch } from "vue";
-import { loadIdMap, OFFLINE_ID_PREFIX } from "~~/lib/offline/adapter";
-import { offlineState } from "~~/lib/offline/state";
+import { loadIdMap, offlineHooks, OFFLINE_ID_PREFIX } from "~~/lib/offline/adapter";
+import { offlineState, rememberOnline } from "~~/lib/offline/state";
 import { offlineStorageAvailable, getIdMap } from "~~/lib/offline/store";
 import { loadSnapshotInfo, syncAll, type SyncContext } from "~~/lib/offline/sync";
 
@@ -51,13 +51,18 @@ export default defineNuxtPlugin(nuxtApp => {
   });
   setInterval(() => {
     if (offlineState.outbox.length > 0 || !offlineState.online) sync();
+    // Without a queued write the sync does not contact the server: check it.
+    if (!offlineState.online) offlineHooks.probe();
   }, POLL_INTERVAL_MS);
 
   // A page request got through again: push what was queued meanwhile.
   watch(
     () => offlineState.online,
     (now, before) => {
-      if (now && !before) sync(true);
+      if (now && !before) {
+        rememberOnline(true);
+        sync(true);
+      }
     }
   );
 
