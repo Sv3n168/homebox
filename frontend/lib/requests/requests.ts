@@ -153,7 +153,9 @@ export class Requests {
           : await sending;
       if (first === NO_ANSWER_YET) {
         // Slow server or no signal? A slow answer is still worth waiting for.
-        const cached = (await this.offline.reachable()) ? null : await answerOffline(true);
+        // (If the request itself answers first, that is all we need.)
+        const reachable = await Promise.race([this.offline.reachable(), sending.then(() => true)]);
+        const cached = reachable ? null : await answerOffline(true);
         if (cached) {
           sending.then(r => this.recordResult(req, r)).catch(() => {});
           return cached;

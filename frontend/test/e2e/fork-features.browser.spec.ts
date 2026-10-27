@@ -112,7 +112,8 @@ test.describe("Fork features", () => {
   test("shows the custom logo", async ({ page }) => {
     await page.goto("/");
     const logo = page.locator("img[src='/logo.png']").first();
-    await expect(logo).toBeVisible();
+    // First test of a shard: a cold WebKit can take longer than 5 s to render.
+    await expect(logo).toBeVisible({ timeout: 15_000 });
     expect(await logo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
   });
 
