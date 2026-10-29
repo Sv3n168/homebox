@@ -147,10 +147,20 @@ export class Requests {
         sending,
         new Promise<typeof NO_ANSWER_YET>(resolve => setTimeout(() => resolve(NO_ANSWER_YET), FAST_FALLBACK_MS)),
       ]);
-      if (first === NO_ANSWER_YET) {
+      // Writes that cannot be queued safely (delete, edits, uploads, login)
+      // are always waited for: the server may already have applied them.
+      const mayGiveUp = method === Method.GET || this.offline.abandonable(req);
+      if (first === NO_ANSWER_YET && mayGiveUp) {
         // Slow server or no signal? A slow answer is still worth waiting for.
-        // (If the request itself answers first, that is all we need.)
-        const reachable = await Promise.race([this.offline.reachable(), sending.then(() => true)]);
+        // (If the request itself answers first, that is all we need; a write
+        // only trusts a check started while it was waiting.)
+        let settled = false;
+        sending.then(
+          () => (settled = true),
+          () => (settled = true)
+        );
+        const check = this.offline.reachable(method === Method.GET ? undefined : FAST_FALLBACK_MS);
+        const reachable = (await Promise.race([check, sending.then(() => true)])) || settled;
         if (!reachable) {
           if (method === Method.GET) {
             sending.then(r => this.recordResult(req, r)).catch(() => {});
@@ -164,7 +174,7 @@ export class Requests {
         }
         result = await sending;
       } else {
-        result = first;
+        result = first === NO_ANSWER_YET ? await sending : first;
       }
     } catch (e) {
       // Network failure or timeout: the server never answered.

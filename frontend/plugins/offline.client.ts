@@ -74,7 +74,9 @@ export default defineNuxtPlugin(nuxtApp => {
     (now, before) => {
       if (now && !before) {
         rememberOnline(true);
-        sync(true);
+        // Send what was queued; a full download only when one is due, so a
+        // flapping connection does not start one each time.
+        sync();
         // Pages shown from the device copy load the current data again.
         refreshNuxtData();
       }

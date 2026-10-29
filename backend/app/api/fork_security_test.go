@@ -87,6 +87,25 @@ func TestClientIPHeader(t *testing.T) {
 
 	r.Header.Set("Cf-Connecting-Ip", "not an ip")
 	assert.Equal(t, "172.18.0.5", extractClientIP(r, false))
+
+	// Reaching the port directly from the internet: the header is ignored.
+	r.RemoteAddr = "203.0.113.200:4444"
+	r.Header.Set("Cf-Connecting-Ip", "198.51.100.1")
+	assert.Equal(t, "203.0.113.200", extractClientIP(r, false))
+}
+
+func TestLoginsInFlightCapped(t *testing.T) {
+	key := "1.2.3.4|/api/v1/users/login"
+	require.True(t, enterLogin(key))
+	require.True(t, enterLogin(key))
+	assert.False(t, enterLogin(key), "a third parallel attempt waits")
+	assert.True(t, enterLogin("5.6.7.8|/api/v1/users/login"), "other clients are not affected")
+	leaveLogin(key)
+	assert.True(t, enterLogin(key))
+	leaveLogin(key)
+	leaveLogin(key)
+	leaveLogin("5.6.7.8|/api/v1/users/login")
+	assert.Empty(t, loginsInFlight.n)
 }
 
 func TestHTTPSHardening(t *testing.T) {

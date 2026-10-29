@@ -70,9 +70,19 @@ class HttpError extends Error {
 const SYNC_TIMEOUT_MS = 20_000;
 const UPLOAD_TIMEOUT_MS = 120_000;
 
-function timedFetch(url: string, init: RequestInit = {}, ms = SYNC_TIMEOUT_MS): Promise<Response> {
+/** When a sync request last got an answer from the server (any status). */
+let lastAnswerAt = 0;
+
+async function timedFetch(url: string, init: RequestInit = {}, ms = SYNC_TIMEOUT_MS): Promise<Response> {
   const signal = typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(ms) : undefined;
-  return fetch(url, signal ? { ...init, signal } : init);
+  const r = await fetch(url, signal ? { ...init, signal } : init);
+  lastAnswerAt = Date.now();
+  return r;
+}
+
+/** Uploads get 2 minutes plus time for the file at a slow 16 KB/s uplink. */
+function uploadTimeout(file: Blob): number {
+  return UPLOAD_TIMEOUT_MS + Math.ceil(file.size / 16_384) * 1000;
 }
 
 async function getJSON<T>(ctx: SyncContext, url: string): Promise<T> {
@@ -151,13 +161,12 @@ function withMappedIds<T>(value: T, map: Record<string, string>): T {
   return JSON.parse(text) as T;
 }
 
-type FlushResult = { synced: number; stoppedBy?: "network" | "auth"; contacted?: boolean };
+type FlushResult = { synced: number; stoppedBy?: "network" | "auth" };
 
 export async function flushOutbox(): Promise<FlushResult> {
   const entries = await listOutbox();
   let synced = 0;
-  // Nothing to send: the server was not contacted, so this says nothing about the connection.
-  if (entries.length === 0) return { synced, contacted: false };
+  if (entries.length === 0) return { synced };
 
   progress("upload", entries.length);
   const failedTempIds = new Set(
@@ -313,7 +322,7 @@ export async function flushOutbox(): Promise<FlushResult> {
             headers: entry.headers,
             body: form,
           },
-          UPLOAD_TIMEOUT_MS
+          uploadTimeout(entry.file)
         );
         if (r.status === 401) return { synced, stoppedBy: "auth" };
         if (!r.ok) {
@@ -363,7 +372,7 @@ export async function downloadSnapshot(ctx: SyncContext): Promise<void> {
 
   for (const path of WARM_ENDPOINTS) {
     const url = API + path;
-    const data = await getJSON<unknown>(ctx, url).catch(() => undefined);
+    const data = await getJSON<unknown>(ctx, url).catch(skipHttpError);
     if (data !== undefined) await putResponse(ctx.tenant, url, data);
   }
 
@@ -441,6 +450,13 @@ export function syncAll(ctx: SyncContext, opts: { snapshot: boolean } = { snapsh
   }
   running = (async () => {
     offlineState.syncing = true;
+    const started = Date.now();
+    // Online only once the server actually answered during this sync.
+    const confirmOnline = () => {
+      if (lastAnswerAt < started) return;
+      offlineState.needsLogin = false;
+      offlineState.online = true;
+    };
     try {
       const flushed = await flushOutbox();
       if (flushed.stoppedBy === "auth") {
@@ -451,16 +467,14 @@ export function syncAll(ctx: SyncContext, opts: { snapshot: boolean } = { snapsh
         offlineState.online = false;
         return;
       }
-      if (flushed.contacted !== false || opts.snapshot) {
-        offlineState.needsLogin = false;
-        offlineState.online = true;
-      }
+      confirmOnline();
       if (flushed.synced > 0) {
         offlineState.syncedCount = flushed.synced;
         offlineState.syncedAt = Date.now();
       }
       if (opts.snapshot || flushed.synced > 0) {
         await downloadSnapshot(ctx);
+        confirmOnline();
       }
     } catch (e) {
       if (e instanceof HttpError && e.status === 401) {
