@@ -70,6 +70,11 @@
   ]);
 
   const { selectedCollection, load: reloadCollections } = useCollections();
+  // Fork: the list is loaded by the sidebar's selector, which on a phone is
+  // not mounted until the menu opens; without this the page stayed "Loading…".
+  onMounted(() => {
+    if (!selectedCollection.value) reloadCollections();
+  });
 
   const members = ref<Array<UserSummary>>([]);
   const membersLoading = ref(false);

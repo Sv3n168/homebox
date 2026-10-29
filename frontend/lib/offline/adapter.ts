@@ -90,7 +90,12 @@ function pathOf(url: string): { path: string; params: URLSearchParams } {
   return { path: u.pathname, params: u.searchParams };
 }
 
-const REACHABLE_TIMEOUT_MS = 2_000;
+const REACHABLE_TIMEOUT_MS = 1_500;
+
+export function markOffline(): void {
+  offlineState.online = false;
+  rememberOnline(false);
+}
 const REACHABLE_REUSE_MS = 5_000;
 let reachableCheck: { at: number; result: Promise<boolean> } | null = null;
 const PROBE_INTERVAL_MS = 15_000;
@@ -454,33 +459,47 @@ async function queueMove(req: OfflineRequest, entityId: string, parentId: string
   return { status: 200, data: answer?.data ?? {} };
 }
 
-async function answerWrite(req: OfflineRequest): Promise<OfflineAnswer | null> {
+type WriteKind =
+  | { kind: "create" }
+  | { kind: "tag" }
+  | { kind: "move"; id: string; parentId: string }
+  | { kind: "patch"; id: string }
+  | { kind: "attachment"; id: string };
+
+/** Which kind of queued write a request becomes offline, if any. */
+function writeKind(req: OfflineRequest): WriteKind | null {
   const { path } = pathOf(req.url);
   const isCreate =
     req.method === "POST" &&
     (path === `${API}/entities` || new RegExp(`^${API}/templates/[^/]+/create-item$`).test(path));
-
-  if (isCreate && req.body && typeof req.body === "object") {
-    return queueCreate(req, req.body as Record<string, unknown>);
-  }
-
+  if (isCreate && req.body && typeof req.body === "object") return { kind: "create" };
   if (req.method === "POST" && path === `${API}/tags` && req.body && typeof req.body === "object") {
-    return queueTag(req);
+    return { kind: "tag" };
   }
-
   const patch = path.match(new RegExp(`^${API}/entities/([^/]+)$`));
   if (req.method === "PATCH" && patch && isMoveBody(req.body)) {
-    return queueMove(req, patch[1]!, req.body.parentId);
+    return { kind: "move", id: patch[1]!, parentId: req.body.parentId };
   }
-  if (req.method === "PATCH" && patch && isPatchBody(req.body)) {
-    return queuePatch(req, patch[1]!);
-  }
-
+  if (req.method === "PATCH" && patch && isPatchBody(req.body)) return { kind: "patch", id: patch[1]! };
   const attachment = path.match(new RegExp(`^${API}/entities/([^/]+)/attachments$`));
-  if (req.method === "POST" && attachment && req.data) {
-    return queueAttachment(req, attachment[1]!);
-  }
+  if (req.method === "POST" && attachment && req.data) return { kind: "attachment", id: attachment[1]! };
+  return null;
+}
 
+async function answerWrite(req: OfflineRequest): Promise<OfflineAnswer | null> {
+  const w = writeKind(req);
+  switch (w?.kind) {
+    case "create":
+      return queueCreate(req, req.body as Record<string, unknown>);
+    case "tag":
+      return queueTag(req);
+    case "move":
+      return queueMove(req, w.id, w.parentId);
+    case "patch":
+      return queuePatch(req, w.id);
+    case "attachment":
+      return queueAttachment(req, w.id);
+  }
   offlineState.blockedAt = Date.now();
   return null;
 }
@@ -491,13 +510,24 @@ export const offlineHooks = {
   /** Skip the network entirely: known offline, or the request needs ids the server doesn't have yet. */
   skipNetwork(req: OfflineRequest): boolean {
     if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
-    // Writes while known offline are queued right away (sent once back online).
-    if (req.method !== "GET" && offlineState.online === false) {
+    // Writes the outbox can hold are queued right away while known offline
+    // (sent once back online); anything else (delete, login, ...) still tries.
+    if (req.method !== "GET" && offlineState.online === false && writeKind(req)) {
       offlineHooks.probe();
       return true;
     }
     const body = req.body !== undefined ? JSON.stringify(req.body) : "";
     return hasUnsyncedId(req.url) || hasUnsyncedId(body);
+  },
+
+  /**
+   * A write that may be given up on and queued when the connection is dead:
+   * the outbox can hold it and replaying it cannot create a duplicate
+   * (creates and tags are checked before replay; uploads are left alone).
+   */
+  abandonable(req: OfflineRequest): boolean {
+    const w = writeKind(req);
+    return !!w && w.kind !== "attachment";
   },
 
   /** The last request did not reach the server. */
@@ -509,16 +539,32 @@ export const offlineHooks = {
    * Whether the server answers its tiny status endpoint within
    * REACHABLE_TIMEOUT_MS. One check at a time; the result is reused briefly.
    */
-  reachable(): Promise<boolean> {
-    if (reachableCheck && Date.now() - reachableCheck.at < REACHABLE_REUSE_MS) return reachableCheck.result;
+  reachable(maxAgeMs = REACHABLE_REUSE_MS, timeoutMs = REACHABLE_TIMEOUT_MS): Promise<boolean> {
+    if (reachableCheck && Date.now() - reachableCheck.at < maxAgeMs) return reachableCheck.result;
     const controller = typeof AbortController !== "undefined" ? new AbortController() : undefined;
-    const timer = setTimeout(() => controller?.abort(), REACHABLE_TIMEOUT_MS);
+    const timer = setTimeout(() => controller?.abort(), timeoutMs);
     const result = fetch(`${API}/status`, { signal: controller?.signal, cache: "no-store" })
       .then(r => r.ok)
       .catch(() => false)
       .finally(() => clearTimeout(timer));
     reachableCheck = { at: Date.now(), result };
     return result;
+  },
+
+  /**
+   * Checks the connection now and updates the offline state either way, so a
+   * dead connection is noticed before the next tap (phone unlocked in the
+   * basement, network switch, regular check while the app is open).
+   */
+  async checkConnection(): Promise<void> {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      markOffline();
+      return;
+    }
+    // Not urgent (nobody waits for it): allow a slow link the probe's time
+    // before declaring it dead, so a working mobile connection does not flap.
+    if (await offlineHooks.reachable(0, PROBE_TIMEOUT_MS)) offlineState.online = true;
+    else markOffline();
   },
 
   /** Checks in the background (at most every PROBE_INTERVAL_MS) whether the server is back. */
@@ -548,10 +594,7 @@ export const offlineHooks = {
 
   async fallback(req: OfflineRequest): Promise<OfflineAnswer | null> {
     if (!offlineStorageAvailable()) return null;
-    if (!hasUnsyncedId(req.url)) {
-      offlineState.online = false;
-      rememberOnline(false);
-    }
+    if (!hasUnsyncedId(req.url)) markOffline();
     try {
       return req.method === "GET" ? await answerGet(req) : await answerWrite(req);
     } catch (e) {

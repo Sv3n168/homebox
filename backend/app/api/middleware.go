@@ -585,6 +585,13 @@ func (a *app) mwAuthRateLimit(next errchain.Handler) errchain.Handler {
 			return validate.NewRequestError(errors.New("too many authentication attempts"), http.StatusTooManyRequests)
 		}
 
+		// Fork: at most a couple of attempts per client at the same time.
+		if !enterLogin(key) {
+			w.Header().Set("Retry-After", "1")
+			return validate.NewRequestError(errors.New("too many authentication attempts"), http.StatusTooManyRequests)
+		}
+		defer leaveLogin(key)
+
 		err := next.ServeHTTP(w, r.WithContext(spanCtx))
 		limiter.record(key, now, err == nil)
 		span.SetAttributes(

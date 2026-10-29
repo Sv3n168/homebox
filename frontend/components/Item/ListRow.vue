@@ -18,8 +18,8 @@
         <MdiArchiveOutline v-else class="size-7 text-muted-foreground" />
       </div>
       <div class="min-w-0 grow">
-        <div class="truncate font-semibold">{{ item.name }}</div>
-        <div v-if="path" class="truncate text-sm text-muted-foreground">{{ path }}</div>
+        <div class="line-clamp-2 break-words font-semibold">{{ item.name }}</div>
+        <div v-if="path && !hidePath" class="truncate text-sm text-muted-foreground">{{ path }}</div>
         <div v-if="lent || pending" class="mt-1 flex flex-wrap gap-1">
           <ItemLentBadge v-if="lent" :item="item" compact />
           <Badge v-if="pending" class="gap-1 bg-sky-600 text-white hover:bg-sky-600/80">
@@ -49,6 +49,8 @@
     item: EntitySummary | EntityOut;
     locationFlatTree?: FlatTreeItem[];
     tableRow?: Row<EntitySummary> | null;
+    /** Where it lies is obvious from the page (box check, sorting the inbox). */
+    hidePath?: boolean;
   }>();
 
   const api = useUserApi();

@@ -16,6 +16,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 )
 
 // clientIPHeader is set once at startup (newApp).
@@ -26,9 +27,12 @@ func setClientIPHeader(h string) {
 }
 
 // clientIPFromHeader returns the configured header's IP, or "" when the
-// option is off or the header is missing/invalid.
+// option is off or the header is missing/invalid. The header is only taken
+// from a peer on the local/private network (cloudflared on the same host or
+// LAN); a client reaching the port directly from the internet cannot pick
+// its own address.
 func clientIPFromHeader(r *http.Request) string {
-	if clientIPHeader == "" {
+	if clientIPHeader == "" || !fromPrivatePeer(r) {
 		return ""
 	}
 	ip := strings.TrimSpace(firstValue(r.Header.Get(clientIPHeader)))
@@ -36,6 +40,45 @@ func clientIPFromHeader(r *http.Request) string {
 		return ""
 	}
 	return ip
+}
+
+func fromPrivatePeer(r *http.Request) bool {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		host = r.RemoteAddr
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && (ip.IsLoopback() || ip.IsPrivate())
+}
+
+// loginsInFlight caps parallel attempts per client on the rate-limited auth
+// routes. The brake decides before and counts after the password check, so
+// without this cap many attempts sent at once would all get through.
+var loginsInFlight = struct {
+	sync.Mutex
+	n map[string]int
+}{n: map[string]int{}}
+
+const maxLoginsInFlight = 2
+
+func enterLogin(key string) bool {
+	loginsInFlight.Lock()
+	defer loginsInFlight.Unlock()
+	if loginsInFlight.n[key] >= maxLoginsInFlight {
+		return false
+	}
+	loginsInFlight.n[key]++
+	return true
+}
+
+func leaveLogin(key string) {
+	loginsInFlight.Lock()
+	defer loginsInFlight.Unlock()
+	if loginsInFlight.n[key] <= 1 {
+		delete(loginsInFlight.n, key)
+		return
+	}
+	loginsInFlight.n[key]--
 }
 
 func firstValue(v string) string {

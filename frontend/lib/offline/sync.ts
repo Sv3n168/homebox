@@ -62,22 +62,58 @@ class HttpError extends Error {
   }
 }
 
+/**
+ * Sync requests give up after this long, so a connection that dies during a
+ * sync (on the way to the basement) ends it instead of hanging for minutes and
+ * holding back the next sync once the signal is back.
+ */
+const SYNC_TIMEOUT_MS = 20_000;
+const UPLOAD_TIMEOUT_MS = 120_000;
+
+/** When a sync request last got an answer from the server (any status). */
+let lastAnswerAt = 0;
+
+async function timedFetch(url: string, init: RequestInit = {}, ms = SYNC_TIMEOUT_MS): Promise<Response> {
+  const signal = typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(ms) : undefined;
+  const r = await fetch(url, signal ? { ...init, signal } : init);
+  lastAnswerAt = Date.now();
+  return r;
+}
+
+/** Uploads get 2 minutes plus time for the file at a slow 16 KB/s uplink. */
+function uploadTimeout(file: Blob): number {
+  return UPLOAD_TIMEOUT_MS + Math.ceil(file.size / 16_384) * 1000;
+}
+
 async function getJSON<T>(ctx: SyncContext, url: string): Promise<T> {
-  const r = await fetch(url, { headers: ctx.headers });
+  const r = await timedFetch(url, { headers: ctx.headers });
   if (!r.ok) throw new HttpError(r.status, `${url}: ${r.status}`);
   return (await r.json()) as T;
 }
 
+/** Runs fn over items, size at a time. The first error stops all workers. */
 async function pool<T>(items: T[], size: number, fn: (item: T) => Promise<void>): Promise<void> {
   let i = 0;
+  let failed = false;
   const workers = Array.from({ length: Math.min(size, items.length) }, async () => {
-    while (i < items.length) {
+    while (i < items.length && !failed) {
       const item = items[i++]!;
-      await fn(item);
+      try {
+        await fn(item);
+      } catch (e) {
+        failed = true;
+        throw e;
+      }
       offlineState.progressDone++;
     }
   });
   await Promise.all(workers);
+}
+
+/** A server answer (kept going) as opposed to a dead connection (stops the download). */
+function skipHttpError(e: unknown): undefined {
+  if (e instanceof HttpError) return undefined;
+  throw e;
 }
 
 function progress(phase: typeof offlineState.phase, total: number) {
@@ -125,13 +161,12 @@ function withMappedIds<T>(value: T, map: Record<string, string>): T {
   return JSON.parse(text) as T;
 }
 
-type FlushResult = { synced: number; stoppedBy?: "network" | "auth"; contacted?: boolean };
+type FlushResult = { synced: number; stoppedBy?: "network" | "auth" };
 
 export async function flushOutbox(): Promise<FlushResult> {
   const entries = await listOutbox();
   let synced = 0;
-  // Nothing to send: the server was not contacted, so this says nothing about the connection.
-  if (entries.length === 0) return { synced, contacted: false };
+  if (entries.length === 0) return { synced };
 
   progress("upload", entries.length);
   const failedTempIds = new Set(
@@ -164,7 +199,7 @@ export async function flushOutbox(): Promise<FlushResult> {
         if (!created) {
           entry.attempted = true;
           await putOutbox(entry);
-          const r = await fetch(withMappedIds(entry.url, map), {
+          const r = await timedFetch(withMappedIds(entry.url, map), {
             method: "POST",
             headers: { ...entry.headers, "Content-Type": "application/json" },
             body: JSON.stringify(body),
@@ -181,7 +216,7 @@ export async function flushOutbox(): Promise<FlushResult> {
       } else if (entry.kind === "tag") {
         // Reuse a tag of the same name (made online meanwhile, or an earlier
         // attempt that did reach the server) instead of creating a twin.
-        const listed = await fetch(`${API}/tags`, { headers: entry.headers });
+        const listed = await timedFetch(`${API}/tags`, { headers: entry.headers });
         if (listed.status === 401) return { synced, stoppedBy: "auth" };
         const existing = listed.ok
           ? ((await listed.json()) as { id: string; name: string }[]).find(
@@ -192,7 +227,7 @@ export async function flushOutbox(): Promise<FlushResult> {
         if (!tagId) {
           entry.attempted = true;
           await putOutbox(entry);
-          const r = await fetch(entry.url, {
+          const r = await timedFetch(entry.url, {
             method: "POST",
             headers: { ...entry.headers, "Content-Type": "application/json" },
             body: JSON.stringify(entry.body),
@@ -220,7 +255,7 @@ export async function flushOutbox(): Promise<FlushResult> {
         }
         // Last write wins: whatever was changed online meanwhile, the place,
         // quantity or tags set in the basement are the ones that count.
-        const r = await fetch(url, {
+        const r = await timedFetch(url, {
           method: "PATCH",
           headers: { ...entry.headers, "Content-Type": "application/json" },
           body: JSON.stringify(body),
@@ -239,7 +274,7 @@ export async function flushOutbox(): Promise<FlushResult> {
         if (entityId.startsWith("offline-")) continue;
         // No PATCH for custom fields: merge into the current entity and PUT it.
         const url = `${API}/entities/${entityId}`;
-        const got = await fetch(url, { headers: entry.headers });
+        const got = await timedFetch(url, { headers: entry.headers });
         if (got.status === 401) return { synced, stoppedBy: "auth" };
         if (!got.ok) {
           await fail(`${got.status} ${(await got.text()).slice(0, 200)}`);
@@ -255,7 +290,7 @@ export async function flushOutbox(): Promise<FlushResult> {
           numberValue: 0,
           booleanValue: false,
         } as never);
-        const r = await fetch(url, {
+        const r = await timedFetch(url, {
           method: "PUT",
           headers: { ...entry.headers, "Content-Type": "application/json" },
           body: JSON.stringify({ ...update, fields }),
@@ -280,11 +315,15 @@ export async function flushOutbox(): Promise<FlushResult> {
         if (entry.type) form.append("type", entry.type);
         form.append("name", entry.name);
         if (entry.primary !== null) form.append("primary", entry.primary);
-        const r = await fetch(`${API}/entities/${entityId}/attachments`, {
-          method: "POST",
-          headers: entry.headers,
-          body: form,
-        });
+        const r = await timedFetch(
+          `${API}/entities/${entityId}/attachments`,
+          {
+            method: "POST",
+            headers: entry.headers,
+            body: form,
+          },
+          uploadTimeout(entry.file)
+        );
         if (r.status === 401) return { synced, stoppedBy: "auth" };
         if (!r.ok) {
           await fail(`${r.status} ${(await r.text()).slice(0, 200)}`);
@@ -333,7 +372,7 @@ export async function downloadSnapshot(ctx: SyncContext): Promise<void> {
 
   for (const path of WARM_ENDPOINTS) {
     const url = API + path;
-    const data = await getJSON<unknown>(ctx, url).catch(() => undefined);
+    const data = await getJSON<unknown>(ctx, url).catch(skipHttpError);
     if (data !== undefined) await putResponse(ctx.tenant, url, data);
   }
 
@@ -346,7 +385,7 @@ export async function downloadSnapshot(ctx: SyncContext): Promise<void> {
   progress("details", stale.length);
   await pool(stale, 4, async id => {
     const url = `${API}/entities/${id}`;
-    const d = await getJSON<EntityOut>(ctx, url).catch(() => undefined);
+    const d = await getJSON<EntityOut>(ctx, url).catch(skipHttpError);
     if (d) await putResponse(ctx.tenant, url, d);
   });
   await pruneEntityResponses(ctx.tenant, new Set(summaries.map(s => s.id)));
@@ -379,12 +418,9 @@ async function warmImages(ctx: SyncContext, ids: string[]): Promise<void> {
 
   progress("images", missing.length);
   await pool(missing, 4, async url => {
-    try {
-      const r = await fetch(url);
-      if (r.ok) await cache.put(url, r);
-    } catch {
-      // ignore; retried next sync
-    }
+    // A failed picture is retried next sync; a dead connection stops the download.
+    const r = await timedFetch(url);
+    if (r.ok) await cache.put(url, r).catch(() => {}); // storage full: skip this one
   });
 }
 
@@ -414,6 +450,13 @@ export function syncAll(ctx: SyncContext, opts: { snapshot: boolean } = { snapsh
   }
   running = (async () => {
     offlineState.syncing = true;
+    const started = Date.now();
+    // Online only once the server actually answered during this sync.
+    const confirmOnline = () => {
+      if (lastAnswerAt < started) return;
+      offlineState.needsLogin = false;
+      offlineState.online = true;
+    };
     try {
       const flushed = await flushOutbox();
       if (flushed.stoppedBy === "auth") {
@@ -424,16 +467,14 @@ export function syncAll(ctx: SyncContext, opts: { snapshot: boolean } = { snapsh
         offlineState.online = false;
         return;
       }
-      if (flushed.contacted !== false || opts.snapshot) {
-        offlineState.needsLogin = false;
-        offlineState.online = true;
-      }
+      confirmOnline();
       if (flushed.synced > 0) {
         offlineState.syncedCount = flushed.synced;
         offlineState.syncedAt = Date.now();
       }
       if (opts.snapshot || flushed.synced > 0) {
         await downloadSnapshot(ctx);
+        confirmOnline();
       }
     } catch (e) {
       if (e instanceof HttpError && e.status === 401) {

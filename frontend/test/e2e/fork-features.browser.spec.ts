@@ -175,6 +175,24 @@ test.describe("Fork features", () => {
     await expect(page.getByTestId("box-check-restored")).toHaveCount(0);
   });
 
+  test("a box check does not ask about lent items", async ({ page, request }) => {
+    const a = await api(request);
+    const id = uid();
+    const box = await a.create({ name: `Lent box ${id}`, entityTypeId: a.locationType });
+    await a.create({ name: `Here ${id}`, entityTypeId: a.itemType, parentId: box.id });
+    const away = await a.create({ name: `Away ${id}`, entityTypeId: a.itemType, parentId: box.id });
+    await a.update(away.id, { lending: { lentTo: "Ben", lentDate: "2026-01-01" } });
+
+    await login(page, request);
+    await page.goto(`/location/${box.id}/check`);
+    await expect(page.getByTestId("box-check-row")).toHaveCount(1);
+    await expect(page.getByTestId("box-check-lent-row")).toContainText(`Away ${id}`);
+    await page.getByTestId("box-check-row").getByTestId("box-check-present").click();
+    await page.getByTestId("box-check-finish").click();
+    await expect(page.getByTestId("box-check-done")).toContainText("0 missing");
+    expect((await a.get(away.id)).tags ?? []).toHaveLength(0);
+  });
+
   test("marks a missing item as found again", async ({ page, request }) => {
     const a = await api(request);
     const id = uid();
@@ -321,6 +339,39 @@ test.describe("Fork features", () => {
       // Before: every request waited 10 s for its timeout, one after the other.
       expect(Date.now() - started).toBeLessThan(9_000);
     } finally {
+      await context.unrouteAll({ behavior: "ignoreErrors" });
+    }
+  });
+
+  test("saving with a dead connection is queued quickly and sent once back", async ({ page, context, request }) => {
+    const a = await api(request);
+    const item = await a.create({ name: `Dead zone ${uid()}`, entityTypeId: a.itemType });
+
+    await login(page, request);
+    await page.goto(`/item/${item.id}`);
+    const stepper = page.getByTestId("quantity-stepper");
+    await expect(stepper).toContainText("1");
+    await page.waitForLoadState("networkidle");
+
+    // Signal gone, the app has not noticed yet: requests neither answer nor fail.
+    let dead = true;
+    await context.route("**/api/v1/**", route => {
+      const wait = () => (dead ? setTimeout(wait, 250) : route.continue().catch(() => {}));
+      wait();
+    });
+    try {
+      const started = Date.now();
+      await stepper.getByRole("button", { name: "+1" }).click();
+      await expect(stepper).toContainText("2", { timeout: 10_000 });
+      // Before: the save waited until the browser gave up (minutes).
+      expect(Date.now() - started).toBeLessThan(6_000);
+      expect((await a.get(item.id)).quantity).toBe(1);
+
+      dead = false;
+      await page.evaluate(() => window.dispatchEvent(new Event("online")));
+      await expect.poll(async () => (await a.get(item.id)).quantity, { timeout: 20_000 }).toBe(2);
+    } finally {
+      dead = false;
       await context.unrouteAll({ behavior: "ignoreErrors" });
     }
   });

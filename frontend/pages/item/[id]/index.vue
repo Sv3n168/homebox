@@ -889,16 +889,20 @@
         class="mt-3 flex flex-wrap items-center gap-3 border-2 p-3"
         :class="lentOverdue ? 'border-destructive bg-destructive/10' : 'border-amber-500 bg-amber-500/10'"
       >
-        <MdiHandExtended class="size-7 shrink-0" :class="lentOverdue ? 'text-destructive' : 'text-amber-600'" />
-        <div class="grow">
-          <div class="font-semibold">
-            {{ $t("items.lending.badge_to", { name: lentTo }) }}
-            <span v-if="lentOverdue" class="text-destructive"> · {{ $t("items.lending.overdue") }}</span>
-          </div>
-          <div class="text-sm text-muted-foreground">
-            <span v-if="lentSince">{{ $t("items.lending.since", { date: fmtDate(lentSince, "human", "date") }) }}</span>
-            <span v-if="lentSince && lentDue"> · </span>
-            <span v-if="lentDue">{{ $t("items.lending.due", { date: fmtDate(lentDue, "human", "date") }) }}</span>
+        <div class="flex min-w-0 grow basis-full items-center gap-3 sm:basis-auto">
+          <MdiHandExtended class="size-7 shrink-0" :class="lentOverdue ? 'text-destructive' : 'text-amber-600'" />
+          <div class="min-w-0">
+            <div class="font-semibold">
+              {{ $t("items.lending.badge_to", { name: lentTo }) }}
+              <span v-if="lentOverdue" class="text-destructive"> · {{ $t("items.lending.overdue") }}</span>
+            </div>
+            <div class="text-sm text-muted-foreground">
+              <span v-if="lentSince">{{
+                $t("items.lending.since", { date: fmtDate(lentSince, "human", "date") })
+              }}</span>
+              <span v-if="lentSince && lentDue"> · </span>
+              <span v-if="lentDue">{{ $t("items.lending.due", { date: fmtDate(lentDue, "human", "date") }) }}</span>
+            </div>
           </div>
         </div>
         <div class="flex gap-2">

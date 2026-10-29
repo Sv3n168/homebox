@@ -1,5 +1,5 @@
 import { watch } from "vue";
-import { loadIdMap, offlineHooks, OFFLINE_ID_PREFIX } from "~~/lib/offline/adapter";
+import { loadIdMap, markOffline, offlineHooks, OFFLINE_ID_PREFIX } from "~~/lib/offline/adapter";
 import { offlineState, rememberOnline } from "~~/lib/offline/state";
 import { offlineStorageAvailable, getIdMap } from "~~/lib/offline/store";
 import { loadSnapshotInfo, syncAll, type SyncContext } from "~~/lib/offline/sync";
@@ -7,6 +7,7 @@ import { loadSnapshotInfo, syncAll, type SyncContext } from "~~/lib/offline/sync
 /** A full download at most this often; outbox replays happen on every trigger. */
 const SNAPSHOT_INTERVAL_MS = 10 * 60 * 1000;
 const POLL_INTERVAL_MS = 2 * 60 * 1000;
+const CHECK_INTERVAL_MS = 30 * 1000;
 
 export default defineNuxtPlugin(nuxtApp => {
   if (!offlineStorageAvailable()) {
@@ -45,10 +46,22 @@ export default defineNuxtPlugin(nuxtApp => {
     setTimeout(() => sync(), 1500);
   });
 
-  window.addEventListener("online", () => sync(true));
+  // Notice a dead connection before the next tap: on network changes, when
+  // the app comes back to the front (phone unlocked in the basement) and
+  // every CHECK_INTERVAL_MS while it is open. A full download only starts
+  // once the server really answers.
+  const check = async (snapshot: boolean) => {
+    await offlineHooks.checkConnection();
+    if (offlineState.online) sync(snapshot);
+  };
+  window.addEventListener("online", () => check(true));
+  window.addEventListener("offline", () => markOffline());
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") sync();
+    if (document.visibilityState === "visible") check(false);
   });
+  setInterval(() => {
+    if (document.visibilityState === "visible") offlineHooks.checkConnection();
+  }, CHECK_INTERVAL_MS);
   setInterval(() => {
     if (offlineState.outbox.length > 0 || !offlineState.online) sync();
     // Without a queued write the sync does not contact the server: check it.
@@ -61,7 +74,11 @@ export default defineNuxtPlugin(nuxtApp => {
     (now, before) => {
       if (now && !before) {
         rememberOnline(true);
-        sync(true);
+        // Send what was queued; a full download only when one is due, so a
+        // flapping connection does not start one each time.
+        sync();
+        // Pages shown from the device copy load the current data again.
+        refreshNuxtData();
       }
     }
   );

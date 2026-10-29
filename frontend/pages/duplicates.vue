@@ -171,7 +171,7 @@
       <p class="text-sm text-muted-foreground">{{ $t("duplicates.intro") }}</p>
     </header>
 
-    <p v-if="loading" class="text-muted-foreground">{{ $t("tag_assistant.loading") }}</p>
+    <p v-if="loading" class="text-muted-foreground">{{ $t("global.loading") }}</p>
 
     <Card
       v-else-if="groups.length === 0"
@@ -214,7 +214,7 @@
               <MdiPackageVariantClosed v-else class="size-6 text-muted-foreground" />
             </div>
             <div class="min-w-0 grow">
-              <div class="truncate font-medium">{{ i.name }}</div>
+              <div class="line-clamp-2 break-words font-medium">{{ i.name }}</div>
               <div class="truncate text-xs text-muted-foreground">{{ i.quantity }}× · {{ pathOf(i) }}</div>
             </div>
           </NuxtLink>
