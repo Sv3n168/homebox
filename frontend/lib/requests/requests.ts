@@ -31,12 +31,13 @@ const UNREACHABLE_STATUSES = new Set([502, 503, 504, 521, 522, 523, 530]);
 const GET_TIMEOUT_MS = 10_000;
 
 /**
- * With a copy on the device, a GET slower than this is answered from the copy
- * unless a quick check shows the server is reachable (then it is only slow);
- * the request keeps going in the background and refreshes the copy.
+ * A request without an answer after this long triggers a quick check whether
+ * the server is reachable at all. If it is, the request is only slow and is
+ * waited for. If not, a GET is answered from the device (the request keeps
+ * going in the background and refreshes the copy) and a write is queued.
  * Weak signal often means requests that neither succeed nor fail for a while.
  */
-const FAST_FALLBACK_MS = 2_500;
+const FAST_FALLBACK_MS = 2_000;
 
 const NO_ANSWER_YET = Symbol("no answer yet");
 
@@ -134,31 +135,32 @@ export class Requests {
     // Known to be offline: answer from the device and check the connection
     // in the background instead of waiting for every request to time out.
     if (method === Method.GET && this.offline.knownOffline()) {
-      const cached = await answerOffline();
-      if (cached) {
-        this.offline.probe();
-        return cached;
-      }
+      this.offline.probe();
+      return (await answerOffline()) ?? this.unreachable<T>();
     }
 
     let result: TResponse<T>;
     try {
-      const sending = this.send<T>(method, args, method === Method.GET ? GET_TIMEOUT_MS : 0);
-      const first =
-        method === Method.GET
-          ? await Promise.race([
-              sending,
-              new Promise<typeof NO_ANSWER_YET>(resolve => setTimeout(() => resolve(NO_ANSWER_YET), FAST_FALLBACK_MS)),
-            ])
-          : await sending;
+      const controller = typeof AbortController !== "undefined" ? new AbortController() : undefined;
+      const sending = this.send<T>(method, args, method === Method.GET ? GET_TIMEOUT_MS : 0, controller);
+      const first = await Promise.race([
+        sending,
+        new Promise<typeof NO_ANSWER_YET>(resolve => setTimeout(() => resolve(NO_ANSWER_YET), FAST_FALLBACK_MS)),
+      ]);
       if (first === NO_ANSWER_YET) {
         // Slow server or no signal? A slow answer is still worth waiting for.
         // (If the request itself answers first, that is all we need.)
         const reachable = await Promise.race([this.offline.reachable(), sending.then(() => true)]);
-        const cached = reachable ? null : await answerOffline(true);
-        if (cached) {
-          sending.then(r => this.recordResult(req, r)).catch(() => {});
-          return cached;
+        if (!reachable) {
+          if (method === Method.GET) {
+            sending.then(r => this.recordResult(req, r)).catch(() => {});
+          } else {
+            // Stop waiting: the write is queued (marked as possibly sent, so
+            // the replay checks before creating anything twice).
+            controller?.abort();
+            sending.catch(() => {});
+          }
+          return (await answerOffline(true)) ?? this.unreachable<T>();
         }
         result = await sending;
       } else {
@@ -190,7 +192,12 @@ export class Requests {
     return { status: 503, error: true, data, response: jsonResponse(503, data) };
   }
 
-  private async send<T>(method: Method, rargs: RequestArgs<unknown>, timeoutMs = 0): Promise<TResponse<T>> {
+  private async send<T>(
+    method: Method,
+    rargs: RequestArgs<unknown>,
+    timeoutMs = 0,
+    controller?: AbortController
+  ): Promise<TResponse<T>> {
     const payload: RequestInit = {
       method,
       headers: {
@@ -215,19 +222,26 @@ export class Requests {
       }
     }
 
+    // The timeout covers the body as well: with weak signal the headers can
+    // arrive and the body never does.
     let timer: ReturnType<typeof setTimeout> | undefined;
-    if (timeoutMs > 0 && typeof AbortController !== "undefined") {
-      const controller = new AbortController();
-      payload.signal = controller.signal;
-      timer = setTimeout(() => controller.abort(), timeoutMs);
+    if (!controller && timeoutMs > 0 && typeof AbortController !== "undefined") {
+      controller = new AbortController();
+    }
+    if (controller) payload.signal = controller.signal;
+    if (controller && timeoutMs > 0) {
+      const c = controller;
+      timer = setTimeout(() => c.abort(), timeoutMs);
     }
 
-    let response: Response;
     try {
-      response = await fetch(this.url(rargs.url), payload);
+      return await this.receive<T>(await fetch(this.url(rargs.url), payload), payload);
     } finally {
       if (timer) clearTimeout(timer);
     }
+  }
+
+  private async receive<T>(response: Response, payload: RequestInit): Promise<TResponse<T>> {
     this.callResponseInterceptors(response, payload);
 
     const data: T = await (async () => {
@@ -239,6 +253,8 @@ export class Requests {
         try {
           return await response.json();
         } catch (e) {
+          // Timed out or given up while reading: not an (empty) answer.
+          if ((e as Error)?.name === "AbortError") throw e;
           return {} as T;
         }
       }

@@ -62,22 +62,48 @@ class HttpError extends Error {
   }
 }
 
+/**
+ * Sync requests give up after this long, so a connection that dies during a
+ * sync (on the way to the basement) ends it instead of hanging for minutes and
+ * holding back the next sync once the signal is back.
+ */
+const SYNC_TIMEOUT_MS = 20_000;
+const UPLOAD_TIMEOUT_MS = 120_000;
+
+function timedFetch(url: string, init: RequestInit = {}, ms = SYNC_TIMEOUT_MS): Promise<Response> {
+  const signal = typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(ms) : undefined;
+  return fetch(url, signal ? { ...init, signal } : init);
+}
+
 async function getJSON<T>(ctx: SyncContext, url: string): Promise<T> {
-  const r = await fetch(url, { headers: ctx.headers });
+  const r = await timedFetch(url, { headers: ctx.headers });
   if (!r.ok) throw new HttpError(r.status, `${url}: ${r.status}`);
   return (await r.json()) as T;
 }
 
+/** Runs fn over items, size at a time. The first error stops all workers. */
 async function pool<T>(items: T[], size: number, fn: (item: T) => Promise<void>): Promise<void> {
   let i = 0;
+  let failed = false;
   const workers = Array.from({ length: Math.min(size, items.length) }, async () => {
-    while (i < items.length) {
+    while (i < items.length && !failed) {
       const item = items[i++]!;
-      await fn(item);
+      try {
+        await fn(item);
+      } catch (e) {
+        failed = true;
+        throw e;
+      }
       offlineState.progressDone++;
     }
   });
   await Promise.all(workers);
+}
+
+/** A server answer (kept going) as opposed to a dead connection (stops the download). */
+function skipHttpError(e: unknown): undefined {
+  if (e instanceof HttpError) return undefined;
+  throw e;
 }
 
 function progress(phase: typeof offlineState.phase, total: number) {
@@ -164,7 +190,7 @@ export async function flushOutbox(): Promise<FlushResult> {
         if (!created) {
           entry.attempted = true;
           await putOutbox(entry);
-          const r = await fetch(withMappedIds(entry.url, map), {
+          const r = await timedFetch(withMappedIds(entry.url, map), {
             method: "POST",
             headers: { ...entry.headers, "Content-Type": "application/json" },
             body: JSON.stringify(body),
@@ -181,7 +207,7 @@ export async function flushOutbox(): Promise<FlushResult> {
       } else if (entry.kind === "tag") {
         // Reuse a tag of the same name (made online meanwhile, or an earlier
         // attempt that did reach the server) instead of creating a twin.
-        const listed = await fetch(`${API}/tags`, { headers: entry.headers });
+        const listed = await timedFetch(`${API}/tags`, { headers: entry.headers });
         if (listed.status === 401) return { synced, stoppedBy: "auth" };
         const existing = listed.ok
           ? ((await listed.json()) as { id: string; name: string }[]).find(
@@ -192,7 +218,7 @@ export async function flushOutbox(): Promise<FlushResult> {
         if (!tagId) {
           entry.attempted = true;
           await putOutbox(entry);
-          const r = await fetch(entry.url, {
+          const r = await timedFetch(entry.url, {
             method: "POST",
             headers: { ...entry.headers, "Content-Type": "application/json" },
             body: JSON.stringify(entry.body),
@@ -220,7 +246,7 @@ export async function flushOutbox(): Promise<FlushResult> {
         }
         // Last write wins: whatever was changed online meanwhile, the place,
         // quantity or tags set in the basement are the ones that count.
-        const r = await fetch(url, {
+        const r = await timedFetch(url, {
           method: "PATCH",
           headers: { ...entry.headers, "Content-Type": "application/json" },
           body: JSON.stringify(body),
@@ -239,7 +265,7 @@ export async function flushOutbox(): Promise<FlushResult> {
         if (entityId.startsWith("offline-")) continue;
         // No PATCH for custom fields: merge into the current entity and PUT it.
         const url = `${API}/entities/${entityId}`;
-        const got = await fetch(url, { headers: entry.headers });
+        const got = await timedFetch(url, { headers: entry.headers });
         if (got.status === 401) return { synced, stoppedBy: "auth" };
         if (!got.ok) {
           await fail(`${got.status} ${(await got.text()).slice(0, 200)}`);
@@ -255,7 +281,7 @@ export async function flushOutbox(): Promise<FlushResult> {
           numberValue: 0,
           booleanValue: false,
         } as never);
-        const r = await fetch(url, {
+        const r = await timedFetch(url, {
           method: "PUT",
           headers: { ...entry.headers, "Content-Type": "application/json" },
           body: JSON.stringify({ ...update, fields }),
@@ -280,11 +306,15 @@ export async function flushOutbox(): Promise<FlushResult> {
         if (entry.type) form.append("type", entry.type);
         form.append("name", entry.name);
         if (entry.primary !== null) form.append("primary", entry.primary);
-        const r = await fetch(`${API}/entities/${entityId}/attachments`, {
-          method: "POST",
-          headers: entry.headers,
-          body: form,
-        });
+        const r = await timedFetch(
+          `${API}/entities/${entityId}/attachments`,
+          {
+            method: "POST",
+            headers: entry.headers,
+            body: form,
+          },
+          UPLOAD_TIMEOUT_MS
+        );
         if (r.status === 401) return { synced, stoppedBy: "auth" };
         if (!r.ok) {
           await fail(`${r.status} ${(await r.text()).slice(0, 200)}`);
@@ -346,7 +376,7 @@ export async function downloadSnapshot(ctx: SyncContext): Promise<void> {
   progress("details", stale.length);
   await pool(stale, 4, async id => {
     const url = `${API}/entities/${id}`;
-    const d = await getJSON<EntityOut>(ctx, url).catch(() => undefined);
+    const d = await getJSON<EntityOut>(ctx, url).catch(skipHttpError);
     if (d) await putResponse(ctx.tenant, url, d);
   });
   await pruneEntityResponses(ctx.tenant, new Set(summaries.map(s => s.id)));
@@ -379,12 +409,9 @@ async function warmImages(ctx: SyncContext, ids: string[]): Promise<void> {
 
   progress("images", missing.length);
   await pool(missing, 4, async url => {
-    try {
-      const r = await fetch(url);
-      if (r.ok) await cache.put(url, r);
-    } catch {
-      // ignore; retried next sync
-    }
+    // A failed picture is retried next sync; a dead connection stops the download.
+    const r = await timedFetch(url);
+    if (r.ok) await cache.put(url, r).catch(() => {}); // storage full: skip this one
   });
 }
 

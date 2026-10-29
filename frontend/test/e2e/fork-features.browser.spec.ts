@@ -325,6 +325,39 @@ test.describe("Fork features", () => {
     }
   });
 
+  test("saving with a dead connection is queued quickly and sent once back", async ({ page, context, request }) => {
+    const a = await api(request);
+    const item = await a.create({ name: `Dead zone ${uid()}`, entityTypeId: a.itemType });
+
+    await login(page, request);
+    await page.goto(`/item/${item.id}`);
+    const stepper = page.getByTestId("quantity-stepper");
+    await expect(stepper).toContainText("1");
+    await page.waitForLoadState("networkidle");
+
+    // Signal gone, the app has not noticed yet: requests neither answer nor fail.
+    let dead = true;
+    await context.route("**/api/v1/**", route => {
+      const wait = () => (dead ? setTimeout(wait, 250) : route.continue().catch(() => {}));
+      wait();
+    });
+    try {
+      const started = Date.now();
+      await stepper.getByRole("button", { name: "+1" }).click();
+      await expect(stepper).toContainText("2", { timeout: 10_000 });
+      // Before: the save waited until the browser gave up (minutes).
+      expect(Date.now() - started).toBeLessThan(6_000);
+      expect((await a.get(item.id)).quantity).toBe(1);
+
+      dead = false;
+      await page.evaluate(() => window.dispatchEvent(new Event("online")));
+      await expect.poll(async () => (await a.get(item.id)).quantity, { timeout: 20_000 }).toBe(2);
+    } finally {
+      dead = false;
+      await context.unrouteAll({ behavior: "ignoreErrors" });
+    }
+  });
+
   test("waits for a slow server instead of showing the old copy", async ({ page, context, request }) => {
     const a = await api(request);
     const item = await a.create({ name: `Slow jar ${uid()}`, entityTypeId: a.itemType });
