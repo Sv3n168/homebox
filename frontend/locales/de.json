@@ -700,7 +700,7 @@
             "badge_to": "Verliehen an {name}",
             "by_person": "Nach Person",
             "due": "zurück bis {date}",
-            "edit": "Ändern",
+            "edit": "Bearbeiten",
             "lend": "Verleihen",
             "lend_something": "Etwas verleihen",
             "lend_title": "„{name}“ verleihen",
@@ -919,7 +919,7 @@
         "title": "„{name}“ verschieben nach…",
         "title_many": "{count, plural, =1 {1 Artikel verschieben nach…} other {{count} Artikel verschieben nach…}}",
         "toast": {
-            "failed": "{count} Artikel konnten nicht verschoben werden",
+            "failed": "{count, plural, =1 {1 Artikel konnte nicht verschoben werden} other {{count} Artikel konnten nicht verschoben werden}}",
             "moved_many": "{count} Artikel nach {target} verschoben",
             "moved_one": "{name} nach {target} verschoben",
             "undone": "Verschieben rückgängig gemacht"
@@ -927,7 +927,7 @@
         "undo": "Rückgängig"
     },
     "offline": {
-        "available": "{count} Einträge offline verfügbar",
+        "available": "{count, plural, =1 {1 Eintrag offline verfügbar} other {{count} Einträge offline verfügbar}}",
         "banner": "Offline",
         "banner_as_of": "Stand {time}",
         "banner_pending": "{count} wartend",
@@ -941,7 +941,7 @@
             "quantity": "Menge: {name} → {quantity}",
             "tag": "Neuer Tag: {name}"
         },
-        "failed": "{count} Änderung(en) vom Server abgelehnt",
+        "failed": "{count, plural, =1 {1 Änderung vom Server abgelehnt} other {{count} Änderungen vom Server abgelehnt}}",
         "hint": "Offline gemachte Änderungen werden automatisch hochgeladen, sobald wieder Netz da ist. Offline kannst du stöbern, suchen, Etiketten scannen, neue Artikel anlegen, Artikel verschieben, Mengen ändern und Boxen prüfen.",
         "last_sync": "Zuletzt synchronisiert {time}",
         "needs_login": "Deine Sitzung ist abgelaufen – bitte neu anmelden, damit die Änderungen hochgeladen werden.",
@@ -949,7 +949,7 @@
         "not_synced": "Nicht synchronisiert",
         "offline": "Offline",
         "online": "Online",
-        "pending": "{count} Änderung(en) warten auf Upload",
+        "pending": "{count, plural, =1 {1 Änderung wartet auf Upload} other {{count} Änderungen warten auf Upload}}",
         "phase": {
             "details": "Lade Details {done}/{total}",
             "images": "Lade Fotos {done}/{total}",
@@ -961,7 +961,7 @@
         "toast": {
             "blocked": "Offline: Ohne Netz kannst du Artikel anlegen, verschieben, Mengen ändern und Boxen prüfen.",
             "queued": "Offline gespeichert – wird hochgeladen, sobald wieder Netz da ist.",
-            "synced": "{count} Offline-Änderung(en) hochgeladen"
+            "synced": "{count, plural, =1 {1 Offline-Änderung hochgeladen} other {{count} Offline-Änderungen hochgeladen}}"
         }
     },
     "offsite_backup": {
@@ -1192,7 +1192,7 @@
         "add": "Hinzufügen",
         "all_done": "Alle Artikel haben mindestens einen Tag.",
         "hint": "{count} Artikel ohne Tag",
-        "loading": "Lade…",
+        "intro": "Artikel ohne Tag nacheinander durchgehen: passende Tags antippen, speichern, weiter.",
         "new_tag": "Neuer Tag…",
         "only_without_tags": "Nur Artikel ohne Tags",
         "remaining": "Noch {count} von {total}",
@@ -1314,7 +1314,7 @@
     "trash": {
         "confirm_empty": "Alle Einträge im Papierkorb endgültig löschen? Das lässt sich nicht rückgängig machen.",
         "confirm_purge": "„{name}“ endgültig löschen? Das lässt sich nicht rückgängig machen.",
-        "contains": "mit {count} Einträgen darin",
+        "contains": "{count, plural, =1 {mit 1 Eintrag darin} other {mit {count} Einträgen darin}}",
         "deleted_at": "gelöscht {when}",
         "empty": "Der Papierkorb ist leer.",
         "empty_all": "Papierkorb leeren",

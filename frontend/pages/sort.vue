@@ -92,10 +92,16 @@
 
     <Card v-else class="divide-y overflow-hidden">
       <div v-for="item in items" :key="item.id" class="flex items-center pr-3" data-testid="sort-row">
-        <ItemListRow :item="item" class="min-w-0 grow" />
-        <Button size="sm" data-testid="sort-into" @click="sortItem(item)">
+        <ItemListRow :item="item" hide-path class="min-w-0 grow" />
+        <Button
+          size="sm"
+          class="shrink-0"
+          :aria-label="$t('sort.into_box')"
+          data-testid="sort-into"
+          @click="sortItem(item)"
+        >
           <MdiFolderMoveOutline />
-          {{ $t("sort.into_box") }}
+          <span class="hidden sm:inline">{{ $t("sort.into_box") }}</span>
         </Button>
       </div>
     </Card>

@@ -33,11 +33,12 @@
   const newTag = ref("");
 
   // Tags used in this session float to the top: usually the next item needs them too.
+  // "Vermisst" and "Nachkaufen" are set by the box check and the shopping list.
   const usage = ref<Record<string, number>>({});
   const sortedTags = computed(() =>
-    [...tagStore.tags].sort(
-      (a, b) => (usage.value[b.id] ?? 0) - (usage.value[a.id] ?? 0) || a.name.localeCompare(b.name)
-    )
+    tagStore.tags
+      .filter(tg => !isMissingTag(tg) && !isRestockTag(tg))
+      .sort((a, b) => (usage.value[b.id] ?? 0) - (usage.value[a.id] ?? 0) || a.name.localeCompare(b.name))
   );
 
   const current = computed(() => queue.value[0] ?? null);
@@ -117,6 +118,7 @@
   <BaseContainer class="flex flex-col gap-4">
     <header class="flex flex-col gap-2">
       <h1 class="text-2xl font-semibold">{{ $t("tag_assistant.title") }}</h1>
+      <p class="text-sm text-muted-foreground">{{ $t("tag_assistant.intro") }}</p>
       <template v-if="!loading && startTotal > 0">
         <Progress :model-value="progress" />
         <p class="text-sm text-muted-foreground" data-testid="tag-assistant-remaining">
@@ -125,7 +127,7 @@
       </template>
     </header>
 
-    <p v-if="loading" class="text-muted-foreground">{{ $t("tag_assistant.loading") }}</p>
+    <p v-if="loading" class="text-muted-foreground">{{ $t("global.loading") }}</p>
 
     <Card
       v-else-if="!current"

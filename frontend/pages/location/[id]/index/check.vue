@@ -12,6 +12,8 @@
   import { Card } from "@/components/ui/card";
   import { Progress } from "@/components/ui/progress";
   import ItemListRow from "~/components/Item/ListRow.vue";
+  import MdiHandExtended from "~icons/mdi/hand-extended";
+  import { isLent } from "~/lib/lending";
 
   // Mini inventory of one box: tick off what is there, flag what is missing
   // (tag "Vermisst"), move what belongs elsewhere. Stored in Homebox itself.
@@ -36,6 +38,8 @@
   const boxId = computed(() => route.params.id as string);
   const boxName = ref("");
   const items = ref<EntitySummary[]>([]);
+  // Lent out: not in the box right now, but not missing either; not asked about.
+  const lent = ref<EntitySummary[]>([]);
   const verdicts = ref<Record<string, Verdict>>({});
   const moved = ref<Record<string, Moved>>({});
   const loading = ref(true);
@@ -110,7 +114,8 @@
       verdicts.value = Object.fromEntries(Object.entries(draft.verdicts ?? {}).filter(([id]) => ids.has(id)));
       restored.value = Object.keys(verdicts.value).length > 0 || Object.keys(moved.value).length > 0;
     }
-    items.value = inBox;
+    lent.value = inBox.filter(i => isLent(i));
+    items.value = inBox.filter(i => !isLent(i));
   }
 
   function set(id: string, v: Verdict) {
@@ -254,7 +259,9 @@
         </Button>
       </div>
 
-      <Card v-if="total === 0" class="p-6 text-center text-muted-foreground">{{ $t("box_check.empty") }}</Card>
+      <Card v-if="total === 0 && lent.length === 0" class="p-6 text-center text-muted-foreground">
+        {{ $t("box_check.empty") }}
+      </Card>
       <Card v-else class="divide-y overflow-hidden">
         <div
           v-for="item in items"
@@ -262,7 +269,7 @@
           class="flex flex-wrap items-center gap-2 pb-2 pr-3 sm:flex-nowrap sm:pb-0"
           data-testid="box-check-row"
         >
-          <ItemListRow :item="item" class="min-w-0 grow basis-full sm:basis-auto" />
+          <ItemListRow :item="item" hide-path class="min-w-0 grow basis-full sm:basis-auto" />
           <div class="ml-3 flex gap-2 sm:ml-0">
             <Button
               size="sm"
@@ -299,6 +306,16 @@
           <MdiArrowRight class="size-4 shrink-0" />
           <span class="truncate">{{ m.to.name }}</span>
           <span class="ml-auto shrink-0 text-xs">{{ $t("box_check.moved") }}</span>
+        </div>
+        <div
+          v-for="item in lent"
+          :key="item.id"
+          class="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground"
+          data-testid="box-check-lent-row"
+        >
+          <MdiHandExtended class="size-4 shrink-0 text-amber-600" />
+          <NuxtLink :to="`/item/${item.id}`" class="truncate hover:underline">{{ item.name }}</NuxtLink>
+          <span class="ml-auto shrink-0 text-xs">{{ $t("items.lending.badge_to", { name: item.lentTo }) }}</span>
         </div>
       </Card>
 

@@ -175,6 +175,24 @@ test.describe("Fork features", () => {
     await expect(page.getByTestId("box-check-restored")).toHaveCount(0);
   });
 
+  test("a box check does not ask about lent items", async ({ page, request }) => {
+    const a = await api(request);
+    const id = uid();
+    const box = await a.create({ name: `Lent box ${id}`, entityTypeId: a.locationType });
+    await a.create({ name: `Here ${id}`, entityTypeId: a.itemType, parentId: box.id });
+    const away = await a.create({ name: `Away ${id}`, entityTypeId: a.itemType, parentId: box.id });
+    await a.update(away.id, { lending: { lentTo: "Ben", lentDate: "2026-01-01" } });
+
+    await login(page, request);
+    await page.goto(`/location/${box.id}/check`);
+    await expect(page.getByTestId("box-check-row")).toHaveCount(1);
+    await expect(page.getByTestId("box-check-lent-row")).toContainText(`Away ${id}`);
+    await page.getByTestId("box-check-row").getByTestId("box-check-present").click();
+    await page.getByTestId("box-check-finish").click();
+    await expect(page.getByTestId("box-check-done")).toContainText("0 missing");
+    expect((await a.get(away.id)).tags ?? []).toHaveLength(0);
+  });
+
   test("marks a missing item as found again", async ({ page, request }) => {
     const a = await api(request);
     const id = uid();

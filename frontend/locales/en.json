@@ -15,7 +15,7 @@
         "missing_all": "All missing items",
         "missing_banner": "Missing",
         "missing_banner_hint": "Not found during the last box check.",
-        "missing_hint": "{count} items missing",
+        "missing_hint": "{count, plural, =1 {1 item missing} other {{count} items missing}}",
         "missing_intro": "Items a box check could not find. When one turns up, mark it here.",
         "missing_none": "Nothing is missing.",
         "missing_title": "Missing",
@@ -704,7 +704,7 @@
             "badge_to": "Lent to {name}",
             "by_person": "By person",
             "due": "due back {date}",
-            "edit": "Change",
+            "edit": "Edit",
             "lend": "Lend",
             "lend_something": "Lend something",
             "lend_title": "Lend \"{name}\"",
@@ -931,7 +931,7 @@
         "title": "Move \"{name}\" to…",
         "title_many": "{count, plural, =1 {Move 1 item to…} other {Move {count} items to…}}",
         "toast": {
-            "failed": "{count} item(s) could not be moved",
+            "failed": "{count, plural, =1 {1 item could not be moved} other {{count} items could not be moved}}",
             "moved_many": "{count} items moved to {target}",
             "moved_one": "{name} moved to {target}",
             "undone": "Move undone"
@@ -939,7 +939,7 @@
         "undo": "Undo"
     },
     "offline": {
-        "available": "{count} entries available offline",
+        "available": "{count, plural, =1 {1 entry available offline} other {{count} entries available offline}}",
         "banner": "Offline",
         "banner_as_of": "as of {time}",
         "banner_pending": "{count} waiting",
@@ -953,7 +953,7 @@
             "quantity": "Quantity: {name} → {quantity}",
             "tag": "New tag: {name}"
         },
-        "failed": "{count} change(s) rejected by the server",
+        "failed": "{count, plural, =1 {1 change rejected by the server} other {{count} changes rejected by the server}}",
         "hint": "Changes made offline are uploaded automatically when the connection is back. Offline, you can browse, search, scan labels, add and move items, change quantities and check boxes.",
         "last_sync": "Last sync {time}",
         "needs_login": "Your session expired – please log in again to upload the changes.",
@@ -961,7 +961,7 @@
         "not_synced": "Not synced",
         "offline": "Offline",
         "online": "Online",
-        "pending": "{count} change(s) waiting for upload",
+        "pending": "{count, plural, =1 {1 change waiting for upload} other {{count} changes waiting for upload}}",
         "phase": {
             "details": "Downloading details {done}/{total}",
             "images": "Downloading photos {done}/{total}",
@@ -973,7 +973,7 @@
         "toast": {
             "blocked": "Offline: only adding and moving items, changing quantities and checking boxes work without a connection.",
             "queued": "Saved offline – it will be uploaded once you are back online.",
-            "synced": "{count} offline change(s) uploaded"
+            "synced": "{count, plural, =1 {1 offline change uploaded} other {{count} offline changes uploaded}}"
         }
     },
     "offsite_backup": {
@@ -1186,7 +1186,7 @@
     "sort": {
         "all_done": "Everything sorted!",
         "create_inbox": "Create \"Unsortiert\"",
-        "hint": "{count} items in {name}",
+        "hint": "{count, plural, =1 {1 item in {name}} other {{count} items in {name}}}",
         "into_box": "Sort in",
         "intro": "Put everything from the inbox into its real box – scan or search the box.",
         "no_inbox": "There is no \"Unsortiert\" location yet. New items without a box land there and get sorted in here later.",
@@ -1208,8 +1208,8 @@
     "tag_assistant": {
         "add": "Add",
         "all_done": "Every item has at least one tag.",
-        "hint": "{count} item(s) without a tag",
-        "loading": "Loading…",
+        "hint": "{count, plural, =1 {1 item without a tag} other {{count} items without a tag}}",
+        "intro": "Go through items without a tag one by one: tap the tags that fit, save, next.",
         "new_tag": "New tag…",
         "only_without_tags": "Only items without tags",
         "remaining": "{count} of {total} left",
@@ -1331,7 +1331,7 @@
     "trash": {
         "confirm_empty": "Delete everything in the trash for good? This cannot be undone.",
         "confirm_purge": "Delete \"{name}\" for good? This cannot be undone.",
-        "contains": "with {count} entries inside",
+        "contains": "{count, plural, =1 {with 1 entry inside} other {with {count} entries inside}}",
         "deleted_at": "deleted {when}",
         "empty": "The trash is empty.",
         "empty_all": "Empty trash",
