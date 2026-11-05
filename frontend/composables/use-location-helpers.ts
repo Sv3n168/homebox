@@ -59,7 +59,7 @@ export function useFlatLocations(excludeSubtreeForLocation?: EntitySummary): Ref
   const locations = useLocationStore();
 
   if (locations.tree === null) {
-    locations.refreshTree();
+    locations.ensureTreeFetched();
   }
 
   return computed(() => {

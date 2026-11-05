@@ -53,6 +53,7 @@
 
   const { t } = useI18n();
   const api = useUserApi();
+  const locationStore = useLocationStore();
   const { inbox } = useInbox();
   const { setField } = useBoxField();
 
@@ -71,8 +72,9 @@
   }
 
   async function compute(): Promise<Due[]> {
-    const { data, error } = await api.items.getLocations({ filterChildren: false });
-    if (error) return [];
+    // The layout loads this list already; share it instead of a second request.
+    await locationStore.ensureLocationsFetched();
+    const data = locationStore.allLocations;
     const boxes = data.filter(l => (l.itemCount ?? 0) > 0 && l.id !== inbox.value?.id && !INBOX_RE.test(l.name.trim()));
     const cutoff = new Date();
     cutoff.setMonth(cutoff.getMonth() - REMIND_MONTHS);

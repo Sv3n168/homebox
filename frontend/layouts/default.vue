@@ -12,7 +12,7 @@
     <TagCreateModal />
     <ItemBarcodeModal />
     <AppQuickMenuModal :actions="quickMenuActions" />
-    <AppScannerModal />
+    <AppScannerModal v-if="scannerWanted" />
     <AppPullToRefresh />
     <LocationPickerDialog />
     <CollectionCreateModal />
@@ -309,7 +309,6 @@
   import TagCreateModal from "~/components/Tag/CreateModal.vue";
   import ItemBarcodeModal from "~/components/Item/BarcodeModal.vue";
   import AppQuickMenuModal from "~/components/App/QuickMenuModal.vue";
-  import AppScannerModal from "~/components/App/ScannerModal.vue";
   import AppOfflineStatus from "~/components/App/OfflineStatus.vue";
   import AppOfflineBanner from "~/components/App/OfflineBanner.vue";
   import AppTabBar from "~/components/App/TabBar.vue";
@@ -323,10 +322,21 @@
   import CollectionJoinModal from "~/components/Collection/JoinModal.vue";
   import CollectionInviteCreateModal from "~/components/Collection/InviteCreateModal.vue";
 
+  // Fork: the scanner pulls in the barcode library (540 KB); loaded when first opened.
+  const AppScannerModal = defineAsyncComponent(() => import("~/components/App/ScannerModal.vue"));
+
   const { t, locale } = useI18n();
   const username = computed(() => authCtx.user?.name || "User");
 
-  const { openDialog } = useDialog();
+  const { openDialog, activeDialog } = useDialog();
+  // Fork: render the scanner (and load its barcode library) on first use only.
+  const scannerWanted = ref(false);
+  watch(
+    () => activeDialog.value,
+    id => {
+      if (id === DialogID.Scanner) scannerWanted.value = true;
+    }
+  );
 
   const preferences = useViewPreferences();
 
@@ -568,8 +578,10 @@
   entityTypeStore.ensureFetched();
 
   onMounted(() => {
-    locationStore.refreshParents();
-    locationStore.refreshTree();
+    // Fork: fetched once here; pages that need them while this loads share
+    // the same request instead of starting their own.
+    locationStore.ensureParentsFetched();
+    locationStore.ensureTreeFetched();
 
     // Auto-open JoinModal when invitation token is in URL
     const token = route.query.token;

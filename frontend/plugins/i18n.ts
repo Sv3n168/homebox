@@ -3,45 +3,85 @@ import type { CompileError, MessageContext } from "vue-i18n";
 import { createI18n } from "vue-i18n";
 import { IntlMessageFormat } from "intl-messageformat";
 
-export default defineNuxtPlugin(({ vueApp }) => {
+// Fork: only English (the fallback) ships in the app bundle; every other
+// language is a separate file fetched the first time it is used. All 44
+// languages together are 1.7 MB and were part of the start-up download.
+import en from "~~/locales/en.json";
+
+const localeModules = import.meta.glob("~//locales/**.json");
+
+/** Language codes we have a file for, e.g. "de", "zh-TW". */
+export const availableLocales = Object.keys(localeModules).map(path => path.slice(9, -5));
+
+function matchLocale(wanted: string): string | null {
+  const exact = availableLocales.find(l => l.toLowerCase() === wanted.toLowerCase());
+  if (exact) return exact;
+  const base = wanted.split("-")[0]!.toLowerCase();
+  return availableLocales.find(l => l.toLowerCase() === base) ?? null;
+}
+
+export default defineNuxtPlugin(async ({ vueApp }) => {
   function checkDefaultLanguage() {
-    let matched = null;
-    const languages = Object.getOwnPropertyNames(messages());
-    const matching = navigator.languages.filter(lang => languages.some(l => l.toLowerCase() === lang.toLowerCase()));
-    if (matching.length > 0) {
-      matched = matching[0];
+    for (const lang of navigator.languages) {
+      const found = matchLocale(lang);
+      if (found) return found;
     }
-    if (!matched) {
-      languages.forEach(lang => {
-        const languagePartials = navigator.language.split("-")[0];
-        if (lang.toLowerCase() === languagePartials) {
-          matched = lang;
-        }
-      });
-    }
-    return matched;
+    return null;
   }
   const preferences = useViewPreferences();
   const i18n = createI18n({
     fallbackLocale: "en",
     globalInjection: true,
     legacy: false,
-    locale: preferences.value.language || checkDefaultLanguage() || "en",
+    locale: "en",
     messageCompiler,
-    messages: messages(),
+    messages: { en } as Record<string, any>,
   });
   vueApp.use(i18n);
+
+  const loaded = new Set<string>(["en"]);
+  const loading = new Map<string, Promise<void>>();
+
+  async function loadLocale(locale: string): Promise<void> {
+    if (loaded.has(locale)) return;
+    const importer = localeModules[`/locales/${locale}.json`];
+    if (!importer) return;
+    let p = loading.get(locale);
+    if (!p) {
+      p = importer()
+        .then(mod => {
+          i18n.global.setLocaleMessage(locale, (mod as any).default ?? mod);
+          loaded.add(locale);
+        })
+        .catch(e => console.warn(`[i18n] could not load ${locale}`, e))
+        .finally(() => loading.delete(locale));
+      loading.set(locale, p);
+    }
+    await p;
+  }
+
+  /** Switches the UI language, fetching its messages first if needed. */
+  async function setLocale(locale: string) {
+    const found = matchLocale(locale) ?? "en";
+    await loadLocale(found);
+    i18n.global.locale.value = found;
+  }
+
+  // Waited for, so the first screen is not shown in English and then switched
+  // (the file is in the service worker's precache, so this works offline too).
+  const initial = preferences.value.language || checkDefaultLanguage() || "en";
+  await setLocale(initial);
 
   watch(
     () => preferences.value.language,
     language => {
-      if (!language) {
-        return;
-      }
-
-      i18n.global.locale.value = language;
+      if (language) setLocale(language);
     }
   );
+  // The language selector writes $i18n.locale directly.
+  watch(i18n.global.locale, locale => {
+    if (!loaded.has(locale)) setLocale(locale);
+  });
 
   return {
     provide: {
@@ -49,16 +89,6 @@ export default defineNuxtPlugin(({ vueApp }) => {
     },
   };
 });
-
-export const messages = () => {
-  const messages: Record<string, any> = {};
-  const modules = import.meta.glob("~//locales/**.json", { eager: true });
-  for (const path in modules) {
-    const key = path.slice(9, -5);
-    messages[key] = modules[path];
-  }
-  return messages;
-};
 
 export const messageCompiler: (
   message: string | any,

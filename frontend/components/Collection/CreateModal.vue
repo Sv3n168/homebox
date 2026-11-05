@@ -112,7 +112,7 @@
       }
     } else {
       // refresh global collections list
-      await collections.load();
+      await collections.load({ force: true });
     }
   }
 </script>

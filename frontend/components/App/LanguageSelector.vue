@@ -1,18 +1,33 @@
 <script setup lang="ts">
   import { computed } from "vue";
-  import * as Locales from "date-fns/locale";
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import { Label } from "@/components/ui/label";
-  import { fmtDate } from "~~/composables/use-formatters";
+  import { dateLocaleCodes, fmtDate } from "~~/composables/use-formatters";
   import { useViewPreferences } from "~~/composables/use-preferences";
+  import { availableLocales } from "~~/plugins/i18n";
 
   const preferences = useViewPreferences();
 
-  const locales = Object.values(Locales).map(l => {
+  // Fork: the list of date-format locales from the file names, not from
+  // importing all 96 of them (630 KB). A name the browser can't resolve
+  // (RangeError) must not break the page: it shows the code instead.
+  const displayName = (inLang: string, code: string) => {
+    try {
+      return new Intl.DisplayNames([inLang], { type: "language" }).of(code) ?? code;
+    } catch {
+      return code;
+    }
+  };
+  // Fork: languages are loaded on demand, so the list comes from the files
+  // we have, and each name in its own language from the browser.
+  const ownName = (lang: string) => displayName(lang, lang);
+  const uiLanguages = [...availableLocales].sort((a, b) => a.localeCompare(b));
+
+  const locales = dateLocaleCodes.map(code => {
     return {
-      code: l.code,
-      name: new Intl.DisplayNames([preferences.value.language ?? "en-US"], { type: "language" }).of(l.code) ?? l.code,
-      localName: new Intl.DisplayNames([l.code], { type: "language" }).of(l.code) ?? l.code,
+      code,
+      name: displayName(preferences.value.language ?? "en-US", code),
+      localName: displayName(code, code),
     };
   });
 
@@ -59,8 +74,8 @@
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem v-for="lang in $i18n.availableLocales" :key="lang" :value="lang">
-          {{ $t(`languages.${lang}`) }} ({{ $t(`languages.${lang}`, 1, { locale: lang }) }})
+        <SelectItem v-for="lang in uiLanguages" :key="lang" :value="lang">
+          {{ $t(`languages.${lang}`) }} ({{ ownName(lang) }})
         </SelectItem>
       </SelectContent>
     </Select>
