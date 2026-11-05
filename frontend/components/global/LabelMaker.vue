@@ -2,6 +2,7 @@
   import { useI18n } from "vue-i18n";
   import { type QueryValue, route } from "../../lib/api/base/urls";
   import PageQRCode from "./PageQRCode.vue";
+  import { accessFetch } from "~/lib/requests/access";
   import { DialogID } from "@/components/ui/dialog-provider/utils";
   import { toast } from "@/components/ui/sonner";
   import MdiLoading from "~icons/mdi/loading";
@@ -55,7 +56,8 @@
   async function serverPrint() {
     serverPrinting.value = true;
     try {
-      await fetch(getLabelUrl(true));
+      // Fork: a print the user asked for; with expired Cloudflare Access the page reloads.
+      await accessFetch(getLabelUrl(true), {}, "reload");
     } catch (err) {
       console.error("Failed to print labels:", err);
       serverPrinting.value = false;
