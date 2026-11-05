@@ -235,16 +235,21 @@ export function useViewPreferencesSync() {
   let localRevision = 0;
   let syncedRevision = 0;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
+  // Fork: back off (1 s, 2 s, 4 s ... 1 min) instead of retrying every second
+  // for as long as the server is out of reach (offline, expired Cloudflare Access).
+  let retryAttempts = 0;
 
   const scheduleRetry = () => {
     if (retryTimer !== null) {
       return;
     }
 
+    const delay = Math.min(1000 * 2 ** retryAttempts, 60_000);
+    retryAttempts += 1;
     retryTimer = setTimeout(() => {
       retryTimer = null;
       void saveToServer();
-    }, 1000);
+    }, delay);
   };
 
   const markDirty = () => {
@@ -277,6 +282,7 @@ export function useViewPreferencesSync() {
         }
 
         syncedRevision = targetRevision;
+        retryAttempts = 0;
       }
     } finally {
       saveInFlight = false;

@@ -64,7 +64,9 @@ describe("Requests and Cloudflare Access", () => {
   });
 
   test("Access 401 (not JSON) counts as expired; reload bypasses the service worker", async () => {
-    fetchMock.mockResolvedValue(new Response("Unauthorized", { status: 401, headers: { "Content-Type": "text/plain" } }));
+    fetchMock.mockResolvedValue(
+      new Response("Unauthorized", { status: 401, headers: { "Content-Type": "text/plain" } })
+    );
     const pending = client().get({ url: "/entities" });
     expect(await settledWithin(pending)).toBe(false);
     expect(reload).toHaveBeenCalledTimes(1);
@@ -87,6 +89,28 @@ describe("Requests and Cloudflare Access", () => {
     const pending = client().get({ url: "/entities" });
     expect(await settledWithin(pending)).toBe(false);
     expect(reload).toHaveBeenCalledTimes(1);
+    expect(expired).not.toHaveBeenCalled();
+  });
+
+  test.each([200, 403])("Access HTML login/block page (%i) counts as expired", async status => {
+    fetchMock.mockResolvedValue(
+      new Response('<html><form action="https://team.cloudflareaccess.com/cdn-cgi/access/login">', {
+        status,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      })
+    );
+    const r = await client().post({ url: "/entities", body: {} });
+    expect(r.data).toEqual({ error: "access_expired" });
+    expect(expired).toHaveBeenCalledTimes(1);
+  });
+
+  test("other HTML (e.g. the app page) is returned as before", async () => {
+    fetchMock.mockResolvedValue(
+      new Response("<html><div id=__nuxt></div></html>", { status: 200, headers: { "Content-Type": "text/html" } })
+    );
+    const r = await client().get({ url: "/unknown" });
+    expect(r.status).toBe(200);
+    expect(r.error).toBe(false);
     expect(expired).not.toHaveBeenCalled();
   });
 

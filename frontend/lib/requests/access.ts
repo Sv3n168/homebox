@@ -9,6 +9,9 @@
  *   401s are always JSON, so a 401 that is not JSON comes from Access.
  * - `redirect: "manual"` turns a redirect that still happens into an
  *   `opaqueredirect` response.
+ * - Depending on its settings Access may also answer with its HTML login or
+ *   block page (200/403). The API never answers HTML, so HTML that mentions
+ *   Access is Access.
  *
  * What happens then depends on the request (see AccessMode): only a page load
  * the user started reloads the page, whose navigation follows the redirect and
@@ -96,9 +99,20 @@ export function handleAccessRedirect(mode: AccessMode): Promise<never> {
   return Promise.reject(new AccessRedirectError());
 }
 
-export function isAccessRedirect(response: Response): boolean {
+const ACCESS_PAGE = /cloudflareaccess\.com|\/cdn-cgi\/access\//i;
+
+export async function isAccessResponse(response: Response): Promise<boolean> {
   if (response.type === "opaqueredirect") return true;
-  return response.status === 401 && !response.headers.get("Content-Type")?.startsWith("application/json");
+  const type = response.headers.get("Content-Type") ?? "";
+  if (response.status === 401 && !type.startsWith("application/json")) return true;
+  if (type.startsWith("text/html")) {
+    const body = await response
+      .clone()
+      .text()
+      .catch(() => "");
+    return ACCESS_PAGE.test(body);
+  }
+  return false;
 }
 
 /**
@@ -113,6 +127,6 @@ export async function accessFetch(
   const headers = new Headers(init.headers);
   headers.set("X-Requested-With", "XMLHttpRequest");
   const response = await fetch(input, { credentials: "same-origin", ...init, headers, redirect: "manual" });
-  if (isAccessRedirect(response)) return handleAccessRedirect(mode);
+  if (await isAccessResponse(response)) return handleAccessRedirect(mode);
   return response;
 }
