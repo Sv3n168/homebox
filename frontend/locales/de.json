@@ -927,6 +927,8 @@
         "undo": "Rückgängig"
     },
     "offline": {
+        "access_expired": "Cloudflare-Anmeldung abgelaufen – bitte neu anmelden. Nicht gespeicherte Eingaben auf dieser Seite gehen dabei verloren.",
+        "access_login": "Neu anmelden",
         "available": "{count, plural, =1 {1 Eintrag offline verfügbar} other {{count} Einträge offline verfügbar}}",
         "banner": "Offline",
         "banner_as_of": "Stand {time}",

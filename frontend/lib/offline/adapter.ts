@@ -39,6 +39,7 @@ import {
   type OutboxPatch,
   type OutboxTag,
 } from "./store";
+import { AccessRedirectError, accessFetch } from "../requests/access";
 import { offlineState, rememberOnline } from "./state";
 
 export const OFFLINE_ID_PREFIX = "offline-";
@@ -543,9 +544,10 @@ export const offlineHooks = {
     if (reachableCheck && Date.now() - reachableCheck.at < maxAgeMs) return reachableCheck.result;
     const controller = typeof AbortController !== "undefined" ? new AbortController() : undefined;
     const timer = setTimeout(() => controller?.abort(), timeoutMs);
-    const result = fetch(`${API}/status`, { signal: controller?.signal, cache: "no-store" })
+    const result = accessFetch(`${API}/status`, { signal: controller?.signal, cache: "no-store" })
       .then(r => r.ok)
-      .catch(() => false)
+      // Access session expired: the server is there, it only wants a new login.
+      .catch(e => e instanceof AccessRedirectError)
       .finally(() => clearTimeout(timer));
     reachableCheck = { at: Date.now(), result };
     return result;
@@ -575,12 +577,15 @@ export const offlineHooks = {
     probing = true;
     const controller = typeof AbortController !== "undefined" ? new AbortController() : undefined;
     const timer = setTimeout(() => controller?.abort(), PROBE_TIMEOUT_MS);
-    fetch(`${API}/status`, { signal: controller?.signal, cache: "no-store" })
+    accessFetch(`${API}/status`, { signal: controller?.signal, cache: "no-store" })
       .then(r => {
         // Back online: the offline plugin syncs queued writes and the copy.
         if (r.ok) offlineState.online = true;
       })
-      .catch(() => {})
+      .catch(e => {
+        // Access session expired: reachable, so the next page load can show its login.
+        if (e instanceof AccessRedirectError) offlineState.online = true;
+      })
       .finally(() => {
         clearTimeout(timer);
         probing = false;

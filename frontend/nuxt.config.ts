@@ -72,15 +72,41 @@ export default defineNuxtConfig({
       // The module adds its own patterns (_nuxt/builds/*.json), which replaces
       // workbox's defaults — without this list the JS bundles and the start
       // page are never precached and the app can't start offline.
-      globPatterns: ["**/*.{js,css,html,svg,png,jpg,jpeg,webp,ico,woff,woff2,webmanifest}"],
+      // Fork: no page HTML here (Cloudflare Access) — a precached page is served
+      // without asking the network, so an expired Access session never shows
+      // its login. Only 200.html (the same SPA shell) as the offline fallback.
+      globPatterns: ["**/*.{js,css,svg,png,jpg,jpeg,webp,ico,woff,woff2,webmanifest}", "200.html"],
       maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
-      navigateFallbackDenylist: [/^\/api/],
+      navigateFallback: null,
       cleanupOutdatedCaches: true,
       // API JSON is cached by the app itself (lib/offline) so it can answer
       // searches and queue writes. Here only photos/attachments: immutable per
       // id, so cache-first. ignoreSearch because the URL carries an access
       // token that changes with every login.
       runtimeCaching: [
+        // Fork: page loads always go to the network first, so Cloudflare Access
+        // can redirect to its login (the browser follows the redirect). Only
+        // without a connection (basement) the precached app shell answers.
+        {
+          urlPattern: ({ request, url }) => request.mode === "navigate" && !url.pathname.startsWith("/api/"),
+          handler: "NetworkFirst",
+          options: {
+            cacheName: "hb-pages",
+            networkTimeoutSeconds: 8,
+            plugins: [
+              {
+                // Never store pages: a stale page would point at old JS bundles,
+                // and an Access redirect must never be kept.
+                cacheWillUpdate: async () => null,
+                // The module stores 200.html under "/200"; both spellings in case that changes.
+                handlerDidError: async () =>
+                  (await caches.match("/200", { ignoreSearch: true })) ??
+                  (await caches.match("/200.html", { ignoreSearch: true })) ??
+                  Response.error(),
+              },
+            ],
+          },
+        },
         {
           urlPattern: /\/api\/v1\/entities\/[^/]+\/attachments\/[^/?]+(\?.*)?$/,
           handler: "CacheFirst",

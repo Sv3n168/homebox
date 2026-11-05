@@ -13,6 +13,7 @@ import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic
 import type { Span, Attributes } from "@opentelemetry/api";
 import { trace, context, propagation, SpanKind, SpanStatusCode } from "@opentelemetry/api";
 import { ExportResultCode } from "@opentelemetry/core";
+import { AccessRedirectError, accessFetch } from "../requests/access";
 import type { ExportResult } from "@opentelemetry/core";
 
 // Types for the telemetry configuration
@@ -69,14 +70,19 @@ class BackendProxyExporter implements SpanExporter {
       console.log("[OTel] Exporting spans:", payload);
     }
 
-    fetch(this.endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    // Fork: with an expired Cloudflare Access session the spans are dropped (silent: no reload, no hint).
+    accessFetch(
+      this.endpoint,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        credentials: "include", // Include auth cookies
       },
-      body: JSON.stringify(payload),
-      credentials: "include", // Include auth cookies
-    })
+      "silent"
+    )
       .then(response => {
         if (response.ok) {
           resultCallback({ code: ExportResultCode.SUCCESS });
@@ -86,6 +92,10 @@ class BackendProxyExporter implements SpanExporter {
         }
       })
       .catch(error => {
+        if (error instanceof AccessRedirectError) {
+          resultCallback({ code: ExportResultCode.FAILED });
+          return;
+        }
         console.warn("[OTel] Error exporting spans:", error);
         resultCallback({ code: ExportResultCode.FAILED });
       });
