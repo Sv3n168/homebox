@@ -9,6 +9,10 @@ export const useLocationStore = defineStore("locations", {
     client: useUserApi(),
     tree: null as TreeItem[] | null,
     refreshLocationsPromise: null as Promise<void> | null,
+    // Fork: one request at a time; several components ask for the tree /
+    // parents on the same page while the first request is still in flight.
+    refreshTreePromise: null as Promise<void> | null,
+    refreshParentsPromise: null as Promise<void> | null,
   }),
   getters: {
     /**
@@ -17,15 +21,20 @@ export const useLocationStore = defineStore("locations", {
      * response
      */
     parentLocations(state): EntitySummary[] {
-      if (state.parents === null) {
-        this.client.items.getLocations({ filterChildren: true }).then(result => {
-          if (result.error) {
-            console.error(result.error);
-            return;
-          }
-
-          this.parents = result.data;
-        });
+      // Fork: one request while the first is still in flight (getters cannot call actions).
+      if (state.parents === null && state.refreshParentsPromise === null) {
+        state.refreshParentsPromise = this.client.items
+          .getLocations({ filterChildren: true })
+          .then(result => {
+            if (result.error) {
+              console.error(result.error);
+              return;
+            }
+            this.parents = result.data;
+          })
+          .finally(() => {
+            state.refreshParentsPromise = null;
+          });
       }
       return state.parents ?? [];
     },
@@ -70,6 +79,30 @@ export const useLocationStore = defineStore("locations", {
 
       this.tree = result.data;
       return result;
+    },
+    /** Fork: the parents once, shared by everything that needs them while they load. */
+    async ensureParentsFetched() {
+      if (this.parents !== null) return;
+      if (this.refreshParentsPromise === null) {
+        this.refreshParentsPromise = this.refreshParents()
+          .then(() => {})
+          .finally(() => {
+            this.refreshParentsPromise = null;
+          });
+      }
+      await this.refreshParentsPromise;
+    },
+    /** Fork: the tree once, shared by everything that needs it while it loads. */
+    async ensureTreeFetched() {
+      if (this.tree !== null) return;
+      if (this.refreshTreePromise === null) {
+        this.refreshTreePromise = this.refreshTree()
+          .then(() => {})
+          .finally(() => {
+            this.refreshTreePromise = null;
+          });
+      }
+      await this.refreshTreePromise;
     },
   },
 });

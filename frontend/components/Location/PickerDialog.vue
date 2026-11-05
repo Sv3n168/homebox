@@ -69,9 +69,11 @@
   import { Button } from "@/components/ui/button";
   import { Input } from "@/components/ui/input";
   import { toast } from "@/components/ui/sonner";
-  import AppQrVideo from "~/components/App/QrVideo.vue";
   import { parseLabel } from "~/lib/places/resolve";
   import type { PickedBox } from "~/composables/use-box-picker";
+
+  // Fork: the camera view pulls in the barcode library (540 KB); loaded when scanning starts.
+  const AppQrVideo = defineAsyncComponent(() => import("~/components/App/QrVideo.vue"));
 
   const { t } = useI18n();
   const api = useUserApi();

@@ -153,14 +153,18 @@
     loading.value = false;
   };
 
-  watch(open, async isOpen => {
-    if (isOpen) {
-      detectedBarcode.value = "";
-      await startScanner();
-    } else {
-      stopScanner();
-    }
-  });
+  watch(
+    open,
+    async isOpen => {
+      if (isOpen) {
+        detectedBarcode.value = "";
+        await startScanner();
+      } else {
+        stopScanner();
+      }
+    },
+    { immediate: true }
+  ); // Fork: mounted on first open (layout loads it lazily)
 
   watch(selectedSource, async newSource => {
     if (!open.value || !newSource) return;

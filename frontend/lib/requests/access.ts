@@ -3,8 +3,15 @@
  *
  * When the Access session has expired, Cloudflare answers every request with a
  * 302 to the Access login (another origin). A fetch that follows it fails on
- * CORS, so the app just hangs. Fetching with `redirect: "manual"` turns that
- * redirect into an `opaqueredirect` response instead.
+ * CORS, so the app just hangs or (Safari) believes it is offline. Two signals:
+ * - `X-Requested-With: XMLHttpRequest` makes Access answer 401 instead of the
+ *   redirect (Cloudflare's documented way for single-page apps). Homebox's own
+ *   401s are always JSON, so a 401 that is not JSON comes from Access.
+ * - `redirect: "manual"` turns a redirect that still happens into an
+ *   `opaqueredirect` response.
+ * - Depending on its settings Access may also answer with its HTML login or
+ *   block page (200/403). The API never answers HTML, so HTML that mentions
+ *   Access is Access.
  *
  * What happens then depends on the request (see AccessMode): only a page load
  * the user started reloads the page, whose navigation follows the redirect and
@@ -17,6 +24,20 @@
  */
 
 const RELOAD_KEY = "hb-access-reload-at";
+
+/**
+ * Page loads carrying this parameter bypass the service worker (see
+ * nuxt.config.ts), so the browser itself follows the redirect to the Access
+ * login and can never fall back to the offline copy of the app.
+ */
+export const REAUTH_PARAM = "hb-reauth";
+
+/** Loads the current page again straight from the network (Access login). */
+export function reloadForLogin() {
+  const url = new URL(window.location.href);
+  url.searchParams.set(REAUTH_PARAM, String(Date.now()));
+  window.location.replace(url.toString());
+}
 
 /** At most one automatic reload in this time, so a misconfigured Access can't loop the page. */
 export const ACCESS_RELOAD_GAP_MS = 30_000;
@@ -61,7 +82,7 @@ function reloadOnce(): boolean {
     const last = Number(window.sessionStorage.getItem(RELOAD_KEY) ?? 0);
     if (last > 0 && now - last >= 0 && now - last < ACCESS_RELOAD_GAP_MS) return false;
     window.sessionStorage.setItem(RELOAD_KEY, String(now));
-    window.location.reload();
+    reloadForLogin();
     return true;
   } catch {
     return false;
@@ -78,8 +99,20 @@ export function handleAccessRedirect(mode: AccessMode): Promise<never> {
   return Promise.reject(new AccessRedirectError());
 }
 
-export function isAccessRedirect(response: Response): boolean {
-  return response.type === "opaqueredirect";
+const ACCESS_PAGE = /cloudflareaccess\.com|\/cdn-cgi\/access\//i;
+
+export async function isAccessResponse(response: Response): Promise<boolean> {
+  if (response.type === "opaqueredirect") return true;
+  const type = response.headers.get("Content-Type") ?? "";
+  if (response.status === 401 && !type.startsWith("application/json")) return true;
+  if (type.startsWith("text/html")) {
+    const body = await response
+      .clone()
+      .text()
+      .catch(() => "");
+    return ACCESS_PAGE.test(body);
+  }
+  return false;
 }
 
 /**
@@ -91,7 +124,9 @@ export async function accessFetch(
   init: RequestInit = {},
   mode: AccessMode = "notify"
 ): Promise<Response> {
-  const response = await fetch(input, { credentials: "same-origin", ...init, redirect: "manual" });
-  if (isAccessRedirect(response)) return handleAccessRedirect(mode);
+  const headers = new Headers(init.headers);
+  headers.set("X-Requested-With", "XMLHttpRequest");
+  const response = await fetch(input, { credentials: "same-origin", ...init, headers, redirect: "manual" });
+  if (await isAccessResponse(response)) return handleAccessRedirect(mode);
   return response;
 }

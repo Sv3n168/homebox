@@ -116,7 +116,7 @@
       setCurrency(res.data.currency);
       toast.success(t("profile.toast.group_updated"));
 
-      await reloadCollections();
+      await reloadCollections({ force: true });
     } catch (e) {
       const msg = (e as Error).message ?? String(e);
       error.value = msg;

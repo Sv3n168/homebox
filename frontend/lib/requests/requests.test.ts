@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { ACCESS_RELOAD_GAP_MS, AccessRedirectError, accessFetch, setAccessHandlers } from "./access";
+import { ACCESS_RELOAD_GAP_MS, AccessRedirectError, REAUTH_PARAM, accessFetch, setAccessHandlers } from "./access";
 import { Requests } from "./requests";
 
 /** What fetch returns with `redirect: "manual"` when Cloudflare Access redirects. */
@@ -36,7 +36,7 @@ describe("Requests and Cloudflare Access", () => {
     setAccessHandlers({ onExpired: expired, mayReload: () => mayReload });
     vi.stubGlobal("fetch", fetchMock);
     vi.stubGlobal("window", {
-      location: { reload },
+      location: { replace: reload, href: "https://hb.example/items?q=1" },
       sessionStorage: {
         getItem: (k: string) => storage.get(k) ?? null,
         setItem: (k: string, v: string) => void storage.set(k, v),
@@ -51,13 +51,37 @@ describe("Requests and Cloudflare Access", () => {
 
   const client = () => new Requests("/api/v1", "Bearer t");
 
-  test("sends without following redirects, same-origin credentials", async () => {
+  test("sends without following redirects, same-origin credentials, XHR marker for Access", async () => {
     fetchMock.mockResolvedValue(json(200, { ok: 1 }));
     await client().get({ url: "/status" });
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/status",
       expect.objectContaining({ redirect: "manual", credentials: "same-origin" })
     );
+    const headers = fetchMock.mock.calls[0]![1].headers as Headers;
+    expect(headers.get("X-Requested-With")).toBe("XMLHttpRequest");
+    expect(headers.get("Authorization")).toBe("Bearer t");
+  });
+
+  test("Access 401 (not JSON) counts as expired; reload bypasses the service worker", async () => {
+    fetchMock.mockResolvedValue(
+      new Response("Unauthorized", { status: 401, headers: { "Content-Type": "text/plain" } })
+    );
+    const pending = client().get({ url: "/entities" });
+    expect(await settledWithin(pending)).toBe(false);
+    expect(reload).toHaveBeenCalledTimes(1);
+    const target = new URL(reload.mock.calls[0]![0] as string);
+    expect(target.pathname + "?q=" + target.searchParams.get("q")).toBe("/items?q=1");
+    expect(target.searchParams.has(REAUTH_PARAM)).toBe(true);
+  });
+
+  test("Homebox's own 401 (JSON) is returned as before", async () => {
+    fetchMock.mockResolvedValue(json(401, { error: "valid authorization token is required" }));
+    const r = await client().get({ url: "/entities" });
+    expect(r.status).toBe(401);
+    expect(r.data).toEqual({ error: "valid authorization token is required" });
+    expect(reload).not.toHaveBeenCalled();
+    expect(expired).not.toHaveBeenCalled();
   });
 
   test("opening something: reloads the page and never settles", async () => {
@@ -65,6 +89,28 @@ describe("Requests and Cloudflare Access", () => {
     const pending = client().get({ url: "/entities" });
     expect(await settledWithin(pending)).toBe(false);
     expect(reload).toHaveBeenCalledTimes(1);
+    expect(expired).not.toHaveBeenCalled();
+  });
+
+  test.each([200, 403])("Access HTML login/block page (%i) counts as expired", async status => {
+    fetchMock.mockResolvedValue(
+      new Response('<html><form action="https://team.cloudflareaccess.com/cdn-cgi/access/login">', {
+        status,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      })
+    );
+    const r = await client().post({ url: "/entities", body: {} });
+    expect(r.data).toEqual({ error: "access_expired" });
+    expect(expired).toHaveBeenCalledTimes(1);
+  });
+
+  test("other HTML (e.g. the app page) is returned as before", async () => {
+    fetchMock.mockResolvedValue(
+      new Response("<html><div id=__nuxt></div></html>", { status: 200, headers: { "Content-Type": "text/html" } })
+    );
+    const r = await client().get({ url: "/unknown" });
+    expect(r.status).toBe(200);
+    expect(r.error).toBe(false);
     expect(expired).not.toHaveBeenCalled();
   });
 
@@ -114,7 +160,7 @@ describe("Requests and Cloudflare Access", () => {
 
   test("does not reload when sessionStorage is unavailable (no loop protection)", async () => {
     vi.stubGlobal("window", {
-      location: { reload },
+      location: { replace: reload, href: "https://hb.example/items" },
       get sessionStorage(): Storage {
         throw new Error("SecurityError");
       },

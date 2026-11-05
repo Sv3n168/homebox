@@ -79,6 +79,10 @@ export default defineNuxtConfig({
       maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
       navigateFallback: null,
       cleanupOutdatedCaches: true,
+      // Fork: a new version takes over right away. Set here because the module
+      // only adds these when it injects its own register script (see below).
+      skipWaiting: true,
+      clientsClaim: true,
       // API JSON is cached by the app itself (lib/offline) so it can answer
       // searches and queue writes. Here only photos/attachments: immutable per
       // id, so cache-first. ignoreSearch because the URL carries an access
@@ -88,7 +92,9 @@ export default defineNuxtConfig({
         // can redirect to its login (the browser follows the redirect). Only
         // without a connection (basement) the precached app shell answers.
         {
-          urlPattern: ({ request, url }) => request.mode === "navigate" && !url.pathname.startsWith("/api/"),
+          // hb-reauth: reload for the Access login, straight from the network (lib/requests/access.ts).
+          urlPattern: ({ request, url }) =>
+            request.mode === "navigate" && !url.pathname.startsWith("/api/") && !url.searchParams.has("hb-reauth"),
           handler: "NetworkFirst",
           options: {
             cacheName: "hb-pages",
@@ -121,10 +127,10 @@ export default defineNuxtConfig({
       ],
     },
     registerType: "autoUpdate",
-    injectRegister: "script",
-    injectManifest: {
-      swSrc: "sw.js",
-    },
+    // Fork: registered from plugins/sw.client.ts once the page is idle. The
+    // injected script registered it at the top of <head>, so the precache of
+    // all ~200 bundles raced the page's own download of the same files.
+    injectRegister: null,
     devOptions: {
       // Enable to troubleshoot during development
       enabled: false,

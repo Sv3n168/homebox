@@ -13,9 +13,13 @@ const selectedId = ref<string | null>(null);
 const refreshing = ref(false);
 
 export const useCollections = () => {
-  const load = async () => {
+  const load = async (opts: { force?: boolean } = {}) => {
     if (window.location.pathname === "/") {
       console.debug("[useCollections] On root path '/', skipping load");
+      return;
+    }
+    // Fork: the sidebar and its phone variant both load on mount; once is enough.
+    if (!opts.force && selectedId.value && collections.value.length > 0) {
       return;
     }
 
@@ -30,9 +34,13 @@ export const useCollections = () => {
       const api = useUserApi();
       const prefs = useViewPreferences();
 
-      console.debug("[useCollections] Fetching current user");
-      const { data: userResp } = await api.user.self();
-      const user = userResp?.item;
+      // Fork: the auth middleware fetched the user already; reuse it.
+      let user = useAuthContext().user ?? undefined;
+      if (!user) {
+        console.debug("[useCollections] Fetching current user");
+        const { data: userResp } = await api.user.self();
+        user = userResp?.item;
+      }
       console.debug("[useCollections] User loaded", { userId: user?.id, defaultGroupId: user?.defaultGroupId });
 
       console.debug("[useCollections] Fetching all groups");

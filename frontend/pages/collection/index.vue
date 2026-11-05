@@ -155,7 +155,7 @@
       }
 
       toast.success(t("collection.left_collection"));
-      await reloadCollections();
+      await reloadCollections({ force: true });
       window.location.reload();
     } catch (e) {
       const msg = (e as Error).message ?? String(e);
@@ -184,7 +184,7 @@
       }
 
       toast.success(t("collection.deleted_collection"));
-      await reloadCollections();
+      await reloadCollections({ force: true });
       window.location.reload();
     } catch (e) {
       const msg = (e as Error).message ?? String(e);
