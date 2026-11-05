@@ -92,7 +92,9 @@ export default defineNuxtConfig({
         // can redirect to its login (the browser follows the redirect). Only
         // without a connection (basement) the precached app shell answers.
         {
-          urlPattern: ({ request, url }) => request.mode === "navigate" && !url.pathname.startsWith("/api/"),
+          // hb-reauth: reload for the Access login, straight from the network (lib/requests/access.ts).
+          urlPattern: ({ request, url }) =>
+            request.mode === "navigate" && !url.pathname.startsWith("/api/") && !url.searchParams.has("hb-reauth"),
           handler: "NetworkFirst",
           options: {
             cacheName: "hb-pages",

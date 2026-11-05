@@ -158,7 +158,8 @@
   );
   watch(
     () => offlineState.blockedAt,
-    at => offlineToasts.once("blocked", at) && toast.warning(t("offline.toast.blocked"))
+    // One toast at a time: every refused write would otherwise stack another one.
+    at => offlineToasts.once("blocked", at) && toast.warning(t("offline.toast.blocked"), { id: "offline-blocked" })
   );
   watch(
     () => offlineState.syncedAt,

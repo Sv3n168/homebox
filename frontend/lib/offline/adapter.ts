@@ -501,7 +501,9 @@ async function answerWrite(req: OfflineRequest): Promise<OfflineAnswer | null> {
     case "attachment":
       return queueAttachment(req, w.id);
   }
-  offlineState.blockedAt = Date.now();
+  // The preferences sync saves in the background and retries every second
+  // until it gets through: a toast for each try would pile up on the screen.
+  if (!req.url.endsWith("/users/self/settings")) offlineState.blockedAt = Date.now();
   return null;
 }
 
