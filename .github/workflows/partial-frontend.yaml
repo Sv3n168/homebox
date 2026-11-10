@@ -32,8 +32,7 @@ jobs:
         working-directory: frontend
 
       - name: Run Typecheck
-        # Fork: fails only on errors not already in .github/typecheck-baseline.txt
-        run: node ../.github/scripts/typecheck-baseline.mjs
+        run: pnpm run typecheck
         working-directory: frontend
 
   integration-tests:

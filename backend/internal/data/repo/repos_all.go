@@ -23,6 +23,7 @@ type AllRepos struct {
 	MaintEntry          *MaintenanceEntryRepository
 	Notifiers           *NotifierRepository
 	Exports             *ExportRepository
+	LabelTemplates      *LabelTemplatesRepository
 	Trash               *TrashRepository // fork: recycle bin (fork_trash.go)
 }
 
@@ -47,6 +48,7 @@ func New(db *ent.Client, bus *eventbus.EventBus, storage config.Storage, pubSubC
 		MaintEntry:          &MaintenanceEntryRepository{db},
 		Notifiers:           NewNotifierRepository(db),
 		Exports:             &ExportRepository{db},
+		LabelTemplates:      &LabelTemplatesRepository{db, bus},
 		Trash:               NewTrashRepository(db, bus, attachments),
 	}
 }
