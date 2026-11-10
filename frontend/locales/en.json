@@ -1325,6 +1325,8 @@
         "last_sync": "Last sync {time}",
         "needs_login": "Your session expired – please log in again to upload the changes.",
         "never_synced": "Not available offline yet – it is downloaded automatically while online.",
+        "new_version": "A new version is available – reload to keep everything working.",
+        "new_version_reload": "Reload",
         "not_synced": "Not synced",
         "offline": "Offline",
         "online": "Online",
