@@ -66,6 +66,9 @@ test.beforeAll(async ({ baseURL }) => {
 });
 
 test.afterAll(async () => {
+  // Browsers keep connections open; close() alone would wait for them.
+  proxy.closeAllConnections();
+  accessLogin.closeAllConnections();
   await new Promise(resolve => proxy.close(resolve));
   await new Promise(resolve => accessLogin.close(resolve));
 });

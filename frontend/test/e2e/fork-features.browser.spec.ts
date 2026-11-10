@@ -83,6 +83,9 @@ async function login(page: Page, request: APIRequestContext) {
   ]);
   await page.goto("/home");
   await expect(page).toHaveURL("/home");
+  // The app finishes starting (router, first requests) after the load event.
+  // Firefox and WebKit abort a page.goto issued while that is still going on.
+  await page.waitForLoadState("networkidle");
 }
 
 test.describe("Fork features", () => {

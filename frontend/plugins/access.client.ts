@@ -18,6 +18,13 @@ export default defineNuxtPlugin(nuxtApp => {
     url.searchParams.delete(REAUTH_PARAM);
     window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
   }
+  // The router may have read the address before that (Firefox) and would put
+  // the marker back; a reload with it would then skip the offline start.
+  const router = useRouter();
+  router.isReady().then(() => {
+    const { [REAUTH_PARAM]: marker, ...query } = router.currentRoute.value.query;
+    if (marker !== undefined) router.replace({ query, hash: router.currentRoute.value.hash });
+  });
 
   let lastAction = Date.now(); // app start: nothing typed yet
   let dirty = false;
