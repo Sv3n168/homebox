@@ -210,8 +210,7 @@ tasks:
   test:ci:
     env:
       UNSAFE_DISABLE_PASSWORD_PROJECTION: "yes_i_am_sure"
-      # The suite registers and logs in many users from one IP; the auth rate
-      # limiter would answer 429 halfway through.
+      # The suite registers and logs in many users from one address
       HBOX_AUTH_RATE_LIMIT_ENABLED: "false"
     desc: Runs end-to-end test on a live server (only for use in CI)
     cmds:

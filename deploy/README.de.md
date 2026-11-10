@@ -78,7 +78,11 @@ Empfohlen, in Cloudflare (kostenlos):
 1. **Gute Passwörter** für alle Konten. Die Bremse macht Raten langsam, ein starkes Passwort macht es aussichtslos.
 2. **Security → WAF → Rate limiting rules:** eine Regel für `URI Path` *equals* `/api/v1/users/login`, z. B. 10 Anfragen pro Minute pro IP, Aktion *Block* für 10 Minuten. Dann kommen Angriffe gar nicht erst bis zu Homebox.
 3. **SSL/TLS → Edge Certificates:** „Always Use HTTPS“ einschalten.
-4. Noch strenger: **Cloudflare Access** (Zero Trust → Access → Application) vor die Adresse setzen, mit Einmal-Code per E-Mail nur für eure Adressen. Dann sieht niemand sonst überhaupt die Anmeldeseite. Nachteil: Die Access-Anmeldung läuft nach der eingestellten Sitzungsdauer ab (z. B. 1 Monat). Danach muss man sie in Safari einmal erneuern, bevor die App wieder synchronisiert.
+4. Noch strenger: **Cloudflare Access** (Zero Trust → Access → Application) vor die Adresse setzen, mit Einmal-Code per E-Mail nur für eure Adressen. Dann sieht niemand sonst überhaupt die Anmeldeseite. Die Access-Anmeldung läuft nach der eingestellten Sitzungsdauer ab. Stell sie lang ein (z. B. 1 Monat), sonst musst du dich oft neu anmelden. Was dann passiert:
+   - Öffnest du in der App etwas, lädt sie neu und zeigt den Cloudflare-Login. Danach geht es normal weiter.
+   - Tippst du gerade etwas ein oder ist ein Dialog offen, lädt sie nicht von selbst neu. Stattdessen erscheint der Hinweis **„Cloudflare-Anmeldung abgelaufen“** mit dem Knopf **„Neu anmelden“**, damit deine Eingabe nicht verloren geht.
+   - Die Anmeldung gehört in die **Homebox-App vom Home-Bildschirm**, nicht in Safari: Auf dem iPhone haben beide getrennte Speicher, ein Login in Safari hilft der App nicht.
+   - Bleibt die App nach einem Update trotzdem auf „Offline“ hängen, lösch sie vom Home-Bildschirm und füge sie neu hinzu (Abschnitt 3). Vorher mit Netz warten, bis nichts mehr auf den Upload wartet.
 5. Port `3100` ist im Heimnetz ohne HTTPS erreichbar. Wenn du ihn nicht brauchst, cloudflared wie oben direkt ins Docker-Netzwerk hängen und den Port entfernen.
 
 ## 3. Auf dem iPhone einrichten (Offline-Modus)

@@ -39,7 +39,8 @@
   import BaseCard from "@/components/Base/Card.vue";
   import Currency from "~/components/global/Currency.vue";
   import DateTime from "~/components/global/DateTime.vue";
-  import LabelMaker from "~/components/global/LabelMaker.vue";
+  import PageQRCode from "~/components/global/PageQRCode.vue";
+  import LabelTemplatePrintButton from "~/components/LabelTemplate/PrintButton.vue";
   import Markdown from "~/components/global/Markdown.vue";
   import DetailsSection from "~/components/global/DetailsSection/DetailsSection.vue";
   import BaseSectionHeader from "@/components/Base/SectionHeader.vue";
@@ -320,7 +321,8 @@
             </div>
             <!-- Phone: labels and "+ Artikel" share one row, ⋯ sits top right. -->
             <div class="mt-2 flex flex-wrap items-center gap-2 sm:ml-auto">
-              <LabelMaker :id="location.id" type="location" />
+              <LabelTemplatePrintButton :id="location.id" type="location" variant="outline" />
+              <PageQRCode />
               <Button data-testid="location-create-item" class="px-3 sm:px-4" @click="openCreateItem">
                 <MdiPlus name="mdi-plus" />
                 <span class="sm:hidden">{{ $t("global.item") }}</span>
