@@ -188,8 +188,8 @@ test.describe("Fork: Cloudflare Access", () => {
 
     mode = "valid";
     await page.goto(`${appUrl}/home?hb-reauth=1`);
-    await expect(page).toHaveURL(`${appUrl}/home`); // marker removed
     await expect(page.getByText("Quick Statistics")).toBeVisible();
+    await expect(page).toHaveURL(`${appUrl}/home`); // marker removed
     await expect(page.getByText("Offline", { exact: true })).toHaveCount(0);
   });
 });
