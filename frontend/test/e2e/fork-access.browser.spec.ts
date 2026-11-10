@@ -107,6 +107,32 @@ async function backgroundCheck(page: Page) {
 }
 
 test.describe("Fork: Cloudflare Access", () => {
+  test("without Access in the way the app never reloads or leaves the page by itself", async ({ page, request }) => {
+    const seen: string[] = [];
+    const at = () => `+${Date.now() - started}ms`;
+    let started = Date.now();
+    page.on("request", r => {
+      if (r.isNavigationRequest() && r.frame() === page.mainFrame()) seen.push(`${at()} document ${r.url()}`);
+    });
+    page.on("framenavigated", f => {
+      if (f === page.mainFrame()) seen.push(`${at()} navigated ${f.url()}`);
+    });
+    page.on("requestfailed", r => seen.push(`${at()} failed ${r.method()} ${r.url()} ${r.failure()?.errorText}`));
+    page.on("pageerror", e => seen.push(`${at()} pageerror ${e.message}`));
+    page.on("console", m => {
+      if (m.type() === "error" || m.type() === "warning") seen.push(`${at()} console.${m.type()} ${m.text()}`);
+    });
+
+    started = Date.now();
+    await openApp(page, request);
+    // The service worker has taken over and the first sync has run by now.
+    await page.waitForTimeout(6000);
+
+    const documents = seen.filter(l => l.includes(" document "));
+    expect(documents, seen.join("\n")).toHaveLength(1);
+    await expect(page.locator("[data-sonner-toast]"), seen.join("\n")).toHaveCount(0);
+  });
+
   test("a page load with an expired session reaches the Access login, not the cached app", async ({
     page,
     request,
