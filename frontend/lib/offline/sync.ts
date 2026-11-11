@@ -11,7 +11,6 @@
 import type { EntityListResult, EntityOut } from "../api/types/data-contracts";
 import { entityToUpdate } from "../cleanup/duplicates";
 import { rememberIdMapping } from "./adapter";
-import { AccessRedirectError, accessFetch } from "../requests/access";
 import { offlineState } from "./state";
 import {
   deleteOutbox,
@@ -76,7 +75,7 @@ let lastAnswerAt = 0;
 
 async function timedFetch(url: string, init: RequestInit = {}, ms = SYNC_TIMEOUT_MS): Promise<Response> {
   const signal = typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(ms) : undefined;
-  const r = await accessFetch(url, signal ? { ...init, signal } : init);
+  const r = await fetch(url, signal ? { ...init, signal } : init);
   lastAnswerAt = Date.now();
   return r;
 }
@@ -162,7 +161,7 @@ function withMappedIds<T>(value: T, map: Record<string, string>): T {
   return JSON.parse(text) as T;
 }
 
-type FlushResult = { synced: number; stoppedBy?: "network" | "auth" | "access" };
+type FlushResult = { synced: number; stoppedBy?: "network" | "auth" };
 
 export async function flushOutbox(): Promise<FlushResult> {
   const entries = await listOutbox();
@@ -334,8 +333,6 @@ export async function flushOutbox(): Promise<FlushResult> {
       await deleteOutbox(entry.seq!);
       synced++;
     } catch (e) {
-      // Access session expired: keep everything until the new login.
-      if (e instanceof AccessRedirectError) return { synced, stoppedBy: "access" };
       // Network dropped mid-replay; keep the rest for the next round.
       console.warn("[offline] replay interrupted", e);
       return { synced, stoppedBy: "network" };
@@ -466,7 +463,6 @@ export function syncAll(ctx: SyncContext, opts: { snapshot: boolean } = { snapsh
         offlineState.needsLogin = true;
         return;
       }
-      if (flushed.stoppedBy === "access") return;
       if (flushed.stoppedBy === "network") {
         offlineState.online = false;
         return;
@@ -483,8 +479,6 @@ export function syncAll(ctx: SyncContext, opts: { snapshot: boolean } = { snapsh
     } catch (e) {
       if (e instanceof HttpError && e.status === 401) {
         offlineState.needsLogin = true;
-      } else if (e instanceof AccessRedirectError) {
-        // Cloudflare Access login needed; the hint is already shown.
       } else {
         console.warn("[offline] sync failed", e);
         if (!(e instanceof HttpError)) offlineState.online = false;

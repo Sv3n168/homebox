@@ -1304,8 +1304,6 @@
         "undo": "Undo"
     },
     "offline": {
-        "access_expired": "Cloudflare sign-in expired – sign in again to continue. Unsaved input on this page will be lost.",
-        "access_login": "Sign in again",
         "available": "{count, plural, =1 {1 entry available offline} other {{count} entries available offline}}",
         "banner": "Offline",
         "banner_as_of": "as of {time}",

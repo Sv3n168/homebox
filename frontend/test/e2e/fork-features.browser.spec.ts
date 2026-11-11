@@ -92,8 +92,7 @@ test.describe("Fork features", () => {
   // Several tests hold back or drop API requests with context.route. In Firefox
   // and WebKit that does not see the requests of a page a service worker
   // controls (Playwright's documented limit), so the "dead" connection let
-  // writes through. None of these tests is about the service worker; it is
-  // covered by fork-access.browser.spec.ts.
+  // writes through. None of these tests is about the service worker.
   test.use({ serviceWorkers: "block" });
 
   // On failure, print what the page showed: CI keeps traces only as artifacts.

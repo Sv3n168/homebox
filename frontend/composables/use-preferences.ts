@@ -246,7 +246,7 @@ export function useViewPreferencesSync() {
   let syncedRevision = 0;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
   // Fork: back off (1 s, 2 s, 4 s ... 1 min) instead of retrying every second
-  // for as long as the server is out of reach (offline, expired Cloudflare Access).
+  // for as long as the server is out of reach.
   let retryAttempts = 0;
 
   const scheduleRetry = () => {
