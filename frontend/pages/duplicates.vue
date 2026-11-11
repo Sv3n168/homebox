@@ -10,7 +10,6 @@
   import { Checkbox } from "@/components/ui/checkbox";
   import BaseContainer from "@/components/Base/Container.vue";
   import { entityToUpdate, findDuplicateGroups, mergeInto, pairKey } from "~/lib/cleanup/duplicates";
-  import { accessFetch } from "~/lib/requests/access";
 
   // Likely duplicates side by side: merge them into one entry (the others are
   // archived, not deleted) or mark them as different things.
@@ -137,8 +136,7 @@
       for (const o of others) {
         for (const a of o.attachments.filter(a => a.type === "photo")) {
           try {
-            // Fork: mid-merge never reload (expired Cloudflare Access): skip the photo, show the hint.
-            const r = await accessFetch(api.authURL(`/entities/${o.id}/attachments/${a.id}`));
+            const r = await fetch(api.authURL(`/entities/${o.id}/attachments/${a.id}`));
             if (r.ok)
               await api.items.attachments.add(
                 targetId,

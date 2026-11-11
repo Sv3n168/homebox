@@ -1,5 +1,4 @@
 import type { OfflineHooks, OfflineRequest } from "../offline/adapter";
-import { AccessRedirectError, accessFetch } from "./access";
 
 export enum Method {
   GET = "GET",
@@ -203,12 +202,6 @@ export class Requests {
     return { status: 503, error: true, data, response: jsonResponse(503, data) };
   }
 
-  /** Not sent: Cloudflare Access wants a new login. Never queued or answered offline. */
-  private accessExpired<T>(): TResponse<T> {
-    const data = { error: "access_expired" } as unknown as T;
-    return { status: 401, error: true, data, response: jsonResponse(401, data) };
-  }
-
   private async send<T>(
     method: Method,
     rargs: RequestArgs<unknown>,
@@ -252,17 +245,7 @@ export class Requests {
     }
 
     try {
-      // Fork: Cloudflare Access session expired. Opening something reloads the
-      // page (Access login); a save fails with a hint instead, so the form keeps
-      // its input.
-      let response: Response;
-      try {
-        response = await accessFetch(this.url(rargs.url), payload, method === Method.GET ? "reload" : "notify");
-      } catch (e) {
-        if (e instanceof AccessRedirectError) return this.accessExpired<T>();
-        throw e;
-      }
-      return await this.receive<T>(response, payload);
+      return await this.receive<T>(await fetch(this.url(rargs.url), payload), payload);
     } finally {
       if (timer) clearTimeout(timer);
     }
