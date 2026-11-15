@@ -3,6 +3,11 @@
 // basement); started at the top of <head> that download competed with the
 // page's own, which doubled the cold start on a slow connection.
 import { toast } from "@/components/ui/sonner";
+import { offlineState } from "~~/lib/offline/state";
+
+/** A failed install (one file did not arrive) is tried again this often, this far apart. */
+const RETRIES = 6;
+const RETRY_MS = 20_000;
 
 export default defineNuxtPlugin(nuxtApp => {
   // Fork: parts of the app load on first use (scanner, languages). After an
@@ -19,10 +24,86 @@ export default defineNuxtPlugin(nuxtApp => {
     });
   });
 
-  if (!("serviceWorker" in navigator)) return;
-  const register = () => {
-    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(e => console.warn("[sw] registration failed", e));
+  if (!("serviceWorker" in navigator)) {
+    offlineState.appShell = "unsupported";
+    return { provide: { prepareOfflineStart: () => {} } };
+  }
+  const sw = navigator.serviceWorker;
+
+  // The cloud icon only shows "ready" once the app can really start offline:
+  // a worker that controls this page has stored every file.
+  let retries = 0;
+  let counter: ReturnType<typeof setInterval> | undefined;
+  const countFiles = async () => {
+    try {
+      let n = 0;
+      for (const name of await caches.keys()) {
+        if (name.includes("precache")) n += (await (await caches.open(name)).keys()).length;
+      }
+      offlineState.appShellFiles = n;
+    } catch {
+      // Cache storage not available: the count is only for display.
+    }
   };
+  const setState = (state: typeof offlineState.appShell) => {
+    offlineState.appShell = state;
+    if (state === "preparing" && !counter) counter = setInterval(countFiles, 2_000);
+    if (state !== "preparing" && counter) {
+      clearInterval(counter);
+      counter = undefined;
+    }
+    countFiles();
+  };
+  const refresh = () => {
+    if (sw.controller) setState("ready");
+    else if (offlineState.appShell !== "failed") setState("preparing");
+  };
+
+  const watch = (reg: ServiceWorkerRegistration) => {
+    const follow = (worker: ServiceWorker | null) => {
+      if (!worker) return;
+      worker.addEventListener("statechange", () => {
+        // "redundant" before it ever became active: the install failed, usually
+        // because one file did not arrive. What was stored so far is kept, so
+        // another try continues instead of starting over.
+        if (worker.state === "redundant" && !sw.controller) {
+          setState("failed");
+          if (retries++ < RETRIES) setTimeout(register, RETRY_MS);
+        } else {
+          refresh();
+        }
+      });
+    };
+    follow(reg.installing);
+    reg.addEventListener("updatefound", () => {
+      follow(reg.installing);
+      refresh();
+    });
+    refresh();
+  };
+
+  let watched: ServiceWorkerRegistration | undefined;
+  function register() {
+    sw.register("/sw.js", { scope: "/" })
+      .then(reg => {
+        if (watched !== reg) {
+          watched = reg;
+          watch(reg);
+        } else {
+          // Same registration: ask the browser to try the install again.
+          if (!sw.controller) setState("preparing");
+          reg.update().catch(() => {});
+        }
+      })
+      .catch(e => {
+        console.warn("[sw] registration failed", e);
+        if (!sw.controller) setState("failed");
+        if (retries++ < RETRIES) setTimeout(register, RETRY_MS);
+      });
+  }
+  sw.addEventListener("controllerchange", refresh);
+  refresh();
+
   const idle = () => {
     if ("requestIdleCallback" in window) {
       (
@@ -34,4 +115,14 @@ export default defineNuxtPlugin(nuxtApp => {
   };
   if (document.readyState === "complete") idle();
   else window.addEventListener("load", idle, { once: true });
+
+  return {
+    provide: {
+      /** "Try again" in the offline status: restarts the preparation by hand. */
+      prepareOfflineStart: () => {
+        retries = 0;
+        register();
+      },
+    },
+  };
 });

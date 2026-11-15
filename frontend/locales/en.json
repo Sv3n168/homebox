@@ -1304,6 +1304,11 @@
         "undo": "Undo"
     },
     "offline": {
+        "app_failed": "The app cannot start without a connection yet: preparing it failed. It tries again automatically while the app is open.",
+        "app_preparing": "Preparing the app for starting without a connection ({count} files so far). Keep it open until this is done.",
+        "app_ready": "The app also starts without a connection.",
+        "app_retry": "Try again now",
+        "app_unsupported": "This browser cannot start the app without a connection.",
         "available": "{count, plural, =1 {1 entry available offline} other {{count} entries available offline}}",
         "banner": "Offline",
         "banner_as_of": "as of {time}",

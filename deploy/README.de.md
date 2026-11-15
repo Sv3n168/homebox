@@ -86,7 +86,7 @@ Empfohlen, in Cloudflare (kostenlos):
 1. Homebox in **Safari** über die Tunnel-Adresse (https://…) öffnen.
 2. Beim Anmelden **„Angemeldet bleiben“** anhaken. Sonst läuft die Sitzung ab und du müsstest dich im Keller neu anmelden, was ohne Netz nicht geht.
 3. **Teilen → Zum Home-Bildschirm**. Ab jetzt Homebox **immer über dieses Icon** öffnen.
-4. Einmal mit Netz öffnen und warten, bis das Wolken-Symbol oben rechts einen Haken zeigt. Ein Tipp darauf zeigt Fortschritt, Anzahl der offline verfügbaren Einträge und den Stand. Danach hält sich die Kopie bei jedem Öffnen mit Netz automatisch aktuell.
+4. Einmal mit Netz öffnen und **geöffnet lassen**, bis das Wolken-Symbol oben rechts einen Haken zeigt. Vorher lädt die App zwei Dinge: ihre eigenen Dateien (mehrere hundert, ohne sie startet sie im Keller gar nicht) und die Kopie deines Inventars. Ein Tipp auf das Symbol zeigt den Stand: **„Die App startet auch ohne Netz“** und die Anzahl der offline verfügbaren Einträge. Steht dort „wird vorbereitet“, die App noch offen lassen. Nach jedem Update der App wiederholt sich das einmal. Danach hält sich die Kopie bei jedem Öffnen mit Netz automatisch aktuell.
 
 **Im Keller:** App über das Icon öffnen. Unter der Kopfzeile erscheint eine schmale Zeile „Offline · Stand …“. Du kannst stöbern, suchen, Boxen öffnen und neue Artikel anlegen, auch mit Fotos. Neue Artikel tragen das Badge **„Nicht synchronisiert“**, bis sie hochgeladen sind. Das passiert automatisch, sobald wieder Netz da ist. Die Zahl am Wolken-Symbol zeigt, wie viel noch wartet.
 

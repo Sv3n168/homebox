@@ -10,9 +10,10 @@
       >
         <MdiCloudOffOutline v-if="!offlineState.online" />
         <MdiCloudSync
-          v-else-if="offlineState.syncing || pending > 0"
-          :class="{ 'animate-pulse': offlineState.syncing }"
+          v-else-if="offlineState.syncing || pending > 0 || shellPreparing"
+          :class="{ 'animate-pulse': offlineState.syncing || shellPreparing }"
         />
+        <MdiCloudAlert v-else-if="offlineState.appShell === 'failed'" />
         <MdiCloudCheckOutline v-else />
         <span
           v-if="pending > 0 || failed.length > 0"
@@ -39,6 +40,29 @@
           </template>
           <template v-else>{{ $t("offline.never_synced") }}</template>
         </p>
+
+        <!-- Fork: can the app itself start without a connection? -->
+        <p
+          data-testid="offline-app-shell"
+          :data-state="offlineState.appShell"
+          :class="offlineState.appShell === 'failed' ? 'font-medium text-destructive' : 'text-muted-foreground'"
+        >
+          <template v-if="offlineState.appShell === 'ready'">{{ $t("offline.app_ready") }}</template>
+          <template v-else-if="offlineState.appShell === 'preparing'">
+            {{ $t("offline.app_preparing", { count: offlineState.appShellFiles }) }}
+          </template>
+          <template v-else-if="offlineState.appShell === 'failed'">{{ $t("offline.app_failed") }}</template>
+          <template v-else>{{ $t("offline.app_unsupported") }}</template>
+        </p>
+        <Button
+          v-if="offlineState.appShell === 'failed'"
+          variant="outline"
+          size="sm"
+          data-testid="offline-app-retry"
+          @click="$prepareOfflineStart()"
+        >
+          {{ $t("offline.app_retry") }}
+        </Button>
 
         <div v-if="offlineState.syncing" class="flex flex-col gap-1">
           <span>{{ phaseLabel }}</span>
@@ -80,6 +104,7 @@
   import MdiCloudOffOutline from "~icons/mdi/cloud-off-outline";
   import MdiCloudSync from "~icons/mdi/cloud-sync";
   import MdiCloudCheckOutline from "~icons/mdi/cloud-check-outline";
+  import MdiCloudAlert from "~icons/mdi/cloud-alert";
   import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
   import { Button } from "@/components/ui/button";
   import { Progress } from "@/components/ui/progress";
@@ -89,7 +114,8 @@
   import type { OutboxEntry } from "~~/lib/offline/store";
 
   const { t } = useI18n();
-  const { $offlineSync } = useNuxtApp();
+  const { $offlineSync, $prepareOfflineStart } = useNuxtApp();
+  const shellPreparing = computed(() => offlineState.appShell === "preparing");
 
   const pending = computed(() => pendingCount());
   const failed = computed(() => failedEntries());

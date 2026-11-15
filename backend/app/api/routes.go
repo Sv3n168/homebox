@@ -341,8 +341,14 @@ func notFoundHandler() errchain.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) error {
+		w.Header().Set("Cache-Control", staticCacheControl(r.URL.Path)) // Fork: see fork_static.go
 		err := tryRead(public, "static/public", r.URL.Path, w)
 		if err != nil {
+			// Fork: a missing script or style is a 404, not the page (fork_static.go).
+			if isBuildAsset(r.URL.Path) {
+				missingBuildAsset(w, r)
+				return nil
+			}
 			// Fallback to the index.html file.
 			// should succeed in all cases.
 			err = tryRead(public, "static/public", "index.html", w)

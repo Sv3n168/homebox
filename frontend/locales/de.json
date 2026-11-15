@@ -927,6 +927,11 @@
         "undo": "Rückgängig"
     },
     "offline": {
+        "app_failed": "Die App kann noch nicht ohne Netz starten: Die Vorbereitung ist fehlgeschlagen. Sie versucht es automatisch erneut, solange die App offen ist.",
+        "app_preparing": "Die App wird für den Start ohne Netz vorbereitet (bisher {count} Dateien). Bitte geöffnet lassen, bis das fertig ist.",
+        "app_ready": "Die App startet auch ohne Netz.",
+        "app_retry": "Jetzt erneut versuchen",
+        "app_unsupported": "Dieser Browser kann die App nicht ohne Netz starten.",
         "available": "{count, plural, =1 {1 Eintrag offline verfügbar} other {{count} Einträge offline verfügbar}}",
         "banner": "Offline",
         "banner_as_of": "Stand {time}",
