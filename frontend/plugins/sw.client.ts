@@ -70,6 +70,8 @@ export default defineNuxtPlugin(nuxtApp => {
         // because one file did not arrive. What was stored so far is kept, so
         // another try continues instead of starting over.
         if (worker.state === "redundant" && !sw.controller) {
+          // The browser gives no reason here; a file that did not arrive is the usual one.
+          offlineState.appShellError = "";
           setState("failed");
           if (retries++ < RETRIES) setTimeout(register, RETRY_MS);
         } else {
@@ -100,6 +102,9 @@ export default defineNuxtPlugin(nuxtApp => {
       })
       .catch(e => {
         console.warn("[sw] registration failed", e);
+        // E.g. a certificate the device does not trust: the page still opens
+        // after "continue anyway", but the browser refuses the service worker.
+        offlineState.appShellError = `${(e as Error)?.name ?? "Error"}: ${(e as Error)?.message ?? String(e)}`;
         if (!sw.controller) setState("failed");
         if (retries++ < RETRIES) setTimeout(register, RETRY_MS);
       });

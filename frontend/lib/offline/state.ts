@@ -55,6 +55,8 @@ export const offlineState = reactive({
   appShell: "preparing" as "preparing" | "ready" | "failed" | "insecure" | "unsupported",
   /** Files of the app stored on the device so far (progress while preparing). */
   appShellFiles: 0,
+  /** What the browser said when preparing failed (e.g. a certificate error). */
+  appShellError: "",
   /** Bumped on events the UI turns into toasts. */
   queuedAt: 0,
   blockedAt: 0,

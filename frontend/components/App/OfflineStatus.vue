@@ -55,6 +55,13 @@
           <template v-else-if="offlineState.appShell === 'insecure'">{{ $t("offline.app_insecure") }}</template>
           <template v-else>{{ $t("offline.app_unsupported") }}</template>
         </p>
+        <p
+          v-if="offlineState.appShell === 'failed' && offlineState.appShellError"
+          class="break-words text-xs text-muted-foreground"
+          data-testid="offline-app-error"
+        >
+          {{ offlineState.appShellError }}
+        </p>
         <Button
           v-if="offlineState.appShell === 'failed'"
           variant="outline"
