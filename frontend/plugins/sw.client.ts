@@ -25,7 +25,10 @@ export default defineNuxtPlugin(nuxtApp => {
   });
 
   if (!("serviceWorker" in navigator)) {
-    offlineState.appShell = "unsupported";
+    // Browsers only offer service workers (and the cache they need) on a secure
+    // address: https://, or localhost. Over http:// on a home network address the
+    // app can never start offline; say so instead of a generic "not supported".
+    offlineState.appShell = window.isSecureContext ? "unsupported" : "insecure";
     return { provide: { prepareOfflineStart: () => {} } };
   }
   const sw = navigator.serviceWorker;

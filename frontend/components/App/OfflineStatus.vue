@@ -13,7 +13,7 @@
           v-else-if="offlineState.syncing || pending > 0 || shellPreparing"
           :class="{ 'animate-pulse': offlineState.syncing || shellPreparing }"
         />
-        <MdiCloudAlert v-else-if="offlineState.appShell === 'failed'" />
+        <MdiCloudAlert v-else-if="shellBroken" />
         <MdiCloudCheckOutline v-else />
         <span
           v-if="pending > 0 || failed.length > 0"
@@ -45,13 +45,14 @@
         <p
           data-testid="offline-app-shell"
           :data-state="offlineState.appShell"
-          :class="offlineState.appShell === 'failed' ? 'font-medium text-destructive' : 'text-muted-foreground'"
+          :class="shellBroken ? 'font-medium text-destructive' : 'text-muted-foreground'"
         >
           <template v-if="offlineState.appShell === 'ready'">{{ $t("offline.app_ready") }}</template>
           <template v-else-if="offlineState.appShell === 'preparing'">
             {{ $t("offline.app_preparing", { count: offlineState.appShellFiles }) }}
           </template>
           <template v-else-if="offlineState.appShell === 'failed'">{{ $t("offline.app_failed") }}</template>
+          <template v-else-if="offlineState.appShell === 'insecure'">{{ $t("offline.app_insecure") }}</template>
           <template v-else>{{ $t("offline.app_unsupported") }}</template>
         </p>
         <Button
@@ -116,6 +117,7 @@
   const { t } = useI18n();
   const { $offlineSync, $prepareOfflineStart } = useNuxtApp();
   const shellPreparing = computed(() => offlineState.appShell === "preparing");
+  const shellBroken = computed(() => offlineState.appShell === "failed" || offlineState.appShell === "insecure");
 
   const pending = computed(() => pendingCount());
   const failed = computed(() => failedEntries());

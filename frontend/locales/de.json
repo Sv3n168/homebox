@@ -928,6 +928,7 @@
     },
     "offline": {
         "app_failed": "Die App kann noch nicht ohne Netz starten: Die Vorbereitung ist fehlgeschlagen. Sie versucht es automatisch erneut, solange die App offen ist.",
+        "app_insecure": "Die App kann hier nicht ohne Netz starten: Sie ist über http:// geöffnet. Handy und Browser speichern eine App nur über eine sichere Adresse (https://) für die Nutzung ohne Netz.",
         "app_preparing": "Die App wird für den Start ohne Netz vorbereitet (bisher {count} Dateien). Bitte geöffnet lassen, bis das fertig ist.",
         "app_ready": "Die App startet auch ohne Netz.",
         "app_retry": "Jetzt erneut versuchen",

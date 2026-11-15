@@ -1305,6 +1305,7 @@
     },
     "offline": {
         "app_failed": "The app cannot start without a connection yet: preparing it failed. It tries again automatically while the app is open.",
+        "app_insecure": "The app cannot start without a connection here: it is opened over http://. Phones and browsers only store an app for offline use on a secure address (https://).",
         "app_preparing": "Preparing the app for starting without a connection ({count} files so far). Keep it open until this is done.",
         "app_ready": "The app also starts without a connection.",
         "app_retry": "Try again now",
