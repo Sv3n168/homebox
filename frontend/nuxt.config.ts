@@ -74,7 +74,9 @@ export default defineNuxtConfig({
       // page are never precached and the app can't start offline.
       globPatterns: ["**/*.{js,css,html,svg,png,jpg,jpeg,webp,ico,woff,woff2,webmanifest}"],
       maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
-      navigateFallbackDenylist: [/^\/api/],
+      // Fork: hb-reauth marks the reload for a login in front of Homebox
+      // (lib/requests/access.ts): it must reach the network, not the stored page.
+      navigateFallbackDenylist: [/^\/api/, /[?&]hb-reauth=/],
       cleanupOutdatedCaches: true,
       // Fork: a new version takes over right away. Set here because the module
       // only adds these when it injects its own register script (see below).

@@ -46,6 +46,17 @@ export const offlineState = reactive({
   outbox: [] as OutboxEntry[],
   /** The server answered 401 during replay: user must log in again. */
   needsLogin: false,
+  /**
+   * Whether the app itself (pages, scripts) can start without a connection,
+   * i.e. the service worker has stored its files and controls this page. The
+   * data copy above is not enough: without this the app does not even open.
+   * "insecure": opened over http://, where browsers offer no service worker.
+   */
+  appShell: "preparing" as "preparing" | "ready" | "failed" | "insecure" | "unsupported",
+  /** Files of the app stored on the device so far (progress while preparing). */
+  appShellFiles: 0,
+  /** What the browser said when preparing failed (e.g. a certificate error). */
+  appShellError: "",
   /** Bumped on events the UI turns into toasts. */
   queuedAt: 0,
   blockedAt: 0,

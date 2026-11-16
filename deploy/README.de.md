@@ -78,7 +78,11 @@ Empfohlen, in Cloudflare (kostenlos):
 1. **Gute Passwörter** für alle Konten. Die Bremse macht Raten langsam, ein starkes Passwort macht es aussichtslos.
 2. **Security → WAF → Rate limiting rules:** eine Regel für `URI Path` *equals* `/api/v1/users/login`, z. B. 10 Anfragen pro Minute pro IP, Aktion *Block* für 10 Minuten. Dann kommen Angriffe gar nicht erst bis zu Homebox.
 3. **SSL/TLS → Edge Certificates:** „Always Use HTTPS“ einschalten.
-4. Noch strenger wäre **Cloudflare Access** (Zero Trust → Access → Application) vor der Adresse. Für die Homebox-App vom Home-Bildschirm ist das **nicht empfohlen**: Läuft die Access-Anmeldung ab, erreicht die App den Server nicht mehr und wirkt wie offline, zeigt den Access-Login aber nicht von selbst.
+4. **Vorgeschaltete Anmeldung (Authelia hinter Caddy, Cloudflare Access o. Ä.):** Die App kommt damit zurecht, auch als Home-Bildschirm-App. Läuft diese Anmeldung ab, passiert Folgendes:
+   - Öffnest du in der App etwas, lädt sie neu und zeigt den Login der vorgeschalteten Anmeldung. Danach geht es normal weiter.
+   - Tippst du gerade etwas ein oder ist ein Dialog offen, lädt sie nicht von selbst neu. Stattdessen erscheint der Hinweis **„Die Anmeldung ist abgelaufen“** mit dem Knopf **„Neu anmelden“**, damit deine Eingabe nicht verloren geht.
+   - **Vor dem Keller mit Netz öffnen:** Ohne Netz kannst du dich nicht neu anmelden. Die App läuft offline weiter und merkt sich Änderungen, hochgeladen werden sie aber erst nach der neuen Anmeldung. Eine lange Sitzungsdauer erspart dir das.
+   - Die Anmeldung gehört in die **Homebox-App vom Home-Bildschirm**, nicht in Safari: Auf dem iPhone haben beide getrennte Speicher.
 5. Port `3100` ist im Heimnetz ohne HTTPS erreichbar. Wenn du ihn nicht brauchst, cloudflared wie oben direkt ins Docker-Netzwerk hängen und den Port entfernen.
 
 ## 3. Auf dem iPhone einrichten (Offline-Modus)
@@ -86,7 +90,7 @@ Empfohlen, in Cloudflare (kostenlos):
 1. Homebox in **Safari** über die Tunnel-Adresse (https://…) öffnen.
 2. Beim Anmelden **„Angemeldet bleiben“** anhaken. Sonst läuft die Sitzung ab und du müsstest dich im Keller neu anmelden, was ohne Netz nicht geht.
 3. **Teilen → Zum Home-Bildschirm**. Ab jetzt Homebox **immer über dieses Icon** öffnen.
-4. Einmal mit Netz öffnen und warten, bis das Wolken-Symbol oben rechts einen Haken zeigt. Ein Tipp darauf zeigt Fortschritt, Anzahl der offline verfügbaren Einträge und den Stand. Danach hält sich die Kopie bei jedem Öffnen mit Netz automatisch aktuell.
+4. Einmal mit Netz öffnen und **geöffnet lassen**, bis das Wolken-Symbol oben rechts einen Haken zeigt. Vorher lädt die App zwei Dinge: ihre eigenen Dateien (mehrere hundert, ohne sie startet sie im Keller gar nicht) und die Kopie deines Inventars. Ein Tipp auf das Symbol zeigt den Stand: **„Die App startet auch ohne Netz“** und die Anzahl der offline verfügbaren Einträge. Steht dort „wird vorbereitet“, die App noch offen lassen. Nach jedem Update der App wiederholt sich das einmal. Danach hält sich die Kopie bei jedem Öffnen mit Netz automatisch aktuell.
 
 **Im Keller:** App über das Icon öffnen. Unter der Kopfzeile erscheint eine schmale Zeile „Offline · Stand …“. Du kannst stöbern, suchen, Boxen öffnen und neue Artikel anlegen, auch mit Fotos. Neue Artikel tragen das Badge **„Nicht synchronisiert“**, bis sie hochgeladen sind. Das passiert automatisch, sobald wieder Netz da ist. Die Zahl am Wolken-Symbol zeigt, wie viel noch wartet.
 

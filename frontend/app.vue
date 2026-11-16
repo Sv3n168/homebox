@@ -10,7 +10,12 @@
       <Link rel="apple-touch-icon" href="/apple-touch-icon.png" size="180x180" />
       <Link rel="mask-icon" href="/mask-icon.svg" color="#5b7f67" />
       <Meta name="theme-color" content="#5b7f67" />
-      <Link rel="manifest" href="/manifest.webmanifest" />
+      <!--
+        Fork: with cookies. Browsers request the manifest without them by default,
+        so behind a login in front of Homebox (Authelia, any forward-auth proxy)
+        it is answered with the login page.
+      -->
+      <Link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
       <NuxtPage />
     </NuxtLayout>
   </DialogProvider>

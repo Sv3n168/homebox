@@ -927,6 +927,14 @@
         "undo": "Rückgängig"
     },
     "offline": {
+        "access_expired": "Die Anmeldung ist abgelaufen – bitte neu anmelden. Nicht gespeicherte Eingaben auf dieser Seite gehen dabei verloren.",
+        "access_login": "Neu anmelden",
+        "app_failed": "Die App kann noch nicht ohne Netz starten: Die Vorbereitung ist fehlgeschlagen. Sie versucht es automatisch erneut, solange die App offen ist.",
+        "app_insecure": "Die App kann hier nicht ohne Netz starten: Sie ist über http:// geöffnet. Handy und Browser speichern eine App nur über eine sichere Adresse (https://) für die Nutzung ohne Netz.",
+        "app_preparing": "Die App wird für den Start ohne Netz vorbereitet (bisher {count} Dateien). Bitte geöffnet lassen, bis das fertig ist.",
+        "app_ready": "Die App startet auch ohne Netz.",
+        "app_retry": "Jetzt erneut versuchen",
+        "app_unsupported": "Dieser Browser kann die App nicht ohne Netz starten.",
         "available": "{count, plural, =1 {1 Eintrag offline verfügbar} other {{count} Einträge offline verfügbar}}",
         "banner": "Offline",
         "banner_as_of": "Stand {time}",
