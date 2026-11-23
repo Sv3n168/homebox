@@ -1,13 +1,14 @@
 package main
 
-// Fork: login hardening for an installation behind a Cloudflare tunnel.
+// Fork: login hardening for an installation behind a reverse proxy.
 //
-//   - HBOX_OPTIONS_CLIENT_IP_HEADER (e.g. CF-Connecting-IP): the client IP is
-//     read from this one header, which the proxy overwrites on every request.
-//     Behind a tunnel every request otherwise comes from cloudflared's
-//     address, so one attacker's failed logins would lock out everybody.
-//     X-Real-IP / X-Forwarded-For (trust_proxy) are passed through from the
-//     client by Cloudflare and must not be trusted there.
+//   - HBOX_OPTIONS_CLIENT_IP_HEADER: the client IP is read from this one
+//     header, which must be one the proxy overwrites on every request (Caddy:
+//     X-Forwarded-For, Cloudflare tunnel: CF-Connecting-IP). Behind a proxy
+//     every request otherwise comes from the proxy's address, so one
+//     attacker's failed logins would lock out everybody. A header the proxy
+//     passes through from the client (X-Forwarded-For behind Cloudflare)
+//     must not be used: the client could pick its own address.
 //   - Requests that arrived over HTTPS get Strict-Transport-Security, and the
 //     session cookies set on them get the Secure flag, so a later plain-HTTP
 //     request to the same host never carries them.
@@ -35,7 +36,9 @@ func clientIPFromHeader(r *http.Request) string {
 	if clientIPHeader == "" || !fromPrivatePeer(r) {
 		return ""
 	}
-	ip := strings.TrimSpace(firstValue(r.Header.Get(clientIPHeader)))
+	// The last entry is the one the proxy next to us added; earlier ones (a
+	// proxy that appends to X-Forwarded-For) may come from the client.
+	ip := strings.TrimSpace(lastValue(r.Header.Get(clientIPHeader)))
 	if net.ParseIP(ip) == nil {
 		return ""
 	}
@@ -79,6 +82,13 @@ func leaveLogin(key string) {
 		return
 	}
 	loginsInFlight.n[key]--
+}
+
+func lastValue(v string) string {
+	if i := strings.LastIndex(v, ","); i >= 0 {
+		return v[i+1:]
+	}
+	return v
 }
 
 func firstValue(v string) string {

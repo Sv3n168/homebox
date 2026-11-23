@@ -46,11 +46,23 @@ Die Images baut GitHub für dich. Auf deiner VM musst du nichts kompilieren.
 
 Beim ersten Start passt Homebox die Datenbank automatisch an. Es kommen nur die neuen Spalten für „Verliehen“ hinzu, bestehende Daten bleiben unverändert.
 
-### cloudflared
+### Reverse-Proxy (Caddy, Cloudflare-Tunnel)
 
-Homebox ist wie bisher auf Port `3100` der VM erreichbar. Zeigt dein Tunnel schon auf `http://<VM-IP>:3100`, ändert sich nichts.
+Homebox ist auf Port `3100` der VM erreichbar, ohne HTTPS. Davor gehört ein Reverse-Proxy, der HTTPS spricht, denn **ohne `https://` gibt es keinen Offline-Modus**: Browser erlauben die dafür nötige Technik nur auf sicheren Adressen.
 
-Hängt dein cloudflared-Container stattdessen in einem eigenen Docker-Netzwerk, kannst du Homebox dort direkt einhängen und den Port weglassen. Dafür in `docker-compose.yml`:
+**Caddy im Heimnetz (mit WireGuard für unterwegs):**
+
+```
+homebox.example.com {
+    reverse_proxy <VM-IP>:3100
+}
+```
+
+- Caddy holt das Zertifikat selbst. Für eine Adresse, die nur im Heimnetz erreichbar ist, per DNS-Challenge.
+- In den Stack-Variablen `HBOX_CLIENT_IP_HEADER=X-Forwarded-For` setzen (Standard). Caddy schreibt dort die Adresse des Besuchers hinein und verwirft, was der Besucher selbst mitschickt.
+- **Port `3100` nur für Caddy öffnen** (Firewall der VM oder des Hosts). Sonst erreicht jedes Gerät im Heimnetz Homebox am Proxy vorbei: ohne HTTPS, ohne vorgeschaltete Anmeldung, und es könnte sich für die Login-Bremse eine beliebige Adresse geben.
+
+**Cloudflare-Tunnel:** Ziel des Tunnels ist `http://<VM-IP>:3100`, und `HBOX_CLIENT_IP_HEADER=CF-Connecting-IP`. Hängt cloudflared in einem eigenen Docker-Netzwerk, kannst du Homebox dort einhängen und den Port weglassen:
 
 ```yaml
 services:
@@ -69,25 +81,23 @@ Im Tunnel ist das Ziel dann `http://homebox:7745`.
 Schon eingebaut:
 
 - **Login-Bremse:** Nach 5 falschen Passwörtern in einer Minute muss man warten, erst 10 Sekunden, dann jeweils doppelt so lange, bis 5 Minuten. Solange weiter probiert wird, bleibt es bei 5 Minuten pro Versuch. Die Anmeldeseite zeigt dann „Zu viele Fehlversuche …“. Bereits angemeldete Geräte sind nicht betroffen.
-- **Pro Besucher:** Die Bremse gilt für die Adresse des Besuchers (Cloudflare liefert sie in `CF-Connecting-IP`). Ein Angreifer sperrt also nicht euch aus. Läuft Homebox ohne Cloudflare-Tunnel, in den Stack-Variablen `HBOX_CLIENT_IP_HEADER=` (leer) setzen.
-- **HTTPS:** Über den Tunnel bekommen die Anmelde-Cookies das Merkmal `Secure` und der Browser die Anweisung (HSTS), die Seite nur noch per HTTPS zu öffnen.
+- **Pro Besucher:** Die Bremse gilt für die Adresse des Besuchers, die der Reverse-Proxy in `HBOX_CLIENT_IP_HEADER` mitgibt (siehe oben). Ein Angreifer sperrt also nicht euch aus. Der Wert muss zum Proxy passen: Ein Kopffeld, das der Proxy nicht selbst setzt, könnte jeder Besucher fälschen. Ohne Proxy `HBOX_CLIENT_IP_HEADER=` (leer) setzen.
+- **HTTPS:** Über den Proxy bekommen die Anmelde-Cookies das Merkmal `Secure` und der Browser die Anweisung (HSTS), die Seite nur noch per HTTPS zu öffnen.
 - Registrierung ist aus (`HBOX_ALLOW_REGISTRATION=false`), neue Konten nur per Einladung.
 
-Empfohlen, in Cloudflare (kostenlos):
+Empfohlen:
 
 1. **Gute Passwörter** für alle Konten. Die Bremse macht Raten langsam, ein starkes Passwort macht es aussichtslos.
-2. **Security → WAF → Rate limiting rules:** eine Regel für `URI Path` *equals* `/api/v1/users/login`, z. B. 10 Anfragen pro Minute pro IP, Aktion *Block* für 10 Minuten. Dann kommen Angriffe gar nicht erst bis zu Homebox.
-3. **SSL/TLS → Edge Certificates:** „Always Use HTTPS“ einschalten.
-4. **Vorgeschaltete Anmeldung (Authelia hinter Caddy, Cloudflare Access o. Ä.):** Die App kommt damit zurecht, auch als Home-Bildschirm-App. Läuft diese Anmeldung ab, passiert Folgendes:
+2. **Nicht offen ins Internet:** nur im Heimnetz und per VPN (WireGuard) erreichbar machen, oder eine Anmeldung vorschalten (Punkt 3). Ist Homebox über einen Cloudflare-Tunnel öffentlich, dort zusätzlich unter **Security → WAF → Rate limiting rules** eine Regel für `/api/v1/users/login` anlegen (z. B. 10 Anfragen pro Minute pro IP) und **„Always Use HTTPS“** einschalten.
+3. **Vorgeschaltete Anmeldung (Authelia hinter Caddy, Cloudflare Access o. Ä.):** Die App kommt damit zurecht, auch als Home-Bildschirm-App. Läuft diese Anmeldung ab, passiert Folgendes:
    - Öffnest du in der App etwas, lädt sie neu und zeigt den Login der vorgeschalteten Anmeldung. Danach geht es normal weiter.
    - Tippst du gerade etwas ein oder ist ein Dialog offen, lädt sie nicht von selbst neu. Stattdessen erscheint der Hinweis **„Die Anmeldung ist abgelaufen“** mit dem Knopf **„Neu anmelden“**, damit deine Eingabe nicht verloren geht.
    - **Vor dem Keller mit Netz öffnen:** Ohne Netz kannst du dich nicht neu anmelden. Die App läuft offline weiter und merkt sich Änderungen, hochgeladen werden sie aber erst nach der neuen Anmeldung. Eine lange Sitzungsdauer erspart dir das.
    - Die Anmeldung gehört in die **Homebox-App vom Home-Bildschirm**, nicht in Safari: Auf dem iPhone haben beide getrennte Speicher.
-5. Port `3100` ist im Heimnetz ohne HTTPS erreichbar. Wenn du ihn nicht brauchst, cloudflared wie oben direkt ins Docker-Netzwerk hängen und den Port entfernen.
 
 ## 3. Auf dem iPhone einrichten (Offline-Modus)
 
-1. Homebox in **Safari** über die Tunnel-Adresse (https://…) öffnen.
+1. Homebox in **Safari** über die `https://`-Adresse des Reverse-Proxys öffnen (unterwegs mit eingeschaltetem VPN).
 2. Beim Anmelden **„Angemeldet bleiben“** anhaken. Sonst läuft die Sitzung ab und du müsstest dich im Keller neu anmelden, was ohne Netz nicht geht.
 3. **Teilen → Zum Home-Bildschirm**. Ab jetzt Homebox **immer über dieses Icon** öffnen.
 4. Einmal mit Netz öffnen und **geöffnet lassen**, bis das Wolken-Symbol oben rechts einen Haken zeigt. Vorher lädt die App zwei Dinge: ihre eigenen Dateien (mehrere hundert, ohne sie startet sie im Keller gar nicht) und die Kopie deines Inventars. Ein Tipp auf das Symbol zeigt den Stand: **„Die App startet auch ohne Netz“** und die Anzahl der offline verfügbaren Einträge. Steht dort „wird vorbereitet“, die App noch offen lassen. Nach jedem Update der App wiederholt sich das einmal. Danach hält sich die Kopie bei jedem Öffnen mit Netz automatisch aktuell.

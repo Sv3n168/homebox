@@ -216,3 +216,50 @@ func TestTrash_SharedFilesAssetIDsAndTemplates(t *testing.T) {
 		_ = tRepos.Entities.Delete(ctx, id)
 	}
 }
+
+// Guards the recycle bin against schema changes from upstream: every column
+// that points at an entity must be known to the trash code. A new table that
+// hangs off entities would otherwise be deleted with the entity (or block the
+// delete) and not come back on restore.
+func TestTrash_KnowsEveryReferenceToEntities(t *testing.T) {
+	ctx := context.Background()
+	db := tClient.Sql()
+	var probe string
+	if err := db.QueryRowContext(ctx, "SELECT name FROM sqlite_master LIMIT 1").Scan(&probe); err != nil {
+		t.Skip("not SQLite")
+	}
+
+	known := map[string]bool{
+		// handled in MoveToTrash/Restore itself
+		"entities.entity_children":                  true,
+		"entities.entity_location_entities":         true,
+		"entity_templates.entity_template_location": true,
+	}
+	for _, ct := range trashChildTables {
+		known[ct.table+"."+ct.column] = true
+	}
+
+	rows, err := db.QueryContext(ctx, "SELECT name FROM sqlite_master WHERE type = 'table'")
+	require.NoError(t, err)
+	var tables []string
+	for rows.Next() {
+		var name string
+		require.NoError(t, rows.Scan(&name))
+		tables = append(tables, name)
+	}
+	require.NoError(t, rows.Close())
+
+	for _, table := range tables {
+		fks, err := db.QueryContext(ctx, `SELECT "table", "from" FROM pragma_foreign_key_list($1)`, table)
+		require.NoError(t, err)
+		for fks.Next() {
+			var target, column string
+			require.NoError(t, fks.Scan(&target, &column))
+			if target == "entities" {
+				assert.True(t, known[table+"."+column],
+					"%s.%s points at entities but fork_trash.go does not handle it", table, column)
+			}
+		}
+		require.NoError(t, fks.Close())
+	}
+}

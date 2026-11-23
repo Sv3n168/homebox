@@ -92,6 +92,12 @@ func TestClientIPHeader(t *testing.T) {
 	r.RemoteAddr = "203.0.113.200:4444"
 	r.Header.Set("Cf-Connecting-Ip", "198.51.100.1")
 	assert.Equal(t, "203.0.113.200", extractClientIP(r, false))
+
+	// A proxy that appends to X-Forwarded-For: its own entry is the last one.
+	r.RemoteAddr = "192.168.1.5:5555"
+	r.Header.Set("X-Forwarded-For", "6.6.6.6, 192.168.1.77")
+	setClientIPHeader("X-Forwarded-For")
+	assert.Equal(t, "192.168.1.77", extractClientIP(r, false))
 }
 
 func TestLoginsInFlightCapped(t *testing.T) {
