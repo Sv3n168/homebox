@@ -20,6 +20,8 @@ type OutboxBase = {
   tenant: string;
   headers: Record<string, string>;
   queuedAt: string;
+  /** The account that queued it; only that account sees and uploads it. */
+  user?: string;
   /** A send was started; if it never reported back the server may have it. */
   attempted?: boolean;
   /** Set when the server rejected it — kept so the user can see and discard it. */
@@ -171,11 +173,35 @@ export function putSnapshot(snapshot: Snapshot): Promise<IDBValidKey> {
   return tx("snapshot", "readwrite", s => s.put(snapshot));
 }
 
-export function listOutbox(): Promise<OutboxEntry[]> {
-  return tx<OutboxEntry[]>("outbox", "readonly", s => s.getAll());
+// Fork: queued writes belong to the account that made them. Someone else
+// signing in on the same device neither sees nor uploads them; they wait until
+// their owner is back. Entries from before this existed have no owner and
+// count for whoever is signed in.
+let outboxUser: string | null = null;
+
+export async function loadOutboxUser(): Promise<void> {
+  outboxUser = (await getMeta<string>("user")) ?? null;
+}
+
+/** Called whenever the server says who is signed in (GET /users/self). */
+export async function setOutboxUser(id: string): Promise<void> {
+  if (!id || id === outboxUser) return;
+  outboxUser = id;
+  await setMeta("user", id);
+}
+
+export async function listOutbox(): Promise<OutboxEntry[]> {
+  const all = await tx<OutboxEntry[]>("outbox", "readonly", s => s.getAll());
+  return all.filter(e => !e.user || !outboxUser || e.user === outboxUser);
+}
+
+/** Every queued write on this device, whoever made it. */
+export function countOutbox(): Promise<number> {
+  return tx<number>("outbox", "readonly", s => s.count());
 }
 
 export async function addOutbox(entry: OutboxEntry): Promise<number> {
+  if (outboxUser) entry.user = outboxUser;
   return (await tx("outbox", "readwrite", s => s.add(entry))) as number;
 }
 

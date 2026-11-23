@@ -7,6 +7,8 @@ on:
 
 jobs:
   delete-old-images-main:
+    # Fork: publishes to the original's registries; only run there.
+    if: github.repository == 'sysadminsmedia/homebox'
     name: Delete Old Images for Main Repo
     runs-on: ubuntu-latest
     permissions:
@@ -27,6 +29,8 @@ jobs:
           older-than: 180 days
 
   delete-old-images-devcache:
+    # Fork: publishes to the original's registries; only run there.
+    if: github.repository == 'sysadminsmedia/homebox'
     name: Delete Old Devcache Images
     runs-on: ubuntu-latest
     permissions:

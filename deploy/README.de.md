@@ -24,25 +24,42 @@ Die Images baut GitHub für dich. Auf deiner VM musst du nichts kompilieren.
 
 1. Im Fork **github.com/Sv3n168/homebox** öffnest du **Actions** und klickst auf „I understand my workflows, go ahead and enable them“.
 2. Links den Workflow **„Custom images“** wählen, dann **Run workflow** auf `main`. Danach baut er bei jedem Push auf `main` automatisch neu.
-3. Einige von Homebox übernommene Workflows sind für das Original gedacht und schlagen im Fork fehl: **„Docker publish“**, **„Docker publish rootless“**, **„Docker publish hardened“** und **„Update Currencies“** (braucht einen API-Schlüssel des Originals). Dasselbe gilt für **„Docker Cleanup“** (läuft jede Nacht und schlägt fehl). Öffne jeden davon und wähle **… → Disable workflow**. „Publish Release Binaries“ läuft nur bei Versions-Tags und kann bleiben.
+3. Die vom Original übernommenen Workflows **„Docker publish“** (drei Varianten), **„Docker Cleanup“** und **„Update Currencies“** sind für das Original gedacht. Im Fork starten sie zwar, überspringen ihre Arbeit aber und schlagen nicht fehl. „Publish Release Binaries“ läuft nur bei Versions-Tags.
    Für Updates per Workflow (Abschnitt 6) zusätzlich unter **Settings → Actions → General** ganz unten **„Allow GitHub Actions to create and approve pull requests“** anhaken.
-4. Nach dem ersten Lauf erscheinen unter **Profil → Packages** die Pakete `homebox` und `homebox-backup`. Bei beiden **Package settings → Change visibility → Public** einstellen. Dann braucht Portainer keine Zugangsdaten. Der Code ist ohnehin öffentlich (AGPL).
+4. Nach dem ersten Lauf erscheinen unter **Profil → Packages** die Pakete `homebox` und `homebox-backup`. Bei beiden **Package settings → Change visibility → Public** einstellen. Dann braucht Docker auf der VM keine Zugangsdaten. Der Code ist ohnehin öffentlich (AGPL).
 
-## 2. Stack in Portainer
+## 2. Mit Docker Compose starten
 
 **Vorher unbedingt eine Sicherung deiner bisherigen Homebox-Daten machen**, z. B. in Homebox selbst über *Sammlung → Werkzeuge → Export* oder als Snapshot der VM in Proxmox.
 
-1. Portainer öffnen, **Stacks → Add stack**, Name `homebox`.
-2. **Build method: Repository**
-   - Repository URL: `https://github.com/Sv3n168/homebox`
-   - Reference: `refs/heads/main`
-   - Compose path: `deploy/docker-compose.yml`
-   - Optional „GitOps updates“ aktivieren, damit Portainer Änderungen selbst holt.
-3. **Environment variables → Advanced mode** und den Inhalt von [`stack.env.example`](stack.env.example) einfügen und ausfüllen:
-   - `HBOX_AUTH_API_KEY_PEPPER`: **derselbe Wert wie in deinem bisherigen Homebox-Stack**, falls du dort einen gesetzt hattest. Sonst einen neuen zufälligen Wert (`openssl rand -hex 32`).
-   - `HOMEBOX_DATA_VOLUME`: **der Name des bisherigen Daten-Volumes** (Portainer → Volumes, z. B. `homebox_homebox-data`). So übernimmt der neue Stack deine vorhandenen Daten. Hattest du statt eines Volumes einen Ordner eingebunden (`/pfad:/data`), ersetze in `docker-compose.yml` bei beiden Diensten `homebox-data:/data` durch diesen Pfad.
+1. Auf der VM einen Ordner anlegen und die beiden Dateien aus dem Repository holen:
+   ```bash
+   mkdir -p ~/homebox && cd ~/homebox
+   curl -fsSLO https://raw.githubusercontent.com/Sv3n168/homebox/main/deploy/docker-compose.yml
+   curl -fsSL -o .env https://raw.githubusercontent.com/Sv3n168/homebox/main/deploy/stack.env.example
+   chmod 600 .env
+   ```
+2. Die Datei `.env` ausfüllen (Docker Compose liest sie automatisch, weil sie neben der `docker-compose.yml` liegt):
+   - `HBOX_AUTH_API_KEY_PEPPER`: **derselbe Wert wie in deiner bisherigen Homebox-Installation**, falls du dort einen gesetzt hattest. Sonst einen neuen zufälligen Wert (`openssl rand -hex 32`).
+   - `HOMEBOX_DATA_VOLUME`: **der Name des bisherigen Daten-Volumes** (`docker volume ls`, z. B. `homebox_homebox-data`). So übernimmt die neue Installation deine vorhandenen Daten. Hattest du statt eines Volumes einen Ordner eingebunden (`/pfad:/data`), ersetze in `docker-compose.yml` bei beiden Diensten `homebox-data:/data` durch diesen Pfad.
+   - `HBOX_CLIENT_IP_HEADER`: passend zu deinem Reverse-Proxy, siehe unten.
    - `BACKUP_PASSWORD` und `BACKUP_SALT`: zwei lange, zufällige Passphrasen. **Speichere beide sofort im Passwortmanager.** Ohne sie lässt sich kein Backup wiederherstellen, auch nicht von dir.
-4. Den **alten Homebox-Stack stoppen** (nicht löschen, das Volume wird weiterverwendet) und den neuen Stack mit **Deploy the stack** starten.
+3. Die **alte Homebox-Installation stoppen** (nicht löschen, das Volume wird weiterverwendet) und die neue starten:
+   ```bash
+   docker compose up -d
+   ```
+
+**Die wichtigsten Befehle** (immer im Ordner mit der `docker-compose.yml`):
+
+| Zweck | Befehl |
+|---|---|
+| Neue Version holen und starten | `docker compose pull && docker compose up -d` |
+| Nach einer Änderung in `.env` übernehmen | `docker compose up -d` |
+| Protokoll ansehen | `docker compose logs -f homebox` |
+| Konsole im Backup-Container | `docker compose exec homebox-backup bash` |
+| Zustand der Container | `docker compose ps` |
+
+Ändert sich die `docker-compose.yml` im Repository, die Datei mit dem `curl`-Befehl aus Schritt 1 neu holen. Wer lieber Portainer nutzt: einen Stack aus dem Repository anlegen (Compose path `deploy/docker-compose.yml`) und den Inhalt von `stack.env.example` als Umgebungsvariablen eintragen.
 
 Beim ersten Start passt Homebox die Datenbank automatisch an. Es kommen nur die neuen Spalten für „Verliehen“ hinzu, bestehende Daten bleiben unverändert.
 
@@ -59,7 +76,7 @@ homebox.example.com {
 ```
 
 - Caddy holt das Zertifikat selbst. Für eine Adresse, die nur im Heimnetz erreichbar ist, per DNS-Challenge.
-- In den Stack-Variablen `HBOX_CLIENT_IP_HEADER=X-Forwarded-For` setzen (Standard). Caddy schreibt dort die Adresse des Besuchers hinein und verwirft, was der Besucher selbst mitschickt.
+- In der `.env` `HBOX_CLIENT_IP_HEADER=X-Forwarded-For` setzen (Standard). Caddy schreibt dort die Adresse des Besuchers hinein und verwirft, was der Besucher selbst mitschickt.
 - **Port `3100` nur für Caddy öffnen** (Firewall der VM oder des Hosts). Sonst erreicht jedes Gerät im Heimnetz Homebox am Proxy vorbei: ohne HTTPS, ohne vorgeschaltete Anmeldung, und es könnte sich für die Login-Bremse eine beliebige Adresse geben.
 
 **Cloudflare-Tunnel:** Ziel des Tunnels ist `http://<VM-IP>:3100`, und `HBOX_CLIENT_IP_HEADER=CF-Connecting-IP`. Hängt cloudflared in einem eigenen Docker-Netzwerk, kannst du Homebox dort einhängen und den Port weglassen:
@@ -125,7 +142,7 @@ Dazu brauchst du kurz einen PC mit Browser.
    rclone authorize "onedrive"
    ```
    Im Browser mit deinem Microsoft-Konto anmelden. Das Terminal gibt danach einen Text aus, der mit `{"access_token":` beginnt. Den **ganzen** Text kopieren.
-2. **In Portainer:** Containers → `homebox-backup` → **Console** → Command `/bin/bash` → Connect, dann:
+2. **Auf der VM** die Konsole des Backup-Containers öffnen (`docker compose exec homebox-backup bash`), dann:
    ```
    rclone config
    ```
@@ -146,7 +163,7 @@ Dazu brauchst du kurz einen PC mit Browser.
    ```
    `verify` lädt das Backup herunter, entschlüsselt es und prüft die Datenbank, ohne etwas zu verändern.
 
-Danach läuft das Backup **jede Nacht um 3:30 Uhr** (`BACKUP_SCHEDULE`). Auf der VM liegen zusätzlich die letzten 3 für einen schnellen Restore. Die Protokolle siehst du in Portainer unter **Containers → homebox-backup → Logs**.
+Danach läuft das Backup **jede Nacht um 3:30 Uhr** (`BACKUP_SCHEDULE`). Auf der VM liegen zusätzlich die letzten 3 für einen schnellen Restore. Die Protokolle zeigt `docker compose logs homebox-backup`.
 
 ### Status und Einstellungen in Homebox
 
@@ -156,7 +173,7 @@ Unter **Sammlung → Werkzeuge → Sicherung & Wiederherstellung** zeigt Homebox
 - **Probe-Wiederherstellung**: Am 1. jedes Monats um 4:15 Uhr lädt der Backup-Container das neueste Backup aus OneDrive, entschlüsselt und entpackt es und prüft Datenbank und Fotos. Deine laufenden Daten bleiben dabei unberührt. Von Hand: `hb-backup verify latest --remote`.
 - **Einstellungen**: wie oft gesichert wird (täglich, alle 2, 3 oder 7 Tage) und nach wie vielen Monaten alte Backups gelöscht werden. Gilt ab dem nächsten nächtlichen Lauf. Die 10 neuesten Backups bleiben immer erhalten, auch wenn sie älter sind. So gehen keine verloren, falls die Sicherung einmal länger ausfällt.
 
-Zusätzlich steht der Container in Portainer auf **unhealthy**, wenn ein Backup oder eine Probe-Wiederherstellung fehlgeschlagen ist oder länger keine Sicherung gelaufen ist. In der Konsole zeigt `hb-backup status` dasselbe.
+Zusätzlich steht der Container in `docker compose ps` auf **unhealthy**, wenn ein Backup oder eine Probe-Wiederherstellung fehlgeschlagen ist oder länger keine Sicherung gelaufen ist. In der Konsole zeigt `hb-backup status` dasselbe.
 
 Wenn du gewarnt werden willst, falls die Backups ausbleiben: kostenlos auf https://healthchecks.io einen Check anlegen (Zeitraum 1 Tag) und dessen URL als `BACKUP_HEALTHCHECK_URL` eintragen.
 
@@ -164,17 +181,17 @@ Wenn du gewarnt werden willst, falls die Backups ausbleiben: kostenlos auf https
 
 **Aus einem Backup zurückspielen:**
 
-1. Portainer: Container **`homebox` stoppen**.
-2. Containers → `homebox-backup` → Console (`/bin/bash`):
+1. Homebox stoppen: `docker compose stop homebox`.
+2. In der Konsole des Backup-Containers (`docker compose exec homebox-backup bash`):
    ```
    hb-backup list                  # alle Backups anzeigen
    hb-backup restore latest --yes  # oder: hb-backup restore homebox-20261013-013000.tar.gz --yes
    ```
-3. Container **`homebox` starten**.
+3. Homebox starten: `docker compose start homebox`.
 
 Die bisherigen Daten werden nicht gelöscht. Sie landen in `/data/.pre-restore-<Zeitpunkt>` im Volume und können gelöscht werden, wenn alles passt. Läuft Homebox noch, verweigert der Restore den Start.
 
-**Wenn die VM komplett weg ist:** Neue VM aufsetzen, Stack wie in Abschnitt 2 anlegen, mit **denselben** `BACKUP_PASSWORD` und `BACKUP_SALT` aus dem Passwortmanager. OneDrive wie in Abschnitt 4 verbinden. Dann wie oben `homebox` stoppen, `hb-backup restore latest --yes` ausführen und `homebox` wieder starten.
+**Wenn die VM komplett weg ist:** Neue VM aufsetzen, Homebox wie in Abschnitt 2 einrichten, mit **denselben** `BACKUP_PASSWORD` und `BACKUP_SALT` aus dem Passwortmanager. OneDrive wie in Abschnitt 4 verbinden. Dann wie oben `homebox` stoppen, `hb-backup restore latest --yes` ausführen und `homebox` wieder starten.
 
 ## 6. Updates vom Original übernehmen
 
@@ -182,17 +199,17 @@ Die eigenen Änderungen liegen in deinem Fork. Neue Versionen des Originals komm
 
 1. Wenn du ein Update möchtest: **Actions → Upstream sync → Run workflow**. Der Workflow läuft nur, wenn du ihn startest. Er führt das Original im Zweig `upstream-sync` mit deinen Änderungen zusammen, erzeugt den Datenbank-Code neu und prüft Backend (Build, Tests) und Frontend (Lint, Tests der eigenen Funktionen, Build).
 2. Klappt alles, öffnet er einen Pull Request **„Update vom Original (…)“** und startet darauf **Fork CI**. Das sind alle Tests, auch die Klicktests deiner eigenen Funktionen (Verleihen, Box prüfen, Verschieben, Lagerorte, Offline, Logo). Gibt es Konflikte, legt er stattdessen ein Issue mit den betroffenen Dateien an. Dann Claude bitten, den Merge zu machen.
-3. Erst mergen, wenn Fork CI grün ist. Dann baut „Custom images“ neu, und Portainer zieht die Images per **Pull and redeploy** (oder automatisch mit GitOps).
+3. Erst mergen, wenn Fork CI grün ist. Dann baut „Custom images“ neu, und du holst die neue Version auf der VM mit `docker compose pull && docker compose up -d`.
 
-**Bitte nicht** auf GitHub **Sync fork → Update branch** klicken: Das schreibt das Original ungeprüft direkt auf `main`, und mit GitOps läuft es kurz danach auf deinem Server.
+**Bitte nicht** auf GitHub **Sync fork → Update branch** klicken: Das schreibt das Original ungeprüft direkt auf `main`, und mit dem nächsten `docker compose pull` läuft es auf deinem Server.
 
 **Sicherung vor jedem Update (automatisch):** Bringt eine neue Version Änderungen an der Datenbank mit, legt Homebox selbst direkt davor eine Kopie der Datenbank an: `/data/.pre-migration/homebox-<Zeitpunkt in UTC>.db`, die letzten 3 bleiben. Dafür ist kein anderer Container nötig. Klappt die Kopie nicht, steht eine Warnung im Log, und Homebox startet trotzdem normal. Fotos und Anhänge ändert ein Update nicht, sie stecken im normalen Backup. Die Kopien landen nicht im OneDrive-Backup.
 
 **Zurück zur vorigen Version:**
 1. Jedes Image gibt es zusätzlich mit festem Tag `sha-<7 Zeichen des Commits>` (Profil → Packages → homebox). Den Stand von vor dem Update heraussuchen.
-2. Container `homebox` stoppen. In `homebox-backup` die Konsole öffnen und `hb-backup snapshots` ausführen. Die Kopie mit der Uhrzeit des Updates ist die richtige.
+2. Homebox stoppen (`docker compose stop homebox`). In der Konsole des Backup-Containers `hb-backup snapshots` ausführen. Die Kopie mit der Uhrzeit des Updates ist die richtige.
 3. `hb-backup restore-snapshot <Name> --yes` (oder `latest`). Die aktuelle Datenbank wird nicht gelöscht, sondern nach `/data/.pre-restore-<Zeitpunkt>` verschoben.
-4. In den Stack-Variablen `HOMEBOX_IMAGE=ghcr.io/sv3n168/homebox:sha-xxxxxxx` setzen und neu deployen. Später für Updates wieder entfernen.
+4. In der `.env` `HOMEBOX_IMAGE=ghcr.io/sv3n168/homebox:sha-xxxxxxx` setzen und mit `docker compose up -d` starten. Später für Updates wieder entfernen.
 
 Reicht das nicht (etwa wenn auch Fotos betroffen sind), wie in Abschnitt 5 ein ganzes Backup zurückspielen.
 

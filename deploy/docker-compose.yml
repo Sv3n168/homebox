@@ -1,6 +1,7 @@
 # Homebox (custom build: offline mode, lending) + encrypted OneDrive backups.
-# Made for a Portainer stack; all settings come from the stack's environment
-# variables (see stack.env.example). Full guide: deploy/README.de.md
+# All settings come from environment variables: copy stack.env.example to
+# .env next to this file (or paste it into a Portainer stack). Full guide:
+# deploy/README.de.md
 name: homebox
 
 services:
@@ -61,7 +62,7 @@ services:
 volumes:
   homebox-data:
     # Moving an existing installation? Put the name of its data volume here
-    # (Portainer -> Volumes) so the data is reused.
+    # (docker volume ls) so the data is reused.
     name: ${HOMEBOX_DATA_VOLUME:-homebox-data}
   homebox-backup-config:
   homebox-backup-local:

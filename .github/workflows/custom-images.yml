@@ -1,4 +1,4 @@
-# Builds the images the Portainer stack (deploy/docker-compose.yml) pulls:
+# Builds the images deploy/docker-compose.yml pulls:
 #   ghcr.io/<owner>/homebox         – Homebox with the custom changes
 #   ghcr.io/<owner>/homebox-backup  – encrypted OneDrive backup sidecar
 name: Custom images
