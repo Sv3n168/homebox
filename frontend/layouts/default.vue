@@ -171,7 +171,8 @@
 
         <SidebarRail />
       </Sidebar>
-      <SidebarInset class="min-h-dvh max-w-full overflow-hidden bg-background-accent">
+      <!-- Fork: overflow-clip, not -hidden, so the sticky header really stays at the top. -->
+      <SidebarInset class="min-h-dvh max-w-full overflow-clip bg-background-accent">
         <div class="relative flex h-full flex-col justify-center pb-24 sm:pb-0">
           <div v-if="preferences.displayLegacyHeader">
             <AppHeaderDecor class="-mt-10 hidden lg:block" />
