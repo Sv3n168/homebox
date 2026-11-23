@@ -5,7 +5,14 @@
  *
  * fork-features.browser.spec.ts covers the offline logic with the service
  * worker blocked; this is the only place the worker itself is tested.
+ *
+ * "No connection" is real here: the app is opened through a small TCP relay
+ * in front of the test server, and the relay is shut down for the basement.
+ * Playwright's own offline switch cannot be used: in WebKit a page load then
+ * fails inside the browser driver before the service worker is asked.
  */
+import net from "node:net";
+import type { AddressInfo } from "node:net";
 import type { APIRequestContext, Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
@@ -40,6 +47,43 @@ async function session(request: APIRequestContext) {
   };
 }
 
+/** A TCP relay to the test server that can be switched off and on again (same port). */
+function relayTo(target: URL) {
+  const open = new Set<net.Socket>();
+  const server = net.createServer(client => {
+    const upstream = net.connect(Number(target.port || 80), target.hostname);
+    for (const socket of [client, upstream]) {
+      open.add(socket);
+      socket.on("error", () => {});
+      socket.on("close", () => {
+        open.delete(socket);
+        client.destroy();
+        upstream.destroy();
+      });
+    }
+    client.pipe(upstream);
+    upstream.pipe(client);
+  });
+  let port = 0;
+  const listen = () =>
+    new Promise<void>(resolve =>
+      server.listen(port, "127.0.0.1", () => {
+        port = (server.address() as AddressInfo).port;
+        resolve();
+      })
+    );
+  return {
+    start: listen,
+    url: () => `http://localhost:${port}`,
+    disconnect: () =>
+      new Promise<void>(resolve => {
+        server.close(() => resolve());
+        for (const socket of open) socket.destroy();
+      }),
+    reconnect: listen,
+  };
+}
+
 /** Opens the offline status and waits until both the app and the data are on the device. */
 async function waitUntilReadyForTheBasement(page: Page) {
   await page.getByTestId("offline-status").filter({ visible: true }).click();
@@ -50,13 +94,15 @@ async function waitUntilReadyForTheBasement(page: Page) {
 
 test("after one visit the app starts and works without a connection", async ({ page, context, request, baseURL }) => {
   test.setTimeout(240_000);
+  const relay = relayTo(new URL(baseURL ?? "http://localhost:7745"));
+  await relay.start();
+  const url = relay.url();
   const s = await session(request);
   const id = uid();
   const box = await s.create({ name: `Cellar box ${id}`, entityTypeId: s.locationType });
   const other = await s.create({ name: `Other box ${id}`, entityTypeId: s.locationType });
   const jar = await s.create({ name: `Jar ${id}`, entityTypeId: s.itemType, parentId: box.id });
 
-  const url = baseURL ?? "http://localhost:7745";
   await context.addCookies([
     { name: "hb.auth.token", value: s.token, url, httpOnly: true, sameSite: "Lax" },
     { name: "hb.auth.remember", value: "false", url, httpOnly: true, sameSite: "Lax" },
@@ -65,18 +111,18 @@ test("after one visit the app starts and works without a connection", async ({ p
   ]);
 
   // Upstairs: only the start page is opened, nothing else is visited.
-  await page.goto("/home");
+  await page.goto(`${url}/home`);
   await expect(page.getByText("Quick Statistics")).toBeVisible();
   await waitUntilReadyForTheBasement(page);
   await page.close();
 
   // Basement: no connection, and the app is started from scratch.
-  await context.setOffline(true);
+  await relay.disconnect();
   const cellar = await context.newPage();
   const problems: string[] = [];
   cellar.on("pageerror", e => problems.push(e.message));
 
-  await cellar.goto("/home");
+  await cellar.goto(`${url}/home`);
   await expect(cellar.getByText("Quick Statistics")).toBeVisible({ timeout: 30_000 });
 
   // A page that was never opened before, reached inside the app.
@@ -85,14 +131,14 @@ test("after one visit the app starts and works without a connection", async ({ p
   await expect(cellar.getByText(box.name).first()).toBeVisible({ timeout: 30_000 });
 
   // A box, its content and its check.
-  await cellar.goto(`/location/${box.id}`);
+  await cellar.goto(`${url}/location/${box.id}`);
   await expect(cellar.getByRole("heading", { name: box.name })).toBeVisible({ timeout: 30_000 });
   await expect(cellar.getByText(jar.name).first()).toBeVisible();
-  await cellar.goto(`/location/${box.id}/check`);
+  await cellar.goto(`${url}/location/${box.id}/check`);
   await expect(cellar.getByText(jar.name).first()).toBeVisible({ timeout: 30_000 });
 
   // Change a quantity and move the item: both are queued.
-  await cellar.goto(`/item/${jar.id}`);
+  await cellar.goto(`${url}/item/${jar.id}`);
   const stepper = cellar.getByTestId("quantity-stepper");
   await expect(stepper).toContainText("1", { timeout: 30_000 });
   await stepper.getByRole("button", { name: "+1" }).click();
@@ -102,7 +148,7 @@ test("after one visit the app starts and works without a connection", async ({ p
   await expect(cellar.getByTestId("offline-pending-count").filter({ visible: true })).toHaveText("2");
 
   // The dialog for a new item opens (its code is loaded on first use).
-  await cellar.goto("/home");
+  await cellar.goto(`${url}/home`);
   await expect(cellar.getByText("Quick Statistics")).toBeVisible({ timeout: 30_000 });
   await cellar.getByRole("button", { name: "Create", exact: true }).first().click();
   await cellar.getByRole("menuitem", { name: /^Item/ }).first().click();
@@ -113,7 +159,8 @@ test("after one visit the app starts and works without a connection", async ({ p
   expect(await s.quantity(jar.id)).toBe(1);
 
   // Back upstairs: what was queued is sent.
-  await context.setOffline(false);
+  await relay.reconnect();
   await cellar.evaluate(() => window.dispatchEvent(new Event("online")));
   await expect.poll(() => s.quantity(jar.id), { timeout: 30_000 }).toBe(2);
+  await relay.disconnect();
 });

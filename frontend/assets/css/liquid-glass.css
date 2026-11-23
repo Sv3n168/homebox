@@ -221,6 +221,30 @@ html:is(.theme-glass, .theme-glass-light, .theme-glass-dark) {
   border-radius: 1.6rem;
 }
 
+/* iPhone status bar (see main.css): the header floats below it, the wallpaper covers the area above. */
+:is(.theme-glass, .theme-glass-light, .theme-glass-dark) .app-header {
+  top: calc(0.5rem + var(--hb-safe-top));
+  margin-top: calc(0.5rem + var(--hb-safe-top));
+  padding-top: var(--hb-header-pad);
+  height: calc(var(--header-height-mobile) - var(--hb-safe-top));
+}
+
+@media (min-width: 640px) {
+  :is(.theme-glass, .theme-glass-light, .theme-glass-dark) .app-header {
+    height: calc(var(--header-height) - var(--hb-safe-top));
+  }
+}
+
+:is(.theme-glass, .theme-glass-light, .theme-glass-dark) body::after {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: var(--hb-safe-top);
+  z-index: 19;
+  background: var(--glass-wallpaper) top / 100% 100lvh no-repeat;
+  pointer-events: none;
+}
+
 :is(.theme-glass, .theme-glass-light, .theme-glass-dark) [data-sidebar="sidebar"] {
   border-radius: 0 1.6rem 1.6rem 0;
 }

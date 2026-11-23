@@ -1077,3 +1077,34 @@ h6 {
   word-break: normal;
   hyphens: auto;
 }
+
+/*
+ * Fork: iPhone status bar. With viewport-fit=cover the page reaches under the
+ * clock and the Dynamic Island, where iOS shows scrolling content blurred. As
+ * in native apps the header stays at the top and its background fills that
+ * area. For "sticky" to work nothing around it may be a scroll box (here and
+ * overflow-clip in layouts/default.vue).
+ */
+:root {
+  --hb-safe-top: env(safe-area-inset-top, 0px);
+  --header-height: calc(4rem + var(--hb-safe-top));
+  --header-height-mobile: calc(2.75rem + var(--hb-safe-top));
+  --hb-header-pad: 0.5rem;
+}
+
+/* On phones the header is as low as a native navigation bar (44px). */
+@media (max-width: 639px) {
+  :root {
+    --hb-header-pad: 0.25rem;
+  }
+}
+
+.app-header {
+  padding-top: calc(var(--hb-header-pad) + var(--hb-safe-top));
+  padding-bottom: var(--hb-header-pad);
+}
+
+/* "hidden" makes the body its own scroll box, and the header then scrolls away with it. */
+body {
+  overflow-x: clip;
+}

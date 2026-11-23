@@ -7,17 +7,18 @@ import (
 )
 
 func TestStaticCacheControl(t *testing.T) {
+	const revalidate = "no-cache"
 	cases := map[string]string{
 		"/_nuxt/BKOpeLj3.js":          "public, max-age=31536000, immutable",
 		"/_nuxt/entry.5vdZhpDB.css":   "public, max-age=31536000, immutable",
-		"/_nuxt/builds/latest.json":   "no-cache",
-		"/_nuxt/builds/meta/abc.json": "no-cache",
-		"/sw.js":                      "no-cache",
-		"/workbox-8df661a4.js":        "no-cache",
-		"/manifest.webmanifest":       "no-cache",
-		"/":                           "no-cache",
-		"/home":                       "no-cache",
-		"/item/123":                   "no-cache",
+		"/_nuxt/builds/latest.json":   revalidate,
+		"/_nuxt/builds/meta/abc.json": revalidate,
+		"/sw.js":                      revalidate,
+		"/workbox-8df661a4.js":        revalidate,
+		"/manifest.webmanifest":       revalidate,
+		"/":                           revalidate,
+		"/home":                       revalidate,
+		"/item/123":                   revalidate,
 	}
 	for path, want := range cases {
 		if got := staticCacheControl(path); got != want {

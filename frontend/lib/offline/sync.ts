@@ -14,6 +14,7 @@ import { rememberIdMapping } from "./adapter";
 import { AccessRedirectError, accessFetch } from "../requests/access";
 import { offlineState } from "./state";
 import {
+  countOutbox,
   deleteOutbox,
   getIdMap,
   getResponse,
@@ -24,6 +25,7 @@ import {
   putOutbox,
   putResponse,
   putSnapshot,
+  setOutboxUser,
   type OutboxEntry,
 } from "./store";
 
@@ -164,9 +166,21 @@ function withMappedIds<T>(value: T, map: Record<string, string>): T {
 
 type FlushResult = { synced: number; stoppedBy?: "network" | "auth" | "access" };
 
-export async function flushOutbox(): Promise<FlushResult> {
-  const entries = await listOutbox();
+export async function flushOutbox(ctx?: SyncContext): Promise<FlushResult> {
   let synced = 0;
+  // Whose writes may go up: ask the server who is signed in before sending
+  // anything, in case the account changed since they were queued.
+  if (ctx && (await countOutbox()) > 0) {
+    try {
+      const r = await timedFetch(`${API}/users/self`, { headers: ctx.headers });
+      if (r.status === 401) return { synced, stoppedBy: "auth" };
+      if (r.ok) await setOutboxUser(((await r.json()) as { item?: { id?: string } }).item?.id ?? "");
+    } catch (e) {
+      return { synced, stoppedBy: e instanceof AccessRedirectError ? "access" : "network" };
+    }
+    await refreshOutboxState();
+  }
+  const entries = await listOutbox();
   if (entries.length === 0) return { synced };
 
   progress("upload", entries.length);
@@ -461,7 +475,7 @@ export function syncAll(ctx: SyncContext, opts: { snapshot: boolean } = { snapsh
       offlineState.online = true;
     };
     try {
-      const flushed = await flushOutbox();
+      const flushed = await flushOutbox(ctx);
       if (flushed.stoppedBy === "auth") {
         offlineState.needsLogin = true;
         return;

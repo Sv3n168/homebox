@@ -216,3 +216,52 @@ func TestTrash_SharedFilesAssetIDsAndTemplates(t *testing.T) {
 		_ = tRepos.Entities.Delete(ctx, id)
 	}
 }
+
+// Guards the recycle bin against schema changes from upstream: every column
+// that points at an entity must be known to the trash code. A new table that
+// hangs off entities would otherwise be deleted with the entity (or block the
+// delete) and not come back on restore.
+func TestTrash_KnowsEveryReferenceToEntities(t *testing.T) {
+	ctx := context.Background()
+	db := tClient.Sql()
+	var probe string
+	if err := db.QueryRowContext(ctx, "SELECT name FROM sqlite_master LIMIT 1").Scan(&probe); err != nil {
+		t.Skip("not SQLite")
+	}
+
+	known := map[string]bool{
+		// handled in MoveToTrash/Restore itself
+		"entities.entity_children":                  true,
+		"entities.entity_location_entities":         true,
+		"entity_templates.entity_template_location": true,
+	}
+	for _, ct := range trashChildTables {
+		known[ct.table+"."+ct.column] = true
+	}
+
+	tables := queryPairs(t, db, "SELECT name, '' FROM sqlite_master WHERE type = 'table'")
+	for _, tbl := range tables {
+		for _, fk := range queryPairs(t, db, `SELECT "table", "from" FROM pragma_foreign_key_list($1)`, tbl[0]) {
+			if fk[0] == "entities" {
+				assert.True(t, known[tbl[0]+"."+fk[1]],
+					"%s.%s points at entities but fork_trash.go does not handle it", tbl[0], fk[1])
+			}
+		}
+	}
+}
+
+// queryPairs returns the two text columns of every row.
+func queryPairs(t *testing.T, db *sql.DB, query string, args ...any) [][2]string {
+	t.Helper()
+	rows, err := db.QueryContext(context.Background(), query, args...)
+	require.NoError(t, err)
+	defer func() { _ = rows.Close() }()
+	var out [][2]string
+	for rows.Next() {
+		var p [2]string
+		require.NoError(t, rows.Scan(&p[0], &p[1]))
+		out = append(out, p)
+	}
+	require.NoError(t, rows.Err())
+	return out
+}

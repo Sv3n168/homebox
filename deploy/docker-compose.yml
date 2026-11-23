@@ -1,6 +1,7 @@
 # Homebox (custom build: offline mode, lending) + encrypted OneDrive backups.
-# Made for a Portainer stack; all settings come from the stack's environment
-# variables (see stack.env.example). Full guide: deploy/README.de.md
+# All settings come from environment variables: copy stack.env.example to
+# .env next to this file (or paste it into a Portainer stack). Full guide:
+# deploy/README.de.md
 name: homebox
 
 services:
@@ -13,21 +14,21 @@ services:
       - HBOX_LOG_LEVEL=info
       - HBOX_LOG_FORMAT=text
       - HBOX_OPTIONS_ALLOW_ANALYTICS=false
-      # Public through the tunnel: only invited users. Set to true once to
+      # Only invited users. Set to true once to
       # create your first account if you start from scratch.
       - HBOX_OPTIONS_ALLOW_REGISTRATION=${HBOX_ALLOW_REGISTRATION:-false}
       # Keep the value you used before — API keys are hashed with it.
       - HBOX_AUTH_API_KEY_PEPPER=${HBOX_AUTH_API_KEY_PEPPER:?set HBOX_AUTH_API_KEY_PEPPER}
       - HBOX_WEB_MAX_UPLOAD_SIZE=${HBOX_MAX_UPLOAD_MB:-20}
-      # Login brake per visitor: behind the Cloudflare tunnel the visitor's
-      # address is in CF-Connecting-IP (cloudflared itself is always the same
-      # address). Without a tunnel set HBOX_CLIENT_IP_HEADER to an empty value.
-      - HBOX_OPTIONS_CLIENT_IP_HEADER=${HBOX_CLIENT_IP_HEADER-CF-Connecting-IP}
+      # Login brake per visitor: the header in which the reverse proxy passes the
+      # visitor's address (Caddy and most others: X-Forwarded-For, Cloudflare
+      # tunnel: CF-Connecting-IP). It must be one the proxy sets itself. Without
+      # a proxy set HBOX_CLIENT_IP_HEADER to an empty value.
+      - HBOX_OPTIONS_CLIENT_IP_HEADER=${HBOX_CLIENT_IP_HEADER-X-Forwarded-For}
     volumes:
       - homebox-data:/data
-    # cloudflared reaches Homebox here (tunnel service: http://<VM-IP>:3100).
-    # If cloudflared shares a Docker network with this stack instead, remove
-    # the port and use http://homebox:7745 — see "cloudflared" in the README.
+    # The reverse proxy reaches Homebox here (http://<VM-IP>:3100). Open the
+    # port for the proxy only — see "Reverse-Proxy" in the README.
     ports:
       - "${HOMEBOX_PORT:-3100}:7745"
 
@@ -61,7 +62,7 @@ services:
 volumes:
   homebox-data:
     # Moving an existing installation? Put the name of its data volume here
-    # (Portainer -> Volumes) so the data is reused.
+    # (docker volume ls) so the data is reused.
     name: ${HOMEBOX_DATA_VOLUME:-homebox-data}
   homebox-backup-config:
   homebox-backup-local:

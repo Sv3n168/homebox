@@ -11,6 +11,8 @@ permissions:
 
 jobs:
   update-currencies:
+    # Fork: needs the original's API key; only run there.
+    if: github.repository == 'sysadminsmedia/homebox'
     runs-on: ubuntu-latest
 
     steps:

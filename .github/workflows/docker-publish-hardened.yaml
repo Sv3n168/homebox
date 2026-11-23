@@ -33,6 +33,8 @@ env:
 
 jobs:
   build:
+    # Fork: publishes to the original's registries; only run there.
+    if: github.repository == 'sysadminsmedia/homebox'
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read

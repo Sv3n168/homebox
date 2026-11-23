@@ -31,8 +31,10 @@ import {
   getResponse,
   getSnapshot,
   listOutbox,
+  loadOutboxUser,
   offlineStorageAvailable,
   putResponse,
+  setOutboxUser,
   type OutboxCreate,
   type OutboxField,
   type OutboxMove,
@@ -63,6 +65,7 @@ let idMap: Record<string, string> = {};
 export async function loadIdMap(): Promise<void> {
   if (offlineStorageAvailable()) {
     idMap = await getIdMap();
+    await loadOutboxUser();
   }
 }
 
@@ -613,6 +616,10 @@ export const offlineHooks = {
   record(req: OfflineRequest, data: unknown): void {
     offlineState.online = true;
     if (!offlineStorageAvailable() || req.method !== "GET" || data === undefined) return;
+    if (pathOf(req.url).path === `${API}/users/self`) {
+      const id = (data as { item?: { id?: string } } | null)?.item?.id;
+      if (id) setOutboxUser(id).catch(() => {});
+    }
     putResponse(tenantOf(req.headers), req.url, data).catch(e => console.warn("[offline] cache write failed", e));
   },
 };
