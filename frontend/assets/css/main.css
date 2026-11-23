@@ -1077,3 +1077,25 @@ h6 {
   word-break: normal;
   hyphens: auto;
 }
+/*
+ * Fork: iPhone status bar. With viewport-fit=cover the page reaches under the
+ * clock and the Dynamic Island, where iOS shows it blurred. Keep the content
+ * below that area and cover it with the page colour.
+ */
+body {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  z-index: 40;
+  background: hsl(var(--background-accent));
+  pointer-events: none;
+}
+
+:is(.theme-glass, .theme-glass-light, .theme-glass-dark) body::after {
+  background: var(--glass-wallpaper) top / 100% 100lvh no-repeat;
+}
