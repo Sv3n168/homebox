@@ -239,27 +239,29 @@ func TestTrash_KnowsEveryReferenceToEntities(t *testing.T) {
 		known[ct.table+"."+ct.column] = true
 	}
 
-	rows, err := db.QueryContext(ctx, "SELECT name FROM sqlite_master WHERE type = 'table'")
-	require.NoError(t, err)
-	var tables []string
-	for rows.Next() {
-		var name string
-		require.NoError(t, rows.Scan(&name))
-		tables = append(tables, name)
-	}
-	require.NoError(t, rows.Close())
-
-	for _, table := range tables {
-		fks, err := db.QueryContext(ctx, `SELECT "table", "from" FROM pragma_foreign_key_list($1)`, table)
-		require.NoError(t, err)
-		for fks.Next() {
-			var target, column string
-			require.NoError(t, fks.Scan(&target, &column))
-			if target == "entities" {
-				assert.True(t, known[table+"."+column],
-					"%s.%s points at entities but fork_trash.go does not handle it", table, column)
+	tables := queryPairs(t, db, "SELECT name, '' FROM sqlite_master WHERE type = 'table'")
+	for _, tbl := range tables {
+		for _, fk := range queryPairs(t, db, `SELECT "table", "from" FROM pragma_foreign_key_list($1)`, tbl[0]) {
+			if fk[0] == "entities" {
+				assert.True(t, known[tbl[0]+"."+fk[1]],
+					"%s.%s points at entities but fork_trash.go does not handle it", tbl[0], fk[1])
 			}
 		}
-		require.NoError(t, fks.Close())
 	}
+}
+
+// queryPairs returns the two text columns of every row.
+func queryPairs(t *testing.T, db *sql.DB, query string, args ...any) [][2]string {
+	t.Helper()
+	rows, err := db.QueryContext(context.Background(), query, args...)
+	require.NoError(t, err)
+	defer func() { _ = rows.Close() }()
+	var out [][2]string
+	for rows.Next() {
+		var p [2]string
+		require.NoError(t, rows.Scan(&p[0], &p[1]))
+		out = append(out, p)
+	}
+	require.NoError(t, rows.Err())
+	return out
 }
