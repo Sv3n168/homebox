@@ -1088,11 +1088,20 @@ h6 {
 :root {
   --hb-safe-top: env(safe-area-inset-top, 0px);
   --header-height: calc(4rem + var(--hb-safe-top));
-  --header-height-mobile: calc(3.75rem + var(--hb-safe-top));
+  --header-height-mobile: calc(2.75rem + var(--hb-safe-top));
+  --hb-header-pad: 0.5rem;
+}
+
+/* On phones the header is as low as a native navigation bar (44px). */
+@media (max-width: 639px) {
+  :root {
+    --hb-header-pad: 0.25rem;
+  }
 }
 
 .app-header {
-  padding-top: calc(0.5rem + var(--hb-safe-top));
+  padding-top: calc(var(--hb-header-pad) + var(--hb-safe-top));
+  padding-bottom: var(--hb-header-pad);
 }
 
 /* "hidden" makes the body its own scroll box, and the header then scrolls away with it. */

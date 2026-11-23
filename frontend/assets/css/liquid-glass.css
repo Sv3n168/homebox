@@ -225,7 +225,7 @@ html:is(.theme-glass, .theme-glass-light, .theme-glass-dark) {
 :is(.theme-glass, .theme-glass-light, .theme-glass-dark) .app-header {
   top: calc(0.5rem + var(--hb-safe-top));
   margin-top: calc(0.5rem + var(--hb-safe-top));
-  padding-top: 0.5rem;
+  padding-top: var(--hb-header-pad);
   height: calc(var(--header-height-mobile) - var(--hb-safe-top));
 }
 
